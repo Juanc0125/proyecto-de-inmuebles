@@ -13,6 +13,8 @@
 //   npm run set:ai-key -- openrouter
 //   npm run set:ai-key -- fal      (goes to Railway, not Vercel - see below)
 //   npm run set:ai-key -- heygen   (Railway too: the worker calls HeyGen)
+//   npm run set:ai-key -- elevenlabs (Railway: the narration voice)
+//   npm run set:ai-key -- gemini / mistral (Vercel, like groq)
 //   npm run set:ai-key            (asks which provider)
 //
 // With --from-local it takes the key already in .env.local instead of asking,
@@ -55,20 +57,46 @@ const TOOL = {
 };
 
 const PROVIDERS = {
+    gemini: {
+        // Google AI Studio key (free tier). No prefix check: the live probe
+        // below is what tells a good key apart, not its shape.
+        envVar: 'GEMINI_API_KEY',
+        prefix: '',
+        url: process.env.GEMINI_API_URL || 'https://generativelanguage.googleapis.com/v1beta/openai/chat/completions',
+        model: process.env.GEMINI_MODEL || MODELS.gemini.model,
+        headers: (key) => ({ Authorization: `Bearer ${key}` }),
+        extra: { reasoning_effort: 'low' },
+    },
+    mistral: {
+        envVar: 'MISTRAL_API_KEY',
+        prefix: '',
+        url: process.env.MISTRAL_API_URL || 'https://api.mistral.ai/v1/chat/completions',
+        model: process.env.MISTRAL_MODEL || MODELS.mistral.model,
+        headers: (key) => ({ Authorization: `Bearer ${key}` }),
+    },
+    elevenlabs: {
+        // The narration voice (apps/render-worker/voice.ts), so Railway only.
+        envVar: 'ELEVENLABS_API_KEY',
+        prefix: '',
+        probe: probeElevenlabs,
+        probeLabel: 'api.elevenlabs.io',
+        railway: true,
+    },
     groq: {
         envVar: 'GROQ_API_KEY',
         prefix: 'gsk_',
         url: process.env.GROQ_API_URL ?? 'https://api.groq.com/openai/v1/chat/completions',
-        model: process.env.GROQ_MODEL ?? MODELS.groq.model,
+        model: process.env.GROQ_MODEL || MODELS.groq.model,
         headers: (key) => ({ Authorization: `Bearer ${key}` }),
     },
     openrouter: {
         envVar: 'OPENROUTER_API_KEY',
         prefix: 'sk-or-v1-',
         url: process.env.OPENROUTER_API_URL ?? 'https://openrouter.ai/api/v1/chat/completions',
-        model: process.env.OPENROUTER_MODEL ?? MODELS.openrouter.model,
+        model: process.env.OPENROUTER_MODEL || MODELS.openrouter.model,
         headers: (key) => ({ Authorization: `Bearer ${key}`, 'X-Title': 'Stickman Video Studio' }),
         alternates: MODELS.openrouter.alternates,
+        extra: { reasoning: { effort: 'low' } },
     },
     fal: {
         envVar: 'FAL_KEY',
@@ -162,9 +190,10 @@ function createSession() {
 
 async function pickProvider(session) {
     while (true) {
-        const answer = (await session.ask('Proveedor (groq/openrouter/fal/heygen): ')).trim().toLowerCase();
+        const names = Object.keys(PROVIDERS);
+        const answer = (await session.ask(`Proveedor (${names.join('/')}): `)).trim().toLowerCase();
         if (PROVIDERS[answer]) return answer;
-        console.log('Escribe "groq", "openrouter", "fal" o "heygen".');
+        console.log(`Escribe uno de: ${names.join(', ')}.`);
     }
 }
 
@@ -226,7 +255,9 @@ async function probeGenerico(provider, key) {
             headers: { 'Content-Type': 'application/json', ...provider.headers(key) },
             body: JSON.stringify({
                 model: provider.model,
-                max_tokens: 120,
+                // Reasoning models spend part of this thinking; 120 left one empty.
+                max_tokens: 1024,
+                ...provider.extra,
                 messages: [
                     { role: 'system', content: 'Eres un asistente que opera un estudio de video. Usa la herramienta cuando corresponda.' },
                     { role: 'user', content: 'crea un video sobre tasas fijas para tiktok' },
@@ -309,6 +340,32 @@ function readLocalEnv(name) {
 
 // Listing one public voice is free and needs a valid key: 200 means the key
 // authenticates, 401/403 means it does not. It never touches the wallet.
+// The plan matters as much as the key: on the free plan /v1/voices answers 200
+// while text-to-speech answers 402 paid_plan_required (measured with a real
+// key), so a free-plan key would install cleanly and never narrate a word.
+async function probeElevenlabs(key) {
+    let response;
+    try {
+        response = await fetch('https://api.elevenlabs.io/v1/user/subscription', {
+            headers: { 'xi-api-key': key, accept: 'application/json' },
+            signal: AbortSignal.timeout(40000),
+        });
+    } catch (error) {
+        return { estado: 'FALLA', detalle: `sin respuesta: ${error.message}` };
+    }
+    if (response.status === 401 || response.status === 403) {
+        return { estado: 'FALLA', detalle: `HTTP ${response.status}: ElevenLabs rechazo la clave` };
+    }
+    if (!response.ok) return { estado: 'FALLA', detalle: `respuesta inesperada de api.elevenlabs.io: HTTP ${response.status}` };
+    const plan = await response.json().catch(() => ({}));
+    const tier = String(plan.tier ?? 'desconocido');
+    if (tier === 'free') {
+        return { estado: 'FALLA', detalle: 'la cuenta esta en el plan gratuito: ahi la API de voz responde 402 y no da licencia comercial. Hace falta Starter o superior.' };
+    }
+    const left = Number(plan.character_limit) - Number(plan.character_count);
+    return { estado: 'OK', detalle: `plan ${tier}${Number.isFinite(left) ? `, ${left} caracteres disponibles este ciclo` : ''}` };
+}
+
 async function probeHeygen(key) {
     let response;
     try {

@@ -49,22 +49,44 @@ const TOOL = {
     },
 };
 
-const PROVIDERS = [
-    {
+// Same order and defaults as apps/web/lib/ai-provider.ts, both read from
+// ai-models.json. `extra` mirrors the request fields the app sends.
+const BY_ID = {
+    gemini: {
+        id: 'gemini',
+        key: 'GEMINI_API_KEY',
+        url: process.env.GEMINI_API_URL || 'https://generativelanguage.googleapis.com/v1beta/openai/chat/completions',
+        model: process.env.GEMINI_MODEL || MODELS.gemini.model,
+        headers: () => ({ Authorization: `Bearer ${process.env.GEMINI_API_KEY}` }),
+        extra: { reasoning_effort: 'low' },
+    },
+    groq: {
         id: 'groq',
         key: 'GROQ_API_KEY',
-        url: process.env.GROQ_API_URL ?? 'https://api.groq.com/openai/v1/chat/completions',
-        model: process.env.GROQ_MODEL ?? MODELS.groq.model,
+        url: process.env.GROQ_API_URL || 'https://api.groq.com/openai/v1/chat/completions',
+        model: process.env.GROQ_MODEL || MODELS.groq.model,
         headers: () => ({ Authorization: `Bearer ${process.env.GROQ_API_KEY}` }),
     },
-    {
+    mistral: {
+        id: 'mistral',
+        key: 'MISTRAL_API_KEY',
+        url: process.env.MISTRAL_API_URL || 'https://api.mistral.ai/v1/chat/completions',
+        model: process.env.MISTRAL_MODEL || MODELS.mistral.model,
+        headers: () => ({ Authorization: `Bearer ${process.env.MISTRAL_API_KEY}` }),
+    },
+    openrouter: {
         id: 'openrouter',
         key: 'OPENROUTER_API_KEY',
-        url: process.env.OPENROUTER_API_URL ?? 'https://openrouter.ai/api/v1/chat/completions',
-        model: process.env.OPENROUTER_MODEL ?? MODELS.openrouter.model,
+        url: process.env.OPENROUTER_API_URL || 'https://openrouter.ai/api/v1/chat/completions',
+        model: process.env.OPENROUTER_MODEL || MODELS.openrouter.model,
         headers: () => ({ Authorization: `Bearer ${process.env.OPENROUTER_API_KEY}`, 'X-Title': 'Stickman Video Studio' }),
         alternates: MODELS.openrouter.alternates,
+        extra: { reasoning: { effort: 'low' } },
     },
+};
+
+const PROVIDERS = [
+    ...MODELS.order.map((id) => BY_ID[id]).filter(Boolean),
     {
         id: 'openai/anthropic (heredado)',
         key: 'LLM_API_KEY',
@@ -85,7 +107,9 @@ async function probe(provider) {
             headers: { 'Content-Type': 'application/json', ...provider.headers() },
             body: JSON.stringify({
                 model: provider.model,
-                max_tokens: 120,
+                // Reasoning models spend part of this thinking; 120 left one empty.
+                max_tokens: 1024,
+                ...provider.extra,
                 messages: [
                     { role: 'system', content: 'Eres un asistente que opera un estudio de video. Usa la herramienta cuando corresponda.' },
                     { role: 'user', content: 'crea un video sobre tasas fijas para tiktok' },
