@@ -37,7 +37,19 @@ interface Provider {
     headers: Record<string, string>;
     /** Only OpenRouter: extra models it may fall through to when the first is busy. */
     alternates?: string[];
+    /** Provider-specific request fields, merged into the body. */
+    extraBody?: Record<string, unknown>;
+    /**
+     * Reasoning models count their thinking against max_tokens. The copilot asks
+     * for 600 and the voice assistant for 300, which such a model can spend
+     * entirely on thinking and come back empty - measured on 2026-10-23.
+     */
+    minTokens?: number;
 }
+
+// Reasoning kept short: the copilot needs a tool call, not an essay, and
+// "low" was enough for a complete one in every probe.
+const REASONING_TOKEN_FLOOR = 1024;
 
 type WireToolCall = { id: string; type: 'function'; function: { name: string; arguments: string } };
 
@@ -66,27 +78,49 @@ function providers(): Provider[] {
     const siteUrl = process.env.OPENROUTER_SITE_URL;
     if (siteUrl) openRouterHeaders['HTTP-Referer'] = siteUrl;
 
-    return [
-        {
+    const byId: Record<string, Provider> = {
+        gemini: {
+            id: 'gemini',
+            // Google's OpenAI-compatible endpoint (ai.google.dev/gemini-api/docs/openai),
+            // tools and tool_choice "auto" included. Its free tier allows far more
+            // tokens per minute than Groq's ~7,000, which is what made the copilot
+            // fall back to keyword mode by the third question in a row.
+            url: process.env.GEMINI_API_URL || 'https://generativelanguage.googleapis.com/v1beta/openai/chat/completions',
+            model: process.env.GEMINI_MODEL || MODELS.gemini.model,
+            apiKey: process.env.GEMINI_API_KEY,
+            headers: {},
+            // Thinking cannot be switched off on Gemini 3; it can be kept short.
+            extraBody: { reasoning_effort: 'low' },
+            minTokens: REASONING_TOKEN_FLOOR,
+        },
+        groq: {
             id: 'groq',
-            url: process.env.GROQ_API_URL ?? 'https://api.groq.com/openai/v1/chat/completions',
-            model: process.env.GROQ_MODEL ?? GROQ_DEFAULT_MODEL,
+            url: process.env.GROQ_API_URL || 'https://api.groq.com/openai/v1/chat/completions',
+            model: process.env.GROQ_MODEL || GROQ_DEFAULT_MODEL,
             apiKey: process.env.GROQ_API_KEY,
             headers: {},
         },
-        {
+        mistral: {
+            id: 'mistral',
+            url: process.env.MISTRAL_API_URL || 'https://api.mistral.ai/v1/chat/completions',
+            model: process.env.MISTRAL_MODEL || MODELS.mistral.model,
+            apiKey: process.env.MISTRAL_API_KEY,
+            headers: {},
+        },
+        openrouter: {
             id: 'openrouter',
-            // Measured 2026-09-24 against the live catalogue: all five answer a
-            // tool-calling probe in 1.4-2.4s. Listed in that order; OpenRouter
-            // walks the list when one is saturated, which is what a 429 on a
-            // free model means.
+            // OpenRouter walks this list when one is saturated, which is what
+            // a 429 on a free model means. See ai-models.json for the probe.
             alternates: MODELS.openrouter.alternates,
-            url: process.env.OPENROUTER_API_URL ?? 'https://openrouter.ai/api/v1/chat/completions',
-            model: process.env.OPENROUTER_MODEL ?? OPENROUTER_DEFAULT_MODEL,
+            url: process.env.OPENROUTER_API_URL || 'https://openrouter.ai/api/v1/chat/completions',
+            model: process.env.OPENROUTER_MODEL || OPENROUTER_DEFAULT_MODEL,
             apiKey: process.env.OPENROUTER_API_KEY,
             headers: openRouterHeaders,
+            extraBody: { reasoning: { effort: 'low' } },
+            minTokens: REASONING_TOKEN_FLOOR,
         },
-    ];
+    };
+    return MODELS.order.map((id) => byId[id]).filter((provider): provider is Provider => Boolean(provider));
 }
 
 function toWireMessage(message: ChatMessage): WireMessage {
@@ -167,8 +201,9 @@ async function requestCompletion(provider: Provider, system: string, messages: C
         model: provider.model,
         ...(provider.alternates?.length ? { models: [provider.model, ...provider.alternates] } : {}),
         temperature: options.temperature ?? 0.6,
-        max_tokens: options.maxTokens ?? 1024,
+        max_tokens: Math.max(options.maxTokens ?? 1024, provider.minTokens ?? 0),
         messages: [{ role: 'system', content: system }, ...messages.map(toWireMessage)],
+        ...provider.extraBody,
     };
     if (options.tools?.length) {
         body.tools = options.tools.map((tool) => ({
@@ -238,7 +273,9 @@ async function requestLegacy(system: string, messages: ChatMessage[], options: G
 // still answer would turn a degraded feature into an absent one.
 export function isCopilotConfigured(): boolean {
     return Boolean(
-        process.env.GROQ_API_KEY
+        process.env.GEMINI_API_KEY
+        || process.env.GROQ_API_KEY
+        || process.env.MISTRAL_API_KEY
         || process.env.OPENROUTER_API_KEY
         || process.env.LLM_API_KEY
         || process.env.OPENAI_API_KEY

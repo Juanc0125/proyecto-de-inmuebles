@@ -537,7 +537,7 @@ export default function Assistant({ videos, loading, selected, onCreated, onUpda
 
             say(data.reply ?? 'Hecho.');
             if (!data.provider && modeloRef.current !== false) {
-                say('Aviso: estoy respondiendo en modo basico, sin modelo de lenguaje. Entiendo ordenes concretas pero no conversacion libre. Se arregla configurando GROQ_API_KEY o OPENROUTER_API_KEY.', false);
+                say('Aviso: ahora respondo en modo básico, porque los modelos de lenguaje no contestaron. Entiendo órdenes concretas, pero no conversación libre. Prueba de nuevo en un minuto.', false);
             }
         } catch (error) {
             clearTimeout(filler);

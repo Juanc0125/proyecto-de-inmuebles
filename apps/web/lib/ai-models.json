@@ -1,14 +1,23 @@
 {
-  "_comment": "Single source for the default models. ai-provider.ts imports it and scripts/check-ai.mjs reads it, so the diagnostic can never report on a model the app does not use. Verified against the live catalogues on 2026-10-08: inclusionai/ling-3.0-flash-fin stopped being free (404), and dots-3 answered in ~12 s with mangled tool names, which is what made the copilot slow and confused whenever Groq saturated. Nemotron 3 Super called both test tools correctly in 2.6-3.4 s. OpenRouter does fall through the models array on 404 and 429 (measured), unlike on 402. OpenRouter accepts at most three models per request, so the list is the primary plus two - picked from different vendors, since two models from one vendor saturate together. Override per environment with GROQ_MODEL / OPENROUTER_MODEL.",
-  "_comment_paid": "Every model here is :free on purpose. To move to a paid one - x-ai/grok-4.7 is the intended upgrade, USD 1.60/M in and 4.80/M out, and it fixes the copilot falling back to keyword mode when the Groq free tier saturates - the OpenRouter account must have purchased credits first. TRAP, measured on 2026-09-28: an account with no credits answers 402, and a 402 does NOT fall through to the rest of the models array - the whole request fails, taking the free models down with it. So naming a paid model here before the credits exist breaks the fallback chain entirely rather than degrading it.",
+  "_comment": "Single source for the default models. ai-provider.ts imports it and scripts/check-ai.mjs reads it, so the diagnostic can never report on a model the app does not use. Every provider here has a free tier, and one with no key is skipped - so adding a key is all it takes to widen the chain. `order` is the order they are tried in: the most capable and least saturated free tier first. Override a model per environment with GEMINI_MODEL / GROQ_MODEL / MISTRAL_MODEL / OPENROUTER_MODEL.",
+  "_comment_openrouter": "Measured 2026-10-23 with a Spanish tool-calling probe. nemotron-3-super, the previous primary, answered 404 - gone - so every turn that reached OpenRouter was losing an attempt. nemotron-3-ultra (550B) called the tool with complete arguments in 2.9-3.7 s, but came back empty at 400 tokens because it spent them reasoning; with reasoning effort low (ai-provider.ts sends it) it used ~135. dots-3-note-preview: complete, 2.3-2.7 s (the plain dots-3 mangled tool names on 2026-10-08; this variant did not). nemotron-3.5-lightning: 1.6-1.9 s, once dropped an argument. Gemma 4 and xing4.0 were 429, inkling answers 403 outside agentic harnesses. OpenRouter accepts at most three models per request and falls through the list on 404 and 429 (measured) - but NOT on 402. Two models from one vendor tend to saturate together, which is why dots sits between the two NVIDIA ones.",
+  "_comment_unverified": "gemini and mistral could not be measured: no key existed when they were added. gemini-flash-latest is Google's alias for the current Flash, the family its free tier covers; mistral-small-latest is the model its free tier is most consistently reported to include. Confirm both with `npm run check:ai` once their keys are set.",
+  "_comment_paid": "Every model here is free on purpose. To move to a paid one - x-ai/grok-4.7 is the intended upgrade, USD 1.60/M in and 4.80/M out - the OpenRouter account must have purchased credits first. TRAP, measured on 2026-09-28: an account with no credits answers 402, and a 402 does NOT fall through to the rest of the models array - the whole request fails, taking the free models down with it.",
+  "order": ["gemini", "groq", "mistral", "openrouter"],
+  "gemini": {
+    "model": "gemini-flash-latest"
+  },
   "groq": {
     "model": "openai/gpt-oss-120b"
   },
+  "mistral": {
+    "model": "mistral-small-latest"
+  },
   "openrouter": {
-    "model": "nvidia/nemotron-3-super-120b-a12b:free",
+    "model": "nvidia/nemotron-3-ultra-550b-a55b:free",
     "alternates": [
-      "google/gemma-4-31b-it:free",
-      "nvidia/nemotron-3-ultra-550b-a55b:free"
+      "dots-studio/dots-3-note-preview:free",
+      "nvidia/nemotron-3.5-lightning:free"
     ]
   }
 }
