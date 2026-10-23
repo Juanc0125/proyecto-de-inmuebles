@@ -1,17 +1,17 @@
-# Graph Report - stickman-video-app  (2026-10-15)
+# Graph Report - stickman-video-app  (2026-10-23)
 
 ## Corpus Check
-- 126 files · ~101,502 words
+- 128 files · ~103,906 words
 - Verdict: corpus is large enough that graph structure adds value.
 - Unclassified: 7 file(s) not represented in the graph (top: (none) 3, .example 2, .ico 1)
 
 ## Summary
-- 1039 nodes · 1903 edges · 85 communities (53 shown, 32 thin omitted)
+- 1061 nodes · 1946 edges · 89 communities (57 shown, 32 thin omitted)
 - Extraction: 98% EXTRACTED · 2% INFERRED · 0% AMBIGUOUS · INFERRED: 38 edges (avg confidence: 0.86)
 - Token cost: 0 input · 0 output
 
 ## Graph Freshness
-- Built from commit: `31463f9a`
+- Built from commit: `ecd72320`
 - Run `git rev-parse HEAD` and compare to check if the graph is stale.
 - Run `graphify update .` after code changes (no API cost).
 
@@ -41,7 +41,7 @@
 - compilerOptions
 - e2e.mjs
 - ai-video.ts
-- react
+- script-panel.tsx
 - heygen.ts
 - api.ts
 - dev.mjs
@@ -50,13 +50,13 @@
 - 20260910000000_initial_schema.sql
 - schema.sql
 - scenes/route.ts
-- next
-- video.ts
+- sign-in-required.ts
+- elevenlabs.ts
 - Stickman PWA Icon 192
 - web/vercel.json
 - public.brand_templates
 - vercel.json
-- render
+- layout.tsx
 - create-next-app Boilerplate README
 - npm run verify (lint + typecheck + build)
 - Next.js Agent Rules Block
@@ -71,18 +71,22 @@
 - render-worker/package.json
 - voice.ts
 - video-list.tsx
-- scene-panel.tsx
+- dependencies
+- video-workspace.tsx
 - Desplegar y comprobar
+- scripts
 - assistant.tsx
 - grafo-pendiente.mjs
 - plugin.json
-- check-ai.mjs
+- speak/route.ts
 - render-worker-agent.md
 - frontend-agent.md
 - graphify-agent.md
 - SceneRow
+- react
 - devops-agent.md
 - qa-agent.md
+- graph.mjs
 - Sin Supabase la app funciona con almacenamiento en memoria
 - App shell de web (layout.tsx, page.tsx, globals.css, manifest.ts)
 - apps/web/lib
@@ -94,7 +98,7 @@
 - scripts/e2e.mjs y la suite de pruebas
 - Instalacion como aplicacion (manifiesto y service worker que cachea solo el armazon)
 - supabase/migrations (esquema de la base de datos)
-- constants.ts
+- video.ts
 
 ## God Nodes (most connected - your core abstractions)
 1. `render()` - 24 edges
@@ -126,19 +130,19 @@
 ## Hyperedges (group relationships)
 - **Stickman PWA Icon Set (192 / 512 / maskable / apple-touch)** — apps_web_public_icons_icon_192_stickman_icon, apps_web_public_icons_icon_512_stickman_icon, apps_web_public_icons_icon_maskable_512_stickman_icon, apps_web_public_icons_apple_touch_icon_stickman_icon [INFERRED 0.95]
 
-## Communities (85 total, 32 thin omitted)
+## Communities (89 total, 32 thin omitted)
 
 ### Community 0 - "branding-panel.tsx"
-Cohesion: 0.16
-Nodes (17): applyBrandTemplate(), BrandingPatch, deleteBrandTemplate(), fetchBrandTemplates(), saveBrandTemplate(), updateBranding(), BrandingPanel(), handleApplyTemplate() (+9 more)
+Cohesion: 0.15
+Nodes (19): applyBrandTemplate(), BrandingPatch, deleteBrandTemplate(), fetchBrandTemplates(), saveBrandTemplate(), updateBranding(), uploadLogo(), BrandingPanel() (+11 more)
 
 ### Community 1 - "sound-panel.tsx"
-Cohesion: 0.14
-Nodes (17): deleteSound(), fetchVideos(), setVideoMusic(), BusinessSounds(), handleDelete(), handleFileChange(), BusinessSoundsProps, KIND_LABELS (+9 more)
+Cohesion: 0.11
+Nodes (22): deleteSound(), fetchVideos(), registerSound(), requestSoundUpload(), setVideoMusic(), uploadSoundFile(), BusinessSounds(), handleDelete() (+14 more)
 
 ### Community 2 - "copilot.ts"
 Cohesion: 0.05
-Nodes (93): BatchFailure, BatchWarning, BatchWarningCause, buildWarning(), planScenes(), PLATFORMS, POST(), apps_web_app_api_videos_id_music_route (+85 more)
+Nodes (90): BatchFailure, BatchWarning, BatchWarningCause, buildWarning(), planScenes(), PLATFORMS, POST(), apps_web_app_api_videos_id_music_route (+82 more)
 
 ### Community 3 - "Verificar: la puerta de calidad"
 Cohesion: 0.17
@@ -154,7 +158,7 @@ Nodes (47): CAMERA_PROFILES, cameraFor(), CameraProfile, clamp(), drawBackground
 
 ### Community 6 - "index.ts"
 Cohesion: 0.08
-Nodes (34): isAiVideoEnabled(), Exact, CharacterType, SceneAction, ScenePropType, Dsn, errorReportingStatus(), reportError() (+26 more)
+Nodes (41): Exact, CharacterType, SceneAction, ScenePropType, elevenlabsMissingConfig(), elevenlabsVoiceLabel(), heygenMissingConfig(), isHeygenEnabled() (+33 more)
 
 ### Community 7 - "scripts"
 Cohesion: 0.08
@@ -173,8 +177,8 @@ Cohesion: 0.12
 Nodes (18): Politica de delegacion por dominio, Delegacion en orden cuando hay dependencias (backend fija el contrato, frontend lo consume), Trampa EPERM: apps/web/.next tomado por el dev server u OneDrive, Agente lider de Stickman, Sin asesoria financiera personalizada ni tasas inventadas, No inventar funcionalidad fuera de la tabla de requerimientos, Alcances de archivo sin solape entre agentes, npm run verify (lint + build de ambos workspaces) (+10 more)
 
 ### Community 11 - "ref_node_fs"
-Cohesion: 0.16
-Nodes (8): nextConfig, rootEnvPath, ref_node_child_process, ref_node_fs, ref_node_path, ref_node_process, args, root
+Cohesion: 0.12
+Nodes (11): key, nextConfig, rootEnvPath, ref_node_fs, ref_node_path, ref_node_process, ref_node_url, MODELS (+3 more)
 
 ### Community 12 - "video-studio.tsx"
 Cohesion: 0.24
@@ -189,12 +193,12 @@ Cohesion: 0.14
 Nodes (19): ref_node_readline, Cancelled, createSession(), question(), ENV_FILE, envFileIsIgnored(), lastLine(), main() (+11 more)
 
 ### Community 17 - "[sceneId]/route.ts"
-Cohesion: 0.18
-Nodes (18): ACTIONS, buildRegenerateSystemPrompt(), CHARACTERS, coerceAction(), coerceCharacter(), coerceDescription(), coerceProp(), DELETE() (+10 more)
+Cohesion: 0.19
+Nodes (17): ACTIONS, buildRegenerateSystemPrompt(), CHARACTERS, coerceAction(), coerceCharacter(), coerceDescription(), coerceProp(), DELETE() (+9 more)
 
 ### Community 18 - "video-persistence.ts"
-Cohesion: 0.06
-Nodes (65): DELETE(), RouteContext, coerceBranding(), CreateBody, GET(), LOGO_POSITIONS, POST(), POST() (+57 more)
+Cohesion: 0.05
+Nodes (72): DELETE(), RouteContext, coerceBranding(), CreateBody, GET(), LOGO_POSITIONS, POST(), EXTENSIONS (+64 more)
 
 ### Community 19 - "make-backdrop.mjs"
 Cohesion: 0.18
@@ -213,20 +217,20 @@ Cohesion: 0.15
 Nodes (10): ref_node_os, api(), cookieHeader(), cookieJar, fail, mp4Path, raiz, results (+2 more)
 
 ### Community 24 - "ai-video.ts"
-Cohesion: 0.20
-Nodes (11): ACTION_VERBS, aiVideoModel(), buildScenePrompt(), CHARACTER_SUBJECTS, extractVideoUrl(), FAL_KEY, falFetch(), generateSceneVideo() (+3 more)
+Cohesion: 0.18
+Nodes (12): ACTION_VERBS, aiVideoModel(), buildScenePrompt(), CHARACTER_SUBJECTS, extractVideoUrl(), FAL_KEY, falFetch(), generateSceneVideo() (+4 more)
 
-### Community 25 - "react"
-Cohesion: 0.20
-Nodes (8): saveScript(), ScriptPanel(), handleSave(), ScriptPanelProps, PATHS, SectionIcon(), SectionIconName, react
+### Community 25 - "script-panel.tsx"
+Cohesion: 0.28
+Nodes (7): saveScript(), ScriptPanel(), handleSave(), ScriptPanelProps, PATHS, SectionIcon(), SectionIconName
 
 ### Community 26 - "heygen.ts"
 Cohesion: 0.18
 Nodes (15): API_KEY, AVATAR_ID, AvatarClip, AvatarScene, ENGINE, heygenError(), heygenFetch(), sleep() (+7 more)
 
 ### Community 27 - "api.ts"
-Cohesion: 0.17
-Nodes (17): BatchCreateResult, createVideosBatch(), fetchSession(), generateScenes(), generateVoice(), JSON_HEADERS, parseJsonSafe(), registerSound() (+9 more)
+Cohesion: 0.16
+Nodes (18): BatchCreateResult, deleteScene(), fetchSession(), generateScenes(), generateVoice(), JSON_HEADERS, parseJsonSafe(), regenerateScene() (+10 more)
 
 ### Community 28 - "dev.mjs"
 Cohesion: 0.33
@@ -246,15 +250,15 @@ Nodes (5): public.scenes, public.videos, scenes_video_id_order_idx, auth.users, 
 
 ### Community 33 - "scenes/route.ts"
 Cohesion: 0.05
-Nodes (52): ACTIONS, buildScenesFromAiJson(), buildSentenceFallback(), buildSystemPrompt(), CHARACTERS, coerceAction(), coerceCharacter(), coerceDescription() (+44 more)
+Nodes (51): ACTIONS, buildScenesFromAiJson(), buildSentenceFallback(), buildSystemPrompt(), CHARACTERS, coerceAction(), coerceCharacter(), coerceDescription() (+43 more)
 
-### Community 34 - "next"
-Cohesion: 0.07
-Nodes (25): POST(), API_KEY, POST(), silent(), VOICE_ID, EXTENSIONS, PATCH(), apps_web_app_globals (+17 more)
+### Community 34 - "sign-in-required.ts"
+Cohesion: 0.19
+Nodes (12): POST(), CopilotTurn, LOGIN_REQUIRED, requireSession(), SIGN_IN_REQUIRED_ERROR, apps_web_lib_supabase_server, apps_web_lib_supabase_server_createsupabaseproxyclient, apps_web_lib_supabase_server_createsupabaserouteclient (+4 more)
 
-### Community 35 - "video.ts"
-Cohesion: 0.18
-Nodes (14): globalStore, transitions, videos, TemplateBeat, TemplateDefinition, VideoTemplate, CharacterType, RENDER_STALL_TIMEOUT_MS (+6 more)
+### Community 35 - "elevenlabs.ts"
+Cohesion: 0.14
+Nodes (18): Alignment, API_KEY, CACHE_DIR, CachedSpeech, cachePath(), decodePcm(), elevenlabsSpeak(), ElevenlabsSpeech (+10 more)
 
 ### Community 36 - "Stickman PWA Icon 192"
 Cohesion: 0.50
@@ -272,33 +276,41 @@ Nodes (3): brand_templates_user_id_idx, public.brand_templates, auth.users
 Cohesion: 0.40
 Nodes (4): buildCommand, crons, framework, installCommand
 
-### Community 40 - "render"
-Cohesion: 0.22
-Nodes (11): applyLogoOverlayOrFallback(), getLogoOverlayPosition(), mixSoundsOrKeep(), nonEmptyUrl(), previewFrameScene(), render(), runFfmpeg(), runFfmpegWithFrames() (+3 more)
+### Community 40 - "layout.tsx"
+Cohesion: 0.20
+Nodes (6): apps_web_app_globals, display, metadata, mono, sans, viewport
 
 ### Community 57 - "render-worker/package.json"
-Cohesion: 0.06
-Nodes (32): dependencies, dejavu-fonts-ttf, ffmpeg-static, fluent-ffmpeg, @napi-rs/canvas, sherpa-onnx, @supabase/supabase-js, tar-stream (+24 more)
+Cohesion: 0.12
+Nodes (16): devDependencies, tsx, @types/node, @types/tar-stream, typescript, name, private, version (+8 more)
 
 ### Community 58 - "voice.ts"
-Cohesion: 0.18
-Nodes (13): clampIndex(), downloadModel(), ensureVoiceModel(), estimateWordTimings(), exists(), getTts(), mouthEnvelope(), speak() (+5 more)
+Cohesion: 0.17
+Nodes (14): clampIndex(), downloadModel(), ensureVoiceModel(), estimateWordTimings(), exists(), getTts(), mouthEnvelope(), speak() (+6 more)
 
 ### Community 59 - "video-list.tsx"
 Cohesion: 0.13
-Nodes (17): BatchCreateFailure, BatchCreateWarning, BatchWarningCause, createVideo(), deleteVideo(), BatchSummary, CreateMode, formatElapsed() (+9 more)
+Nodes (17): BatchCreateFailure, BatchCreateWarning, BatchWarningCause, createVideo(), createVideosBatch(), deleteVideo(), BatchSummary, CreateMode (+9 more)
 
-### Community 61 - "scene-panel.tsx"
-Cohesion: 0.13
-Nodes (17): deleteScene(), fetchSounds(), regenerateScene(), ScenePatch, ACTION_OPTIONS, CHARACTER_OPTIONS, PROP_OPTIONS, ScenePanelProps (+9 more)
+### Community 60 - "dependencies"
+Cohesion: 0.22
+Nodes (9): dependencies, dejavu-fonts-ttf, ffmpeg-static, fluent-ffmpeg, @napi-rs/canvas, sherpa-onnx, @supabase/supabase-js, tar-stream (+1 more)
+
+### Community 61 - "video-workspace.tsx"
+Cohesion: 0.20
+Nodes (11): duplicateVideo(), fetchSounds(), transitionStatus(), SoundPanel(), StatusPanel(), handleDuplicate(), runAction(), brandSignature() (+3 more)
 
 ### Community 62 - "Desplegar y comprobar"
 Cohesion: 0.22
 Nodes (8): Antes de empujar, Comprobar producción, Desplegar y comprobar, El worker de Railway es aparte, Empujar, Esperar el despliegue, Qué reportar, Si tocaste `vercel.json`
 
+### Community 63 - "scripts"
+Cohesion: 0.25
+Nodes (8): scripts, build, check:types, dev, elevenlabs:voces, heygen:catalogo, sounds:library, start
+
 ### Community 64 - "assistant.tsx"
-Cohesion: 0.06
-Nodes (45): login(), Assistant(), beginListening(), maybeResumeListening(), onSpeechEnd(), say(), send(), speak() (+37 more)
+Cohesion: 0.07
+Nodes (42): Assistant(), beginListening(), maybeResumeListening(), onSpeechEnd(), say(), send(), speak(), speakWithBrowser() (+34 more)
 
 ### Community 65 - "grafo-pendiente.mjs"
 Cohesion: 0.22
@@ -308,9 +320,9 @@ Nodes (7): etiquetas, INDEXADAS, manifest, manifestPath, pendientes, raiz, total
 Cohesion: 0.25
 Nodes (7): author, name, description, keywords, name, $schema, version
 
-### Community 67 - "check-ai.mjs"
-Cohesion: 0.29
-Nodes (5): ref_node_url, MODELS, PROVIDERS, root, TOOL
+### Community 67 - "speak/route.ts"
+Cohesion: 0.50
+Nodes (4): API_KEY, POST(), silent(), VOICE_ID
 
 ### Community 68 - "render-worker-agent.md"
 Cohesion: 0.25
@@ -325,8 +337,12 @@ Cohesion: 0.25
 Nodes (7): Git, Preparing the output for commit, Report, Running it, What to look for in GRAPH_REPORT.md, Whether a run is needed at all — measure it, do not guess, Your files
 
 ### Community 71 - "SceneRow"
-Cohesion: 0.43
-Nodes (8): updateScene(), SceneRow(), applyPatch(), handleActionChange(), handleCharacterChange(), handleEffectChange(), handlePropChange(), handleSaveText()
+Cohesion: 0.36
+Nodes (9): SceneRow(), applyPatch(), handleActionChange(), handleCharacterChange(), handleDelete(), handleEffectChange(), handlePropChange(), handleRegenerate() (+1 more)
+
+### Community 72 - "react"
+Cohesion: 0.50
+Nodes (4): login(), LoginForm(), handleSubmit(), react
 
 ### Community 73 - "devops-agent.md"
 Cohesion: 0.33
@@ -336,29 +352,33 @@ Nodes (5): Before you finish, Git, Rules, What must keep working, Your files
 Cohesion: 0.33
 Nodes (5): Git, How to report, Rules, What to run, Your files
 
-### Community 90 - "constants.ts"
-Cohesion: 0.18
-Nodes (13): duplicateVideo(), StatusAction, transitionStatus(), PLATFORM_LABELS, PLATFORM_OPTIONS, STATUS_BADGE_CLASSES, STATUS_DOT_CLASSES, STATUS_LABELS (+5 more)
+### Community 75 - "graph.mjs"
+Cohesion: 0.40
+Nodes (3): ref_node_child_process, args, root
+
+### Community 90 - "video.ts"
+Cohesion: 0.12
+Nodes (24): StatusAction, ACTION_OPTIONS, CHARACTER_OPTIONS, PLATFORM_LABELS, PLATFORM_OPTIONS, PROP_OPTIONS, STATUS_BADGE_CLASSES, STATUS_DOT_CLASSES (+16 more)
 
 ## Knowledge Gaps
-- **411 isolated node(s):** `Dsn`, `ENCODER_THREADS`, `CLIP_AUDIO_ARGS`, `RenderScene`, `RenderJob` (+406 more)
-  These have ≤1 connection - possible missing edges or undocumented components. (Counts symbols only; 481 node(s) total have ≤1 connection when file, concept and rationale nodes are included.)
+- **419 isolated node(s):** `API_KEY`, `VOICE_ID`, `CACHE_DIR`, `ElevenlabsSpeech`, `Alignment` (+414 more)
+  These have ≤1 connection - possible missing edges or undocumented components. (Counts symbols only; 492 node(s) total have ≤1 connection when file, concept and rationale nodes are included.)
 - **32 thin communities (<3 nodes) omitted from report** — run `graphify query` to explore isolated nodes.
 
 ## Suggested Questions
 _Questions this graph is uniquely positioned to answer:_
 
-- **Why does `next` connect `next` to `assistant.tsx`, `scenes/route.ts`, `copilot.ts`, `scripts`, `assistant.ts`, `ref_node_fs`, `[sceneId]/route.ts`, `video-persistence.ts`?**
+- **Why does `next` connect `video-persistence.ts` to `assistant.tsx`, `scenes/route.ts`, `copilot.ts`, `sign-in-required.ts`, `speak/route.ts`, `scripts`, `assistant.ts`, `layout.tsx`, `ref_node_fs`, `[sceneId]/route.ts`?**
   _High betweenness centrality (0.125) - this node is a cross-community bridge._
-- **Why does `Platform` connect `copilot.ts` to `video.ts`, `index.ts`, `api.ts`, `assistant.ts`, `video-persistence.ts`, `constants.ts`, `video-list.tsx`?**
-  _High betweenness centrality (0.038) - this node is a cross-community bridge._
-- **Why does `@supabase/supabase-js` connect `video-persistence.ts` to `render-worker/package.json`, `index.ts`?**
-  _High betweenness centrality (0.036) - this node is a cross-community bridge._
-- **What connects `Dsn`, `ENCODER_THREADS`, `CLIP_AUDIO_ARGS` to the rest of the system?**
-  _411 weakly-connected nodes found - possible documentation gaps or missing edges._
+- **Why does `@supabase/supabase-js` connect `render-worker/package.json` to `video-persistence.ts`, `index.ts`?**
+  _High betweenness centrality (0.041) - this node is a cross-community bridge._
+- **Why does `Platform` connect `video.ts` to `copilot.ts`, `index.ts`, `assistant.ts`, `video-list.tsx`, `video-persistence.ts`, `api.ts`?**
+  _High betweenness centrality (0.035) - this node is a cross-community bridge._
+- **What connects `API_KEY`, `VOICE_ID`, `CACHE_DIR` to the rest of the system?**
+  _419 weakly-connected nodes found - possible documentation gaps or missing edges._
+- **Should `branding-panel.tsx` be split into smaller, more focused modules?**
+  _Cohesion score 0.14736842105263157 - nodes in this community are weakly interconnected._
 - **Should `sound-panel.tsx` be split into smaller, more focused modules?**
-  _Cohesion score 0.13725490196078433 - nodes in this community are weakly interconnected._
+  _Cohesion score 0.11462450592885376 - nodes in this community are weakly interconnected._
 - **Should `copilot.ts` be split into smaller, more focused modules?**
-  _Cohesion score 0.05263157894736842 - nodes in this community are weakly interconnected._
-- **Should `web/package.json` be split into smaller, more focused modules?**
-  _Cohesion score 0.05 - nodes in this community are weakly interconnected._
+  _Cohesion score 0.054464703132304816 - nodes in this community are weakly interconnected._
