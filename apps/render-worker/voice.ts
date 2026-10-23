@@ -5,6 +5,7 @@ import { Readable } from 'node:stream';
 import { join } from 'node:path';
 import bz2 from 'unbzip2-stream';
 import { extract } from 'tar-stream';
+import { elevenlabsSpeak } from './elevenlabs';
 
 // RF-003: the narration voice. Runs locally through sherpa-onnx, which ships
 // as WebAssembly rather than a native binary - so unlike every other native
@@ -27,6 +28,8 @@ export interface Speech {
 	samples: Float32Array;
 	sampleRate: number;
 	durationSeconds: number;
+	/** Exact per-word timings, when the voice reports them (ElevenLabs does). */
+	words?: WordTiming[];
 }
 
 let modelPromise: Promise<string | null> | null = null;
@@ -147,6 +150,11 @@ async function getTts() {
 export async function speak(text: string): Promise<Speech | null> {
 	const trimmed = text.trim();
 	if (!trimmed) return null;
+
+	// The professional voice first, when configured. Piper below is the
+	// fallback, so a scene ElevenLabs cannot voice is still narrated.
+	const professional = await elevenlabsSpeak(trimmed);
+	if (professional) return professional;
 
 	try {
 		const tts = await getTts();

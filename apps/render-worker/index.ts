@@ -23,6 +23,7 @@ import { ensureVoiceModel, estimateWordTimings, mouthEnvelope, speak } from './v
 import { aiVideoModel, buildScenePrompt, generateSceneVideo, isAiVideoEnabled } from './ai-video';
 import { heygenMissingConfig, isHeygenEnabled, startAvatarScenes, type AvatarClip } from './heygen';
 import { errorReportingStatus, reportError } from './error-reporting';
+import { elevenlabsMissingConfig, elevenlabsVoiceLabel } from './elevenlabs';
 
 // Frames are drawn with a real 2D graphics context and piped to ffmpeg, so
 // this is the animation's frame rate as well as the output's.
@@ -686,11 +687,13 @@ export async function render(job: RenderJob, onProgress?: (percent: number) => v
 			const frameStyle = { width, height, background: backgroundColor, ink: textColor, fontFamily: branding.font_family };
 			const frameCount = Math.max(1, Math.round(duration * FRAME_RATE));
 			const mouth = speech ? mouthEnvelope(speech, FRAME_RATE, frameCount) : null;
-			// There is no offline word-level alignment for the narration, so the
-			// subtitle highlight's timing is approximated from word length and,
-			// when we actually synthesised the speech, refined against its
-			// loudness envelope (see estimateWordTimings in voice.ts).
-			const wordTimings = estimateWordTimings(frameScene.description, duration, mouth, FRAME_RATE);
+			// ElevenLabs reports when each word is spoken, so its timings are used
+			// as they come. Piper does not, so there the subtitle highlight is
+			// approximated from word length and refined against the loudness
+			// envelope (see estimateWordTimings in voice.ts).
+			const wordTimings = speech?.words?.length
+				? speech.words
+				: estimateWordTimings(frameScene.description, duration, mouth, FRAME_RATE);
 			const isFirstScene = index === 0;
 			const isLastScene = index === scenes.length - 1;
 
@@ -920,6 +923,8 @@ const server = createServer(async (request, response) => {
 			last_storage_error: lastStorageError,
 			render_auth: renderAuthStatus(),
 			error_reporting: errorReportingStatus(),
+			// Which voice narrates, and why it is not ElevenLabs when it is not.
+			voice: elevenlabsMissingConfig() ? `piper (${elevenlabsMissingConfig()})` : `elevenlabs ${elevenlabsVoiceLabel()}`,
 		});
 		return;
 	}

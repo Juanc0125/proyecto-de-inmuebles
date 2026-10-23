@@ -10,8 +10,9 @@
 // is never printed.
 //
 // Voices that HeyGen serves through its ElevenLabs engine are listed apart and
-// not recommended: the project's rule is to not depend on ElevenLabs, and
-// choosing one here would do that through the back door.
+// not recommended: the narration already calls ElevenLabs directly when it is
+// configured (elevenlabs.ts), and a second, indirect path through HeyGen would
+// bill the same voice twice and from two places.
 import { readFileSync } from 'node:fs';
 import { dirname, join } from 'node:path';
 import { fileURLToPath } from 'node:url';
