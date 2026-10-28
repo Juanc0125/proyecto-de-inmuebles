@@ -2,6 +2,7 @@ import { createWriteStream } from 'node:fs';
 import { Readable } from 'node:stream';
 import { pipeline } from 'node:stream/promises';
 import type { ReadableStream as WebReadableStream } from 'node:stream/web';
+import { reportError } from './error-reporting';
 
 // The main video engine when it is configured: every scene becomes a HeyGen
 // avatar - a realistic person - saying that scene's narration, lip-synced, in
@@ -35,6 +36,10 @@ const API_BASE = 'https://api.heygen.com';
 const TIMEOUT_MS = Number(process.env.HEYGEN_TIMEOUT_MS ?? 15 * 60 * 1000);
 const POLL_MS = 5000;
 const MAX_SUBMIT_ATTEMPTS = 4;
+// Per HTTP call; TIMEOUT_MS bounds the polling loop, not a single hung request.
+const REQUEST_TIMEOUT_MS = 30_000;
+// The download is streamed and this signal also bounds reading the body.
+const DOWNLOAD_TIMEOUT_MS = 5 * 60 * 1000;
 
 export interface AvatarClip {
 	path: string;
@@ -68,6 +73,7 @@ function heygenError(status: number, body: unknown): Error {
 
 async function heygenFetch(path: string, init?: RequestInit): Promise<{ status: number; body: Record<string, unknown>; retryAfter: number | null }> {
 	const response = await fetch(`${API_BASE}${path}`, {
+		signal: AbortSignal.timeout(REQUEST_TIMEOUT_MS),
 		...init,
 		headers: { 'x-api-key': API_KEY ?? '', accept: 'application/json', 'Content-Type': 'application/json', ...init?.headers },
 	});
@@ -127,7 +133,7 @@ async function waitAndDownload(videoId: string, destinationPath: string, deadlin
 
 		// Streamed straight to disk: the worker lives in 1 GB and a 1080p clip
 		// should never sit whole in memory.
-		const download = await fetch(detail.video_url);
+		const download = await fetch(detail.video_url, { signal: AbortSignal.timeout(DOWNLOAD_TIMEOUT_MS) });
 		if (!download.ok || !download.body) throw new Error(`No se pudo descargar la escena de HeyGen: HTTP ${download.status}`);
 		await pipeline(Readable.fromWeb(download.body as unknown as WebReadableStream), createWriteStream(destinationPath));
 
@@ -162,6 +168,7 @@ export function startAvatarScenes(
 			return { path, durationSeconds: Math.min(60, reported ?? options.fallbackDurations[index] ?? 5) };
 		} catch (error) {
 			console.warn(`Fallo HeyGen en la escena ${index + 1}; se narrara y dibujara en su lugar.`, error);
+			void reportError(error, { stage: 'heygen_scene', scene_index: index + 1, avatar_id: AVATAR_ID });
 			return null;
 		}
 	});

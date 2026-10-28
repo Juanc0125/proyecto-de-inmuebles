@@ -1,4 +1,6 @@
 import { writeFile } from 'node:fs/promises';
+import type { CharacterType, SceneAction, ScenePropType } from './drawing';
+import { reportError } from './error-reporting';
 
 // RF-004 alternative path: generate each scene with a text-to-video model
 // instead of drawing it. Goes through fal.ai, which fronts several models
@@ -32,6 +34,10 @@ const STYLE = process.env.AI_VIDEO_STYLE?.trim()
 // generous; the caller falls back to drawing the scene when it is hit.
 const TIMEOUT_MS = Number(process.env.AI_VIDEO_TIMEOUT_MS ?? 5 * 60 * 1000);
 const POLL_MS = 5000;
+// Per HTTP call. The overall TIMEOUT_MS above bounds the polling loop, but a
+// single fetch that never answers would sit outside it and hang the render.
+const REQUEST_TIMEOUT_MS = 30_000;
+const DOWNLOAD_TIMEOUT_MS = 3 * 60 * 1000;
 
 export function isAiVideoEnabled() {
 	return Boolean(FAL_KEY);
@@ -41,7 +47,10 @@ export function aiVideoModel() {
 	return MODEL;
 }
 
-const CHARACTER_SUBJECTS: Record<string, string> = {
+// Keyed by the domain unions, so a value added to shared-types (and therefore
+// to drawing.ts, held in sync by checks/type-parity.ts) fails to compile here
+// until it gets its own prompt, instead of silently falling back to the default.
+const CHARACTER_SUBJECTS: Record<CharacterType, string> = {
 	broker: 'a friendly professional mortgage advisor in business attire',
 	cliente: 'a hopeful first-time home buyer',
 	pareja: 'a young couple looking at a home together',
@@ -50,7 +59,7 @@ const CHARACTER_SUBJECTS: Record<string, string> = {
 	generico: 'a person',
 };
 
-const ACTION_VERBS: Record<string, string> = {
+const ACTION_VERBS: Record<SceneAction, string> = {
 	hablar: 'speaking directly to camera, gesturing naturally',
 	caminar: 'walking forward',
 	senalar: 'pointing toward something off to the side',
@@ -60,7 +69,7 @@ const ACTION_VERBS: Record<string, string> = {
 	mostrar_objeto: 'presenting something with an open hand',
 };
 
-const PROP_SCENERY: Record<string, string> = {
+const PROP_SCENERY: Record<ScenePropType, string> = {
 	casa: 'in front of a suburban house',
 	carro: 'beside a car',
 	banco: 'inside a bank branch',
@@ -73,7 +82,9 @@ const PROP_SCENERY: Record<string, string> = {
 };
 
 /** Builds the visual prompt. The scene description is narration, not a shot list, so it is used only as context. */
-export function buildScenePrompt(scene: { character: string; action: string; prop: string; description: string }) {
+export function buildScenePrompt(scene: { character: CharacterType; action: SceneAction; prop: ScenePropType; description: string }) {
+	// The fallbacks stay: the job arrives as JSON, so the types are a promise
+	// the request body may not keep.
 	const subject = CHARACTER_SUBJECTS[scene.character] ?? CHARACTER_SUBJECTS.generico;
 	const action = ACTION_VERBS[scene.action] ?? ACTION_VERBS.hablar;
 	const scenery = PROP_SCENERY[scene.prop] ?? PROP_SCENERY.ninguno;
@@ -82,6 +93,7 @@ export function buildScenePrompt(scene: { character: string; action: string; pro
 
 async function falFetch(url: string, init?: RequestInit) {
 	const response = await fetch(url, {
+		signal: AbortSignal.timeout(REQUEST_TIMEOUT_MS),
 		...init,
 		headers: { Authorization: `Key ${FAL_KEY}`, 'Content-Type': 'application/json', ...init?.headers },
 	});
@@ -144,12 +156,15 @@ export async function generateSceneVideo(
 		const videoUrl = extractVideoUrl(result);
 		if (!videoUrl) throw new Error('fal.ai no devolvio una URL de video.');
 
-		const download = await fetch(videoUrl);
+		const download = await fetch(videoUrl, { signal: AbortSignal.timeout(DOWNLOAD_TIMEOUT_MS) });
 		if (!download.ok) throw new Error(`No se pudo descargar el video generado: HTTP ${download.status}`);
 		await writeFile(destinationPath, Buffer.from(await download.arrayBuffer()));
 		return true;
 	} catch (error) {
 		console.warn('Fallo la generacion con IA de una escena; se dibujara en su lugar.', error);
+		// Reported, not just logged: the submit may already have been charged,
+		// and a silent fallback once hid exactly that for every scene.
+		void reportError(error, { stage: 'fal_scene', model: MODEL, duration_seconds: durationSeconds });
 		return false;
 	}
 }

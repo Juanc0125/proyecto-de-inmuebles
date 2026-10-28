@@ -6,6 +6,7 @@ import { join } from 'node:path';
 import bz2 from 'unbzip2-stream';
 import { extract } from 'tar-stream';
 import { elevenlabsSpeak } from './elevenlabs';
+import { reportError } from './error-reporting';
 
 // RF-003: the narration voice. Runs locally through sherpa-onnx, which ships
 // as WebAssembly rather than a native binary - so unlike every other native
@@ -23,6 +24,9 @@ const MODEL_FILE = process.env.VOICE_MODEL_FILE ?? `${MODEL_NAME.replace(/^vits-
 const MODEL_URL = `https://github.com/k2-fsa/sherpa-onnx/releases/download/tts-models/${MODEL_NAME}.tar.bz2`;
 const CACHE_DIR = process.env.VOICE_CACHE_DIR ?? join(process.cwd(), '.voice-cache');
 const SPEAKING_RATE = Number(process.env.VOICE_SPEED ?? 1);
+// Covers the whole ~67MB download, body included: a stalled GitHub transfer
+// would otherwise keep every render waiting on ensureVoiceModel() forever.
+const MODEL_DOWNLOAD_TIMEOUT_MS = Number(process.env.VOICE_MODEL_DOWNLOAD_TIMEOUT_MS ?? 5 * 60 * 1000);
 
 export interface Speech {
 	samples: Float32Array;
@@ -61,7 +65,7 @@ async function downloadModel(): Promise<string | null> {
 	await mkdir(staging, { recursive: true });
 
 	console.log(`Descargando el modelo de voz ${MODEL_NAME} (unica vez por contenedor)...`);
-	const response = await fetch(MODEL_URL);
+	const response = await fetch(MODEL_URL, { signal: AbortSignal.timeout(MODEL_DOWNLOAD_TIMEOUT_MS) });
 	if (!response.ok || !response.body) throw new Error(`No se pudo descargar el modelo de voz: HTTP ${response.status}`);
 
 	const archive = extract();
@@ -93,6 +97,9 @@ export function ensureVoiceModel(): Promise<string | null> {
 	if (!modelPromise) {
 		modelPromise = downloadModel().catch((error) => {
 			console.warn('No se pudo preparar el modelo de voz; los videos saldran sin narracion.', error);
+			// A render that goes on without narration still "succeeds", so
+			// this is the only signal that videos are coming out mute.
+			void reportError(error, { stage: 'piper_model', model: MODEL_NAME });
 			// Cleared so a later render can retry rather than being stuck with
 			// a failure cached for the life of the container.
 			modelPromise = null;
@@ -167,6 +174,7 @@ export async function speak(text: string): Promise<Speech | null> {
 		};
 	} catch (error) {
 		console.warn('Fallo la sintesis de voz para una escena; esa escena quedara en silencio.', error);
+		void reportError(error, { stage: 'piper_synthesis', model: MODEL_NAME, characters: trimmed.length });
 		return null;
 	}
 }

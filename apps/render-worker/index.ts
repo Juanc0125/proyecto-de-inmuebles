@@ -1,6 +1,6 @@
 import { createServer, type IncomingMessage, type ServerResponse } from 'node:http';
 import { createReadStream } from 'node:fs';
-import { access, mkdir, readFile, rename, rm, stat, unlink, writeFile } from 'node:fs/promises';
+import { access, mkdir, readdir, readFile, rename, rm, stat, unlink, writeFile } from 'node:fs/promises';
 import { spawn } from 'node:child_process';
 import { once } from 'node:events';
 import { join } from 'node:path';
@@ -19,7 +19,7 @@ import {
 	type SceneAction,
 	type ScenePropType,
 } from './drawing';
-import { ensureVoiceModel, estimateWordTimings, mouthEnvelope, speak } from './voice';
+import { ensureVoiceModel, estimateWordTimings, mouthEnvelope, speak, type Speech } from './voice';
 import { aiVideoModel, buildScenePrompt, generateSceneVideo, isAiVideoEnabled } from './ai-video';
 import { heygenMissingConfig, isHeygenEnabled, startAvatarScenes, type AvatarClip } from './heygen';
 import { errorReportingStatus, reportError } from './error-reporting';
@@ -222,7 +222,9 @@ const PLATFORM_DIMENSIONS: Record<Platform, { width: number; height: number }> =
 
 const DEFAULT_BRANDING: Branding = {
 	logo_url: null,
-	logo_position: 'top-left',
+	// Same default as packages/shared-types, so a job without branding puts
+	// the logo where the web app's preview shows it.
+	logo_position: 'top-right',
 	primary_color: '#17202a',
 	secondary_color: '#ffffff',
 	font_family: 'Arial',
@@ -243,37 +245,152 @@ function toCssHexColor(value: unknown, fallback: string): string {
 	return fallback;
 }
 
-async function uploadToSupabase(filePath: string, filename: string): Promise<string | null> {
-	if (!storageClient) return null;
+// Job ids name a directory that is later removed with rm -rf, so anything but
+// a plain UUID (the web app's video row id) is refused before it reaches a path.
+const UUID_PATTERN = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
 
+function isUuid(value: unknown): value is string {
+	return typeof value === 'string' && UUID_PATTERN.test(value);
+}
+
+function sleep(ms: number) {
+	return new Promise((resolve) => setTimeout(resolve, ms));
+}
+
+// supabase-js hands back plain error objects (PostgrestError, StorageError)
+// rather than throwing; Sentry and the logs want a real Error with a stack.
+function toError(value: unknown): Error {
+	if (value instanceof Error) return value;
+	if (value && typeof value === 'object' && 'message' in value) return new Error(String((value as { message: unknown }).message));
+	return new Error(String(value));
+}
+
+// Every remote input ffmpeg opens gets a read timeout (microseconds): without
+// it a server that accepts the connection and then stalls hangs the render
+// forever, and the video row stays "procesando" with nobody told.
+const REMOTE_READ_TIMEOUT_US = String(Math.max(1, Number(process.env.FFMPEG_RW_TIMEOUT_MS ?? 30_000)) * 1000);
+
+function remoteInput(url: string): string[] {
+	return ['-rw_timeout', REMOTE_READ_TIMEOUT_US, '-i', url];
+}
+
+// Ceiling on any single ffmpeg run. Generous on purpose: the logo pass
+// re-encodes the whole video. It exists for the stuck process, not the slow one.
+const FFMPEG_TIMEOUT_MS = Math.max(1000, Number(process.env.FFMPEG_TIMEOUT_MS ?? 20 * 60 * 1000));
+
+// Each render gets its own object name, so a re-render never overwrites a URL
+// a browser or the CDN already cached; the low max-age is only a backstop.
+const STORAGE_CACHE_CONTROL_SECONDS = '60';
+const UPLOAD_ATTEMPTS = 3;
+
+// Streamed from disk instead of read whole: the worker lives in 1 GB and the
+// finished MP4 would otherwise sit in memory next to everything else. A fresh
+// stream per attempt, since a consumed stream cannot be replayed. Throws once
+// every attempt has failed - the caller decides what that means for the job.
+async function uploadToSupabase(filePath: string, objectName: string): Promise<string> {
+	if (!storageClient) throw new Error('Supabase Storage no esta configurado.');
+
+	let lastError: unknown = null;
+	for (let attempt = 1; attempt <= UPLOAD_ATTEMPTS; attempt += 1) {
+		try {
+			const { error: uploadError } = await storageClient.storage.from(storageBucket).upload(objectName, createReadStream(filePath), {
+				contentType: 'video/mp4',
+				cacheControl: STORAGE_CACHE_CONTROL_SECONDS,
+				upsert: true,
+			});
+			if (uploadError) throw toError(uploadError);
+
+			const { data } = storageClient.storage.from(storageBucket).getPublicUrl(objectName);
+			if (!data?.publicUrl) throw new Error('No se obtuvo una URL publica del bucket.');
+
+			await unlink(filePath).catch(() => undefined);
+			lastStorageError = null;
+			return data.publicUrl;
+		} catch (error) {
+			lastError = error;
+			lastStorageError = toError(error).message;
+			console.warn(`Fallo el intento ${attempt}/${UPLOAD_ATTEMPTS} de subir el render a Supabase Storage.`, error);
+			if (attempt < UPLOAD_ATTEMPTS) await sleep(2000 * attempt);
+		}
+	}
+	throw toError(lastError);
+}
+
+// Public URL prefix of this worker's own bucket, used to recognise the object
+// a previous render of the same video left behind.
+const storagePublicPrefix = supabaseUrl
+	? `${supabaseUrl.replace(/\/+$/, '')}/storage/v1/object/public/${storageBucket}/`
+	: null;
+
+// Only an object this video itself produced is ever deleted: the name must be
+// the video's own id (old `<id>.mp4` or new `<id>-<timestamp>.mp4`), so a
+// video_url that somehow points at another video's file is left alone.
+function previousObjectName(previousUrl: string | null, videoId: string, currentObjectName: string): string | null {
+	if (!previousUrl || !storagePublicPrefix || !isUuid(videoId)) return null;
+	const withoutQuery = previousUrl.split('?')[0];
+	if (!withoutQuery.startsWith(storagePublicPrefix)) return null;
+	let name: string;
 	try {
-		const fileBuffer = await readFile(filePath);
-		const { error: uploadError } = await storageClient.storage.from(storageBucket).upload(filename, fileBuffer, {
-			contentType: 'video/mp4',
-			upsert: true,
-		});
-		if (uploadError) throw uploadError;
+		name = decodeURIComponent(withoutQuery.slice(storagePublicPrefix.length));
+	} catch {
+		return null;
+	}
+	if (name === currentObjectName) return null;
+	return new RegExp(`^${videoId}(-\\d+)?\\.mp4$`, 'i').test(name) ? name : null;
+}
 
-		const { data } = storageClient.storage.from(storageBucket).getPublicUrl(filename);
-		if (!data?.publicUrl) throw new Error('No se obtuvo una URL publica del bucket.');
-
-		await unlink(filePath).catch(() => undefined);
-		lastStorageError = null;
-		return data.publicUrl;
+async function readPreviousVideoUrl(videoId: string): Promise<string | null> {
+	if (!storageClient) return null;
+	try {
+		const { data, error } = await storageClient.from('videos').select('video_url').eq('id', videoId).maybeSingle();
+		if (error) throw toError(error);
+		const url = (data as { video_url?: unknown } | null)?.video_url;
+		return typeof url === 'string' ? url : null;
 	} catch (error) {
-		lastStorageError = error instanceof Error ? error.message : String(error);
-		console.warn('Fallo al subir el render a Supabase Storage, se conserva en disco local.', error);
+		console.warn('No se pudo leer el video anterior; no se borrara su archivo.', error);
+		return null;
+	}
+}
+
+// Best-effort: a leftover object only costs storage, never the person's video.
+async function removePreviousObject(previousUrl: string | null, videoId: string, currentObjectName: string) {
+	const name = previousObjectName(previousUrl, videoId, currentObjectName);
+	if (!name || !storageClient) return;
+	try {
+		const { error } = await storageClient.storage.from(storageBucket).remove([name]);
+		if (error) throw toError(error);
+	} catch (error) {
+		console.warn(`No se pudo borrar el render anterior ${name} del bucket.`, error);
+	}
+}
+
+// The logo URL comes from the request body and is handed to ffmpeg, which
+// would fetch anything (file:, other hosts, internal addresses). Only logos
+// the web app itself uploaded to the public branding-logos bucket are used.
+const LOGO_URL_PREFIX = supabaseUrl
+	? `${supabaseUrl.replace(/\/+$/, '')}/storage/v1/object/public/branding-logos/`
+	: null;
+
+function trustedLogoUrl(raw: string): string | null {
+	if (!LOGO_URL_PREFIX) return null;
+	try {
+		// new URL() resolves dot segments, so "<prefix>../other-bucket/x" can't
+		// pass the prefix test and still escape the bucket.
+		const parsed = new URL(raw);
+		if (parsed.protocol !== 'https:') return null;
+		return parsed.href.startsWith(LOGO_URL_PREFIX) ? parsed.href : null;
+	} catch {
 		return null;
 	}
 }
 
 function getLogoOverlayPosition(position: LogoPosition | undefined): string {
 	switch (position) {
-		case 'top-right': return 'W-w-24:24';
+		case 'top-left': return '24:24';
 		case 'bottom-left': return '24:H-h-24';
 		case 'bottom-right': return 'W-w-24:H-h-24';
-		case 'top-left':
-		default: return '24:24';
+		case 'top-right':
+		default: return 'W-w-24:24';
 	}
 }
 
@@ -282,12 +399,20 @@ function getLogoOverlayPosition(position: LogoPosition | undefined): string {
 // on it, this degrades gracefully to the un-logo'd video instead of failing
 // the whole render, matching this file's existing resilience-over-hard-failure
 // convention (see uploadToSupabase above).
-async function applyLogoOverlayOrFallback(sourcePath: string, destinationPath: string, branding: Branding): Promise<void> {
-	const logoUrl = typeof branding.logo_url === 'string' && branding.logo_url.trim().length > 0
+async function applyLogoOverlayOrFallback(sourcePath: string, destinationPath: string, branding: Branding, jobId: string): Promise<void> {
+	const requestedLogoUrl = typeof branding.logo_url === 'string' && branding.logo_url.trim().length > 0
 		? branding.logo_url.trim()
 		: null;
 
+	if (!requestedLogoUrl) {
+		await rename(sourcePath, destinationPath);
+		return;
+	}
+
+	const logoUrl = trustedLogoUrl(requestedLogoUrl);
 	if (!logoUrl) {
+		console.warn('El logo de marca no viene del bucket branding-logos de este proyecto; se renderiza sin logo.');
+		void reportError(new Error('logo_url rechazada: no es una URL https del bucket branding-logos'), { job_id: jobId, logo_url: requestedLogoUrl.slice(0, 300) });
 		await rename(sourcePath, destinationPath);
 		return;
 	}
@@ -297,7 +422,7 @@ async function applyLogoOverlayOrFallback(sourcePath: string, destinationPath: s
 		await runFfmpeg([
 			'-y',
 			'-i', sourcePath,
-			'-i', logoUrl,
+			...remoteInput(logoUrl),
 			'-filter_complex', `[1:v]scale=160:-1[logo];[0:v][logo]overlay=${overlayPosition}[outv]`,
 			'-map', '[outv]',
 			'-map', '0:a',
@@ -323,6 +448,7 @@ async function applyLogoOverlayOrFallback(sourcePath: string, destinationPath: s
 		]);
 	} catch (error) {
 		console.warn('Fallo al aplicar el logo de marca sobre el render final, se conserva el video sin logo.', error);
+		void reportError(error, { job_id: jobId, stage: 'logo', logo_url: logoUrl });
 		await unlink(destinationPath).catch(() => undefined);
 		await rename(sourcePath, destinationPath);
 	}
@@ -358,20 +484,70 @@ function nonEmptyUrl(value: unknown): string | null {
 	return typeof value === 'string' && value.trim().length > 0 ? value.trim() : null;
 }
 
+// Downloads and decodes one remote audio file to raw 16-bit PCM on disk, at
+// most `maxSeconds` of it, and returns how long it actually is. Decoding up
+// front means a broken URL fails here, on its own, instead of inside a
+// multi-input ffmpeg graph where it would take every other input down with it;
+// and the byte count gives the exact length without a separate probe.
+async function decodeToPcm(url: string, pcmPath: string, maxSeconds: number, channels: number, sampleRate: number): Promise<number> {
+	await runFfmpeg([
+		'-y', ...remoteInput(url), '-vn',
+		'-t', String(maxSeconds),
+		'-ac', String(channels), '-ar', String(sampleRate), '-f', 's16le', pcmPath,
+	]);
+	return (await stat(pcmPath)).size / (sampleRate * channels * 2);
+}
+
+function pcmInput(path: string, channels: number, sampleRate: number): string[] {
+	return ['-f', 's16le', '-ar', String(sampleRate), '-ac', String(channels), '-i', path];
+}
+
 // One extra ffmpeg pass over the concatenated video that only touches audio:
 // the video stream is copied, so this costs a few seconds and the memory of an
 // audio decode, not another x264 encode. Returns the path of the mixed video,
-// or the untouched source when there is nothing to mix or the mix fails - a
-// broken music URL must never cost the person their video (same convention as
-// applyLogoOverlayOrFallback).
+// or the untouched source when there is nothing usable to mix or the mix
+// fails - a broken music URL must never cost the person their video (same
+// convention as applyLogoOverlayOrFallback). Each input is decoded on its own
+// first, so one bad effect drops only that effect, not the music and the rest.
 async function mixSoundsOrKeep(
 	sourcePath: string,
 	jobDirectory: string,
 	musicUrl: string | null,
 	effects: TimedEffect[],
 	totalSeconds: number,
+	jobId: string,
 ): Promise<string> {
 	if (!musicUrl && effects.length === 0) return sourcePath;
+
+	// Only as much as the video needs (a three-minute upload is cut at the
+	// video's length); the loop copies below then read a local file instead
+	// of downloading the URL once per copy.
+	let music: { path: string; seconds: number } | null = null;
+	if (musicUrl) {
+		const musicPcmPath = join(jobDirectory, 'music.pcm');
+		try {
+			const seconds = await decodeToPcm(musicUrl, musicPcmPath, totalSeconds + 1, 2, MIX_SAMPLE_RATE);
+			if (seconds < MUSIC_MIN_SECONDS) throw new Error(`La musica dura ${seconds.toFixed(2)} s, demasiado corta para usarla de fondo.`);
+			music = { path: musicPcmPath, seconds };
+		} catch (error) {
+			console.warn('No se pudo usar la musica de fondo; el video sale sin ella.', error);
+			void reportError(error, { job_id: jobId, stage: 'music', music_url: musicUrl });
+		}
+	}
+
+	const usableEffects: Array<{ path: string; startSeconds: number }> = [];
+	for (const [effectIndex, effect] of effects.entries()) {
+		const effectPcmPath = join(jobDirectory, `effect-${effectIndex}.pcm`);
+		try {
+			await decodeToPcm(effect.url, effectPcmPath, Math.max(1, totalSeconds), 2, MIX_SAMPLE_RATE);
+			usableEffects.push({ path: effectPcmPath, startSeconds: effect.startSeconds });
+		} catch (error) {
+			console.warn(`No se pudo usar el efecto de sonido ${effectIndex + 1}; se omite solo ese efecto.`, error);
+			void reportError(error, { job_id: jobId, stage: 'sound_effect', effect_url: effect.url, start_seconds: effect.startSeconds });
+		}
+	}
+
+	if (!music && usableEffects.length === 0) return sourcePath;
 
 	const mixedPath = join(jobDirectory, 'mixed-output.mp4');
 	try {
@@ -380,26 +556,12 @@ async function mixSoundsOrKeep(
 		const mixLabels = ['[voice]'];
 		let nextInput = 1;
 
-		if (musicUrl) {
-			// Decoded once to raw PCM on disk, and only as much as the video
-			// needs (a three-minute upload is cut at the video's length): the
-			// copies below then read a local file instead of downloading the URL
-			// once per loop, and the byte count gives the exact duration without
-			// a separate probe.
-			const musicPcmPath = join(jobDirectory, 'music.pcm');
-			await runFfmpeg([
-				'-y', '-i', musicUrl, '-vn',
-				'-t', String(totalSeconds + 1),
-				'-ac', '2', '-ar', String(MIX_SAMPLE_RATE), '-f', 's16le', musicPcmPath,
-			]);
-			const musicSeconds = (await stat(musicPcmPath)).size / (MIX_SAMPLE_RATE * 2 * 2);
-			if (musicSeconds < MUSIC_MIN_SECONDS) throw new Error(`La musica dura ${musicSeconds.toFixed(2)} s, demasiado corta para usarla de fondo.`);
-
-			const copies = musicSeconds >= totalSeconds
+		if (music) {
+			const copies = music.seconds >= totalSeconds
 				? 1
-				: 1 + Math.ceil((totalSeconds - musicSeconds) / (musicSeconds - MUSIC_LOOP_CROSSFADE_SECONDS));
+				: 1 + Math.ceil((totalSeconds - music.seconds) / (music.seconds - MUSIC_LOOP_CROSSFADE_SECONDS));
 			for (let copy = 0; copy < copies; copy += 1) {
-				inputs.push('-f', 's16le', '-ar', String(MIX_SAMPLE_RATE), '-ac', '2', '-i', musicPcmPath);
+				inputs.push(...pcmInput(music.path, 2, MIX_SAMPLE_RATE));
 			}
 
 			let musicLabel = `[${nextInput}:a]`;
@@ -422,8 +584,8 @@ async function mixSoundsOrKeep(
 			graph.push(`[0:a]${MIX_FORMAT}[voice]`);
 		}
 
-		effects.forEach((effect, effectIndex) => {
-			inputs.push('-i', effect.url);
+		usableEffects.forEach((effect, effectIndex) => {
+			inputs.push(...pcmInput(effect.path, 2, MIX_SAMPLE_RATE));
 			const delayMs = Math.max(0, Math.round(effect.startSeconds * 1000));
 			graph.push(`[${nextInput}:a]${MIX_FORMAT},adelay=delays=${delayMs}:all=1,volume=${EFFECT_VOLUME}[fx${effectIndex}]`);
 			mixLabels.push(`[fx${effectIndex}]`);
@@ -451,22 +613,37 @@ async function mixSoundsOrKeep(
 		return mixedPath;
 	} catch (error) {
 		console.warn('Fallo al mezclar la musica o los efectos de sonido, se conserva el video sin mezcla.', error);
+		void reportError(error, { job_id: jobId, stage: 'mix', music: Boolean(music), effects: usableEffects.length });
 		await unlink(mixedPath).catch(() => undefined);
 		return sourcePath;
 	}
 }
 
-function runFfmpeg(args: string[]) {
+// Kills ffmpeg once it has run past `timeoutMs`; SIGKILL because a process
+// stuck in I/O can ignore SIGTERM.
+function runFfmpeg(args: string[], timeoutMs: number = FFMPEG_TIMEOUT_MS) {
 	return new Promise<void>((resolve, reject) => {
 		const childProcess = spawn(process.env.FFMPEG_PATH ?? ffmpegPath ?? 'ffmpeg', args, { stdio: ['ignore', 'ignore', 'pipe'] });
 		let errorOutput = '';
+		let timedOut = false;
+		const timer = setTimeout(() => {
+			timedOut = true;
+			childProcess.kill('SIGKILL');
+		}, timeoutMs);
 
 		childProcess.stderr.on('data', (chunk: Buffer) => {
-			errorOutput += chunk.toString();
+			// Only the tail is ever reported; keep a chatty run from growing
+			// this without bound.
+			errorOutput = (errorOutput + chunk.toString()).slice(-8000);
 		});
-		childProcess.on('error', (error) => reject(error));
+		childProcess.on('error', (error) => {
+			clearTimeout(timer);
+			reject(error);
+		});
 		childProcess.on('close', (code) => {
-			if (code === 0) resolve();
+			clearTimeout(timer);
+			if (timedOut) reject(new Error(`FFmpeg excedio el tiempo limite (${timeoutMs} ms) y fue detenido: ${errorOutput.slice(-1000)}`));
+			else if (code === 0) resolve();
 			else reject(new Error(`FFmpeg termino con codigo ${code}: ${errorOutput.slice(-2000)}`));
 		});
 	});
@@ -476,24 +653,32 @@ function runFfmpeg(args: string[]) {
 // giving it an input file. renderFrame() must return exactly width*height*4
 // bytes; the buffer is handed straight to the pipe, respecting backpressure so
 // a long scene can't buffer the whole uncompressed video in memory.
-function runFfmpegWithFrames(args: string[], frameCount: number, renderFrame: (frameIndex: number) => Buffer) {
+function runFfmpegWithFrames(args: string[], frameCount: number, renderFrame: (frameIndex: number) => Buffer, timeoutMs: number = FFMPEG_TIMEOUT_MS) {
 	return new Promise<void>((resolve, reject) => {
 		const childProcess = spawn(process.env.FFMPEG_PATH ?? ffmpegPath ?? 'ffmpeg', args, { stdio: ['pipe', 'ignore', 'pipe'] });
 		let errorOutput = '';
 		let settled = false;
 
-		const fail = (error: Error) => {
+		const fail = (error: Error, signal: NodeJS.Signals = 'SIGTERM') => {
 			if (settled) return;
 			settled = true;
-			childProcess.kill();
+			clearTimeout(timer);
+			childProcess.kill(signal);
 			reject(error);
 		};
 
+		// Same ceiling as runFfmpeg: a wedged encoder must not hold the job,
+		// and the single render slot, forever.
+		const timer = setTimeout(() => {
+			fail(new Error(`FFmpeg excedio el tiempo limite (${timeoutMs} ms) y fue detenido: ${errorOutput.slice(-1000)}`), 'SIGKILL');
+		}, timeoutMs);
+
 		childProcess.stderr.on('data', (chunk: Buffer) => {
-			errorOutput += chunk.toString();
+			errorOutput = (errorOutput + chunk.toString()).slice(-8000);
 		});
-		childProcess.on('error', fail);
+		childProcess.on('error', (error) => fail(error));
 		childProcess.on('close', (code) => {
+			clearTimeout(timer);
 			if (settled) return;
 			settled = true;
 			if (code === 0) resolve();
@@ -520,6 +705,20 @@ function runFfmpegWithFrames(args: string[], frameCount: number, renderFrame: (f
 			setTimeout(() => fail(error instanceof Error ? error : new Error(String(error))), 400);
 		});
 	});
+}
+
+// Narration the web app already produced (scene.audio_url), decoded to mono
+// 16-bit PCM: mono because it is one voice and the envelope wants one channel,
+// 48 kHz because it is also what the clip is encoded from, so nothing is lost.
+// At most 61 s, since a scene is capped at 60.
+const SCENE_AUDIO_SAMPLE_RATE = 48000;
+
+async function decodeSceneAudio(url: string, pcmPath: string): Promise<Speech> {
+	await decodeToPcm(url, pcmPath, 61, 1, SCENE_AUDIO_SAMPLE_RATE);
+	const bytes = await readFile(pcmPath);
+	const samples = new Float32Array(Math.floor(bytes.length / 2));
+	for (let i = 0; i < samples.length; i += 1) samples[i] = bytes.readInt16LE(i * 2) / 32768;
+	return { samples, sampleRate: SCENE_AUDIO_SAMPLE_RATE, durationSeconds: samples.length / SCENE_AUDIO_SAMPLE_RATE };
 }
 
 // 16-bit PCM mono WAV. The narration comes back as float samples and ffmpeg
@@ -553,13 +752,33 @@ async function writeWavFile(path: string, samples: Float32Array, sampleRate: num
 // Progress is written straight onto the video row, so it survives a worker
 // restart and the UI can read it from the endpoint it already polls. Failing
 // to report progress must never fail the render itself.
-async function reportProgress(videoId: string, fields: Record<string, unknown>) {
-	if (!storageClient) return;
-	try {
-		await storageClient.from('videos').update(fields).eq('id', videoId);
-	} catch (error) {
-		console.warn('No se pudo reportar el progreso del render.', error);
+//
+// supabase-js does not throw on a failed update, it returns { error }, so that
+// is what is checked. Intermediate percentages are fire-and-forget; a final
+// state ('listo' / 'error') is what the web app waits on, so `final` retries
+// it with backoff and reports to Sentry if it still can't be written - a lost
+// final write leaves the row "procesando" forever. Returns whether it landed.
+const FINAL_WRITE_ATTEMPTS = 4;
+
+async function reportProgress(videoId: string, fields: Record<string, unknown>, options: { final?: boolean } = {}): Promise<boolean> {
+	if (!storageClient) return true;
+	const attempts = options.final ? FINAL_WRITE_ATTEMPTS : 1;
+	let lastError: unknown = null;
+	for (let attempt = 1; attempt <= attempts; attempt += 1) {
+		try {
+			const { error } = await storageClient.from('videos').update(fields).eq('id', videoId);
+			if (!error) return true;
+			lastError = error;
+		} catch (error) {
+			lastError = error;
+		}
+		if (attempt < attempts) await sleep(1000 * 2 ** (attempt - 1));
 	}
+	console.warn(`No se pudo reportar el estado del render ${videoId}.`, lastError);
+	if (options.final) {
+		void reportError(toError(lastError), { job_id: videoId, stage: 'report_final_state', render_status: fields.render_status });
+	}
+	return false;
 }
 
 // The frame the outgoing scene's own last drawn pose comes from (for a
@@ -579,8 +798,16 @@ export async function render(job: RenderJob, onProgress?: (percent: number) => v
 		throw new Error('El trabajo necesita al menos una escena.');
 	}
 
+	// Checked here too, not only in the HTTP handler: the id becomes a path
+	// that the finally below removes recursively.
+	if (job.id !== undefined && !isUuid(job.id)) {
+		throw new Error('El id del trabajo no es un UUID valido.');
+	}
 	const jobId = job.id ?? randomUUID();
-	const jobDirectory = join(renderDirectory, jobId);
+	// One directory per attempt, not per video: a retry of the same video that
+	// overlapped a dying attempt would otherwise have its files removed by the
+	// other attempt's cleanup.
+	const jobDirectory = join(renderDirectory, `${jobId}-${randomUUID()}`);
 	await mkdir(jobDirectory, { recursive: true });
 
 	const branding = job.branding ?? DEFAULT_BRANDING;
@@ -654,12 +881,21 @@ export async function render(job: RenderJob, onProgress?: (percent: number) => v
 			// waveform, which is what drives the lip sync below.
 			const speech = audioUrl || avatarClip ? null : await speak(narration);
 
+			// Audio the app already narrated is decoded here too, for the same
+			// two reasons: its real length (a line longer than the planned
+			// duration was being cut off) and its waveform for the lip sync.
+			// The clip below then reads the local PCM instead of fetching the
+			// URL a second time.
+			const providedAudioPath = join(jobDirectory, `scene-${index + 1}-audio.pcm`);
+			const providedAudio = audioUrl && !avatarClip ? await decodeSceneAudio(audioUrl, providedAudioPath) : null;
+			const voiceTrack: Speech | null = speech ?? providedAudio;
+
 			// A scene must never cut its own narration off mid-sentence, so
 			// speech length wins when it exceeds the planned duration.
 			const duration = avatarClip
 				? avatarClip.durationSeconds
-				: speech
-					? Math.min(60, Math.max(requestedDuration, speech.durationSeconds + 0.35))
+				: voiceTrack
+					? Math.min(60, Math.max(requestedDuration, voiceTrack.durationSeconds + 0.35))
 					: requestedDuration;
 
 			// Every clip gets both a video AND an audio stream - real audio when
@@ -667,8 +903,8 @@ export async function render(job: RenderJob, onProgress?: (percent: number) => v
 			// so the concat demuxer below sees a uniform stream layout across all
 			// clips regardless of which scenes had narration.
 			let audioInputArgs: string[];
-			if (audioUrl) {
-				audioInputArgs = ['-i', audioUrl];
+			if (providedAudio) {
+				audioInputArgs = pcmInput(providedAudioPath, 1, SCENE_AUDIO_SAMPLE_RATE);
 			} else if (speech) {
 				const voicePath = join(jobDirectory, `scene-${index + 1}.wav`);
 				await writeWavFile(voicePath, speech.samples, speech.sampleRate);
@@ -686,7 +922,7 @@ export async function render(job: RenderJob, onProgress?: (percent: number) => v
 			};
 			const frameStyle = { width, height, background: backgroundColor, ink: textColor, fontFamily: branding.font_family };
 			const frameCount = Math.max(1, Math.round(duration * FRAME_RATE));
-			const mouth = speech ? mouthEnvelope(speech, FRAME_RATE, frameCount) : null;
+			const mouth = voiceTrack ? mouthEnvelope(voiceTrack, FRAME_RATE, frameCount) : null;
 			// ElevenLabs reports when each word is spoken, so its timings are used
 			// as they come. Piper does not, so there the subtitle highlight is
 			// approximated from word length and refined against the loudness
@@ -881,14 +1117,28 @@ export async function render(job: RenderJob, onProgress?: (percent: number) => v
 
 		// Mixed before the logo so the logo's re-encode (the expensive one)
 		// copies the finished audio rather than the other way round.
-		const soundtrackPath = await mixSoundsOrKeep(concatOutputPath, jobDirectory, nonEmptyUrl(job.music_url), timedEffects, elapsedSeconds);
+		const soundtrackPath = await mixSoundsOrKeep(concatOutputPath, jobDirectory, nonEmptyUrl(job.music_url), timedEffects, elapsedSeconds, jobId);
 
-		const outputPath = join(renderDirectory, `${jobId}.mp4`);
-		await applyLogoOverlayOrFallback(soundtrackPath, outputPath, branding);
+		// A new name per render (not `<id>.mp4`): the web app stores whatever
+		// URL is written, so a re-render gets a URL no cache has seen yet.
+		const filename = `${jobId}-${Date.now()}.mp4`;
+		const outputPath = join(renderDirectory, filename);
+		await applyLogoOverlayOrFallback(soundtrackPath, outputPath, branding, jobId);
 
-		const filename = `${jobId}.mp4`;
-		const uploadedUrl = await uploadToSupabase(outputPath, filename);
-		return { job_id: jobId, filename, output_path: outputPath, url: uploadedUrl, persisted: uploadedUrl !== null };
+		// Without storage configured, the local file served by /renders is the
+		// only copy by design (development). With storage configured, a local
+		// URL would die with the container on the next deploy, so a failed
+		// upload fails the job instead of reporting it 'listo'.
+		if (!storageClient) {
+			return { job_id: jobId, filename, output_path: outputPath, url: null, persisted: false };
+		}
+		try {
+			const uploadedUrl = await uploadToSupabase(outputPath, filename);
+			return { job_id: jobId, filename, output_path: outputPath, url: uploadedUrl, persisted: true };
+		} catch (error) {
+			await unlink(outputPath).catch(() => undefined);
+			throw new Error('El video se generó, pero no se pudo guardar en el almacenamiento. Vuelve a intentarlo en unos minutos.', { cause: error });
+		}
 	} finally {
 		await rm(jobDirectory, { recursive: true, force: true });
 	}
@@ -904,6 +1154,11 @@ async function readJson(request: IncomingMessage): Promise<unknown> {
 	for await (const chunk of request) chunks.push(Buffer.from(chunk));
 	return JSON.parse(Buffer.concat(chunks).toString('utf8'));
 }
+
+// Video ids with a render in flight in THIS process, with when it started.
+// Per-process on purpose: every instance has its own memory budget.
+const MAX_CONCURRENT_RENDERS = 1;
+const activeRenders = new Map<string, number>();
 
 const server = createServer(async (request, response) => {
 	if (request.method === 'GET' && request.url === '/health') {
@@ -922,6 +1177,8 @@ const server = createServer(async (request, response) => {
 			bucket: storageBucket,
 			last_storage_error: lastStorageError,
 			render_auth: renderAuthStatus(),
+			// Busy means /render answers 503 until the current job finishes.
+			active_renders: activeRenders.size,
 			error_reporting: errorReportingStatus(),
 			// Which voice narrates, and why it is not ElevenLabs when it is not.
 			voice: elevenlabsMissingConfig() ? `piper (${elevenlabsMissingConfig()})` : `elevenlabs ${elevenlabsVoiceLabel()}`,
@@ -944,7 +1201,9 @@ const server = createServer(async (request, response) => {
 			return;
 		}
 
-		response.writeHead(200, { 'content-type': 'video/mp4', 'cache-control': 'public, max-age=3600' });
+		// Names are unique per render now, so a long cache can't serve a stale
+		// video; kept short anyway to match the bucket's cacheControl.
+		response.writeHead(200, { 'content-type': 'video/mp4', 'cache-control': `public, max-age=${STORAGE_CACHE_CONTROL_SECONDS}` });
 		createReadStream(filePath).pipe(response);
 		return;
 	}
@@ -982,45 +1241,103 @@ const server = createServer(async (request, response) => {
 		if (!Array.isArray(job?.scenes) || job.scenes.length === 0) {
 			throw new Error('El trabajo necesita al menos una escena.');
 		}
+		if (job.id !== undefined && !isUuid(job.id)) {
+			throw new Error('El id del trabajo no es un UUID valido.');
+		}
 	} catch (error) {
 		sendJson(response, 400, { error: error instanceof Error ? error.message : 'Trabajo no valido.' });
 		return;
 	}
 
-	// Accept and answer immediately. A render can run for minutes once scenes
-	// are generated by an AI model, which is far past any HTTP timeout, so the
-	// caller follows the job through render_status on the video row instead of
-	// holding the connection open.
 	const jobId = job.id ?? randomUUID();
-	sendJson(response, 202, { job_id: jobId, status: 'procesando' });
 
-	await reportProgress(jobId, {
-		render_status: 'procesando',
-		render_progress: 0,
-		render_error: null,
-		render_started_at: new Date().toISOString(),
-	});
+	// Both checks and the registration below run synchronously, with no await
+	// in between, so two requests arriving together can't both pass.
+	// Same video already rendering: a double click or a retry while the first
+	// attempt is still alive. Two attempts would race on the same row.
+	if (activeRenders.has(jobId)) {
+		sendJson(response, 409, { error: 'Este video ya se esta renderizando. Espera a que termine.' });
+		return;
+	}
+	// One render at a time: a render peaks around 0.8 GB of a 1 GB container
+	// (see the encoder notes at the top), so a second one would get both
+	// killed for memory. The web app tells the person to try again shortly.
+	if (activeRenders.size >= MAX_CONCURRENT_RENDERS) {
+		sendJson(response, 503, { error: 'El worker esta ocupado con otro video. Intenta de nuevo en unos minutos.' });
+		return;
+	}
+	activeRenders.set(jobId, Date.now());
 
 	try {
-		const result = await render({ ...job, id: jobId }, (percent) => {
-			void reportProgress(jobId, { render_progress: percent });
-		});
-		const videoUrl = result.url ?? `${publicBaseUrl}/renders/${encodeURIComponent(result.filename)}`;
+		// Accept and answer immediately. A render can run for minutes once
+		// scenes are generated by an AI model, which is far past any HTTP
+		// timeout, so the caller follows the job through render_status on the
+		// video row instead of holding the connection open.
+		sendJson(response, 202, { job_id: jobId, status: 'procesando' });
+
+		// Read before the render so the object it replaces can be removed once
+		// the new URL is safely on the row (see removePreviousObject).
+		const previousVideoUrl = await readPreviousVideoUrl(jobId);
+
 		await reportProgress(jobId, {
+			render_status: 'procesando',
+			render_progress: 0,
+			render_error: null,
+			render_started_at: new Date().toISOString(),
+		});
+
+		let result: Awaited<ReturnType<typeof render>>;
+		try {
+			result = await render({ ...job, id: jobId }, (percent) => {
+				void reportProgress(jobId, { render_progress: percent });
+			});
+		} catch (error) {
+			const message = error instanceof Error ? error.message : 'Error de render desconocido.';
+			console.error(`Render ${jobId} fallo:`, error);
+			const cause = error instanceof Error && error.cause !== undefined ? toError(error.cause).message : undefined;
+			void reportError(error, { job_id: jobId, scenes: job.scenes.length, ...(cause ? { cause } : {}) });
+			await reportProgress(jobId, { render_status: 'error', render_error: message.slice(0, 500) }, { final: true });
+			return;
+		}
+
+		// result.url is null only when no storage is configured at all (see
+		// render), the one case where the local /renders URL is the real copy.
+		const videoUrl = result.url ?? `${publicBaseUrl}/renders/${encodeURIComponent(result.filename)}`;
+		const written = await reportProgress(jobId, {
 			render_status: 'listo',
 			render_progress: 100,
 			render_error: null,
 			video_url: videoUrl,
-		});
-	} catch (error) {
-		const message = error instanceof Error ? error.message : 'Error de render desconocido.';
-		console.error(`Render ${jobId} fallo:`, error);
-		void reportError(error, { job_id: jobId, scenes: job.scenes.length });
-		await reportProgress(jobId, { render_status: 'error', render_error: message.slice(0, 500) });
+		}, { final: true });
+
+		// The old object is only removed once the row points at the new one;
+		// if the write failed, the row still references the old file.
+		if (written && result.persisted) {
+			await removePreviousObject(previousVideoUrl, jobId, result.filename);
+		}
+	} finally {
+		activeRenders.delete(jobId);
 	}
 });
 
-mkdir(renderDirectory, { recursive: true }).then(() => {
+// A crash or a redeploy mid-render leaves its working directory behind; at
+// boot nothing in this process can be using one, so every directory under
+// renders/ is an orphan. Files are kept: without storage, finished MP4s live
+// there and /renders serves them. Rows left "procesando" are NOT touched here -
+// with several instances, another one may still be rendering that video.
+async function removeOrphanWorkDirectories() {
+	try {
+		const entries = await readdir(renderDirectory, { withFileTypes: true });
+		const orphans = entries.filter((entry) => entry.isDirectory());
+		await Promise.all(orphans.map((entry) => rm(join(renderDirectory, entry.name), { recursive: true, force: true })));
+		if (orphans.length > 0) console.log(`Se borraron ${orphans.length} carpetas de trabajo huerfanas de renders anteriores.`);
+	} catch (error) {
+		console.warn('No se pudieron limpiar las carpetas de trabajo huerfanas.', error);
+	}
+}
+
+mkdir(renderDirectory, { recursive: true }).then(async () => {
+	await removeOrphanWorkDirectories();
 	server.listen(port, () => console.log(`render worker escuchando en http://localhost:${port}`));
 	// Warm the voice model in the background: it is a ~67MB download on a cold
 	// container, and paying it here means the first render doesn't stall on it.

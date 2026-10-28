@@ -162,6 +162,9 @@ export async function elevenlabsSpeak(text: string): Promise<ElevenlabsSpeech | 
 		};
 	} catch (error) {
 		console.warn('ElevenLabs no pudo narrar esta escena; se usa la voz local.', error);
+		// The video still comes out, but with a different voice than the one
+		// paid for; worth knowing about.
+		void reportError(error, { stage: 'elevenlabs_fallback', voice_id: VOICE_ID, model: MODEL });
 		return null;
 	}
 }
