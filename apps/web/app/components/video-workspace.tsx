@@ -1,20 +1,41 @@
 'use client';
 
-import { useCallback, useEffect, useState } from 'react';
+import { useState, type Dispatch, type SetStateAction } from 'react';
 import type { SoundAsset } from '@shared-types/sounds';
 import type { BrandTemplate } from '@shared-types/templates';
-import { fetchBrandTemplates, fetchSounds, type VideoRecord } from './api';
-import { PLATFORM_LABELS } from './constants';
+import type { VideoRecord } from './api';
+import { PLATFORM_LABELS, TEMPLATE_TEXT } from './constants';
 import StatusBadge from './status-badge';
 import ScriptPanel from './script-panel';
 import ScenePanel from './scene-panel';
 import BrandingPanel from './branding-panel';
 import StatusPanel from './status-panel';
 import SoundPanel from './sound-panel';
-import { LogoMark } from './logo';
+import ExportPanel from './export-panel';
+import VideoPoster from './video-poster';
+import { Icon, type SectionIconName } from './section-icon';
+import { formatClock, scenesSeconds } from './studio-utils';
+
+// The sound list and the brand templates are owned by the shell now (the
+// Marca and Sonidos sections show the same lists), which keeps the reason
+// they were lifted out of the panels: a save that changes the brand
+// mid-request cannot lose the template it was creating, and a sound uploaded
+// in one place is offered everywhere without a second fetch.
+export interface SharedLibraries {
+    sounds: SoundAsset[];
+    soundsLoading: boolean;
+    soundsError: string;
+    onSoundsChanged: Dispatch<SetStateAction<SoundAsset[]>>;
+    brandTemplates: BrandTemplate[];
+    brandTemplatesLoading: boolean;
+    brandTemplatesError: string;
+    onBrandTemplatesChanged: Dispatch<SetStateAction<BrandTemplate[]>>;
+    onRetryBrandTemplates: () => void;
+}
 
 interface VideoWorkspaceProps {
-    video: VideoRecord | null;
+    video: VideoRecord;
+    libraries: SharedLibraries;
     onUpdated: (video: VideoRecord) => void;
     onDuplicated: (video: VideoRecord) => void;
 }
@@ -24,161 +45,26 @@ interface VideoWorkspaceProps {
 // status badge changing on its own reads as a glitch.
 const BACK_TO_DRAFT_NOTICE = 'El video volvió a borrador: hay que aprobarlo de nuevo.';
 
-export default function VideoWorkspace({ video, onUpdated, onDuplicated }: VideoWorkspaceProps) {
-    // RF-010: one sound list for the music picker, the per-scene effect
-    // pickers and the business uploads, so a sound uploaded in one place is
-    // offered in the others without a second fetch.
-    const [sounds, setSounds] = useState<SoundAsset[]>([]);
-    const [soundsLoading, setSoundsLoading] = useState(true);
-    const [soundsError, setSoundsError] = useState('');
+const JUMPS: { id: string; label: string; icon: SectionIconName }[] = [
+    { id: 'guion', label: 'Guion', icon: 'script' },
+    { id: 'escenas', label: 'Storyboard', icon: 'scenes' },
+    { id: 'sonido', label: 'Sonido', icon: 'sound' },
+    { id: 'marca', label: 'Marca', icon: 'brand' },
+    { id: 'aprobacion', label: 'Aprobación', icon: 'shield' },
+    { id: 'exportar', label: 'Exportar', icon: 'export' },
+];
 
-    const loadSounds = useCallback(async () => {
-        try {
-            setSounds(await fetchSounds());
-            setSoundsError('');
-        } catch (err) {
-            setSoundsError(err instanceof Error ? err.message : 'No se pudieron cargar los sonidos.');
-        } finally {
-            setSoundsLoading(false);
-        }
-    }, []);
+// In-page jumps are buttons, not #anchors: the hash is the shell's router.
+function jumpTo(id: string) {
+    const target = document.getElementById(`ws-${id}`);
+    if (!target) return;
+    target.scrollIntoView({ behavior: 'smooth', block: 'start' });
+    target.focus({ preventScroll: true });
+}
 
-    useEffect(() => {
-        // Deferred by a tick: the lint rule cannot tell that state only
-        // changes once the fetch resolves.
-        const timer = setTimeout(() => { void loadSounds(); }, 0);
-        return () => clearTimeout(timer);
-    }, [loadSounds]);
-
-    // Brand templates live here rather than in the branding panel for the
-    // same reason as the sounds, plus one: the panel's form follows the
-    // video's brand, and saving a template first saves pending brand edits.
-    // When the list lived in the panel, that save changed the brand
-    // mid-request, the panel was rebuilt, and the new template (or its error)
-    // landed in a component that no longer existed.
-    const [brandTemplates, setBrandTemplates] = useState<BrandTemplate[]>([]);
-    const [brandTemplatesLoading, setBrandTemplatesLoading] = useState(true);
-    const [brandTemplatesError, setBrandTemplatesError] = useState('');
-
-    const loadBrandTemplates = useCallback(async () => {
-        try {
-            setBrandTemplates(await fetchBrandTemplates());
-            setBrandTemplatesError('');
-        } catch (err) {
-            setBrandTemplatesError(err instanceof Error ? err.message : 'No se pudieron cargar las plantillas de marca.');
-        } finally {
-            setBrandTemplatesLoading(false);
-        }
-    }, []);
-
-    useEffect(() => {
-        const timer = setTimeout(() => { void loadBrandTemplates(); }, 0);
-        return () => clearTimeout(timer);
-    }, [loadBrandTemplates]);
-
-    function retryBrandTemplates() {
-        setBrandTemplatesLoading(true);
-        setBrandTemplatesError('');
-        void loadBrandTemplates();
-    }
-
+export default function VideoWorkspace({ video, libraries, onUpdated, onDuplicated }: VideoWorkspaceProps) {
     // Tied to the video it is about, so switching videos hides it.
     const [notice, setNotice] = useState<{ videoId: string; text: string } | null>(null);
-
-    if (!video) {
-        return (
-            <section className="panel enter relative overflow-hidden px-5 py-12 sm:px-10 sm:py-16">
-                {/* Soft spotlight behind the hero. Decorative only. */}
-                <div
-                    aria-hidden="true"
-                    className="pointer-events-none absolute inset-x-0 -top-24 mx-auto h-72 max-w-2xl rounded-full bg-[radial-gradient(closest-side,rgba(99,102,241,0.28),transparent)] blur-2xl"
-                />
-                <div className="relative mx-auto max-w-4xl">
-                    <div className="mb-12 text-center">
-                        <div className="float-soft mx-auto mb-6 w-fit">
-                            <LogoMark size={64} />
-                        </div>
-                        <p className="mx-auto mb-4 inline-flex items-center gap-2 rounded-full border border-white/[0.08] bg-white/[0.03] px-3 py-1 text-xs font-medium text-slate-300">
-                            <span className="h-1.5 w-1.5 rounded-full bg-emerald-400" aria-hidden="true" />
-                            Estudio de video con IA
-                        </p>
-                        <h2 className="text-gradient mx-auto mb-4 max-w-2xl text-balance text-3xl font-semibold leading-[1.1] tracking-[-0.03em] sm:text-[2.75rem]">
-                            Convierte un tema en un video{' '}
-                            <span className="text-gradient-brand pr-1 font-display text-[1.12em] font-normal italic tracking-[-0.01em]">listo para publicar</span>
-                        </h2>
-                        <p className="mx-auto max-w-xl text-pretty text-sm leading-relaxed text-slate-400 sm:text-base">
-                            Stickman escribe la historia, la reparte en escenas, la narra en español y arma el MP4
-                            vertical para Reels, TikTok o Shorts. Tú solo dices el tema.
-                        </p>
-                    </div>
-
-                    <ol className="mb-10 grid gap-3 sm:grid-cols-2 lg:grid-cols-4">
-                        {[
-                            { n: '01', t: 'Dices el tema', d: 'Hablas o escribes. Se genera un guion con forma de historia, no un folleto.' },
-                            { n: '02', t: 'Se arma en escenas', d: 'Cada escena con su personaje, su acción y su objeto. Puedes editarlas o borrarlas.' },
-                            { n: '03', t: 'Tú lo apruebas', d: 'Nada se publica sin que una persona lo revise. El asistente no puede saltarse este paso.' },
-                            { n: '04', t: 'Sale el video', d: 'MP4 vertical con voz y subtítulos, listo para descargar o publicar.' },
-                        ].map((step) => (
-                            <li key={step.n} className="tile tile-hover group relative overflow-hidden p-5">
-                                <span
-                                    aria-hidden="true"
-                                    className="absolute inset-x-0 top-0 h-px bg-gradient-to-r from-transparent via-brand-300/50 to-transparent opacity-40 transition-opacity duration-300 group-hover:opacity-100"
-                                />
-                                <span className="mb-4 block font-mono text-xs font-medium tracking-wider text-brand-300">{step.n}</span>
-                                <h3 className="mb-1.5 text-sm font-semibold text-white">{step.t}</h3>
-                                <p className="text-xs leading-relaxed text-slate-400">{step.d}</p>
-                            </li>
-                        ))}
-                    </ol>
-
-                    <div className="grid gap-4 sm:grid-cols-2">
-                        <div className="tile p-5">
-                            <h3 className="eyebrow mb-4">Pruébalo diciendo</h3>
-                            <ul className="space-y-2">
-                                {[
-                                    'Crea un video sobre tasas fijas para TikTok',
-                                    'Genera las escenas',
-                                    'En la escena 2 que el broker camine con una casa',
-                                    '¿Cuántos videos tengo pendientes?',
-                                ].map((example) => (
-                                    <li
-                                        key={example}
-                                        className="flex items-start gap-2.5 rounded-xl border border-white/[0.06] bg-ink-950/40 px-3 py-2 text-sm text-slate-200"
-                                    >
-                                        <svg className="mt-[3px] shrink-0 text-brand-300" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
-                                            <rect x="9" y="3" width="6" height="11" rx="3" />
-                                            <path d="M5 11a7 7 0 0 0 14 0M12 18v3" />
-                                        </svg>
-                                        <span>&ldquo;{example}&rdquo;</span>
-                                    </li>
-                                ))}
-                            </ul>
-                        </div>
-                        <div className="tile p-5">
-                            <h3 className="eyebrow mb-4">También puedes</h3>
-                            <ul className="space-y-3 text-sm text-slate-200">
-                                {[
-                                    'Editar el guion y cada escena a mano',
-                                    'Poner tu logo, tus colores y tu tipografía',
-                                    'Reutilizar un video para otra plataforma',
-                                    'Descargar el MP4 o publicarlo',
-                                ].map((item) => (
-                                    <li key={item} className="flex items-start gap-2.5">
-                                        <span className="mt-0.5 flex h-5 w-5 shrink-0 items-center justify-center rounded-full bg-emerald-400/10 text-emerald-300 ring-1 ring-inset ring-emerald-400/25" aria-hidden="true">
-                                            <svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="3" strokeLinecap="round" strokeLinejoin="round">
-                                                <path d="m5 12 5 5L20 7" />
-                                            </svg>
-                                        </span>
-                                        {item}
-                                    </li>
-                                ))}
-                            </ul>
-                        </div>
-                    </div>
-                </div>
-            </section>
-        );
-    }
 
     // Read-only progress strip: where this video sits in guion -> escenas ->
     // aprobacion -> video. Derived from the record; it has no controls, so it
@@ -197,32 +83,35 @@ export default function VideoWorkspace({ video, onUpdated, onDuplicated }: Video
     // lands in draft, but there the operator asked for exactly that.
     const previousStatus = video.status;
     function handleEdited(updated: VideoRecord) {
-        if (updated.id === video?.id && updated.status !== previousStatus && updated.status === 'borrador') {
+        if (updated.id === video.id && updated.status !== previousStatus && updated.status === 'borrador') {
             setNotice({ videoId: updated.id, text: BACK_TO_DRAFT_NOTICE });
         }
         onUpdated(updated);
     }
     // Once it is back in approval there is nothing left to warn about.
     const visibleNotice = notice && notice.videoId === video.id && video.status === 'borrador' ? notice.text : '';
+    const seconds = scenesSeconds(video);
 
     return (
-        <div key={video.id} className="enter space-y-5 sm:space-y-6">
+        <div key={video.id} className="enter space-y-5">
             <header className="panel relative overflow-hidden">
                 <div
                     aria-hidden="true"
-                    className="pointer-events-none absolute -right-24 -top-24 h-64 w-64 rounded-full bg-[radial-gradient(closest-side,rgba(154,92,246,0.2),transparent)]"
+                    className="pointer-events-none absolute -right-24 -top-24 h-64 w-64 rounded-full bg-[radial-gradient(closest-side,rgba(34,211,238,0.14),transparent)]"
                 />
                 <div className="panel-pad relative">
                     <div className="flex flex-wrap items-start justify-between gap-3">
                         <div className="min-w-0 flex-1">
-                            <p className="eyebrow mb-2">Video seleccionado</p>
-                            <h2 className="text-balance break-words text-2xl font-semibold leading-tight tracking-[-0.025em] text-white sm:text-[1.75rem]">{video.topic}</h2>
+                            <p className="eyebrow mb-2">Video en edición</p>
+                            <h2 className="text-balance break-words text-xl font-semibold leading-tight tracking-[-0.025em] text-white sm:text-[1.625rem]">{video.topic}</h2>
                             <div className="mt-4 flex flex-wrap items-center gap-2">
                                 <span className="chip">{PLATFORM_LABELS[video.platform]}</span>
-                                <span className="chip tabular-nums">Duración objetivo: {video.target_duration_seconds}s</span>
+                                <span className="chip font-mono tabular-nums">Objetivo {formatClock(video.target_duration_seconds)}</span>
+                                {seconds > 0 && <span className="chip font-mono tabular-nums">Real {formatClock(seconds)}</span>}
                                 <span className="chip tabular-nums">
                                     {video.scenes.length} {video.scenes.length === 1 ? 'escena' : 'escenas'}
                                 </span>
+                                <span className="chip">Plantilla: {TEMPLATE_TEXT[video.template]?.label ?? video.template}</span>
                             </div>
                         </div>
                         <StatusBadge status={video.status} />
@@ -235,7 +124,7 @@ export default function VideoWorkspace({ video, onUpdated, onDuplicated }: Video
                             <li
                                 key={step.label}
                                 aria-current={current ? 'step' : undefined}
-                                className={`relative min-w-0 px-2 py-3 sm:px-5 sm:py-4 ${index > 0 ? 'border-l border-white/[0.06]' : ''}`}
+                                className={`relative min-w-0 px-2 py-3 sm:px-5 ${index > 0 ? 'border-l border-white/[0.06]' : ''}`}
                             >
                                 <span
                                     aria-hidden="true"
@@ -246,21 +135,15 @@ export default function VideoWorkspace({ video, onUpdated, onDuplicated }: Video
                                 <span className="flex min-w-0 items-center gap-2">
                                     <span
                                         aria-hidden="true"
-                                        className={`flex h-5 w-5 shrink-0 items-center justify-center rounded-full text-[0.625rem] font-semibold transition-colors duration-300 ${
+                                        className={`flex h-5 w-5 shrink-0 items-center justify-center rounded-full font-mono text-[0.625rem] font-semibold transition-colors duration-300 ${
                                             step.done
-                                                ? 'bg-brand-500 text-white'
+                                                ? 'bg-brand-400 text-ink-950'
                                                 : current
                                                     ? 'bg-brand-500/15 text-brand-200 ring-1 ring-inset ring-brand-400/50'
                                                     : 'bg-white/[0.05] text-slate-400 ring-1 ring-inset ring-white/10'
                                         }`}
                                     >
-                                        {step.done ? (
-                                            <svg width="10" height="10" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="3.5" strokeLinecap="round" strokeLinejoin="round">
-                                                <path d="m5 12 5 5L20 7" />
-                                            </svg>
-                                        ) : (
-                                            index + 1
-                                        )}
+                                        {step.done ? <Icon name="check" size={10} strokeWidth={3.5} /> : index + 1}
                                     </span>
                                     <span className={`truncate text-[0.6875rem] font-medium sm:text-xs ${step.done || current ? 'text-slate-100' : 'text-slate-400'}`}>
                                         <span className="sr-only">{step.done ? 'Completado: ' : current ? 'Paso actual: ' : 'Pendiente: '}</span>
@@ -273,48 +156,111 @@ export default function VideoWorkspace({ video, onUpdated, onDuplicated }: Video
                 </ol>
             </header>
 
+            {/* Jump bar: sticks under the top bar so a long workspace stays
+                navigable. Scrolls sideways on phones instead of wrapping. */}
+            <nav aria-label="Secciones del video" className="glass sticky top-[3.75rem] z-10 -mx-1 rounded-xl border border-white/[0.06] px-1">
+                <ul className="thin-scroll flex gap-1 overflow-x-auto py-1">
+                    {JUMPS.map((jump) => (
+                        <li key={jump.id} className="shrink-0">
+                            <button type="button" onClick={() => jumpTo(jump.id)} className="btn btn-ghost btn-sm">
+                                <Icon name={jump.icon} size={14} className="text-slate-500" />
+                                {jump.label}
+                            </button>
+                        </li>
+                    ))}
+                </ul>
+            </nav>
+
             {visibleNotice && (
                 <div className="alert alert-warning flex items-start justify-between gap-3" role="status">
                     <span className="min-w-0">{visibleNotice}</span>
-                    <button
-                        type="button"
-                        onClick={() => setNotice(null)}
-                        aria-label="Cerrar aviso"
-                        className="btn-icon -my-1 shrink-0"
-                    >
-                        <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" aria-hidden="true">
-                            <path d="M6 6l12 12M18 6 6 18" />
-                        </svg>
+                    <button type="button" onClick={() => setNotice(null)} aria-label="Cerrar aviso" className="btn-icon -my-1 shrink-0">
+                        <Icon name="close" size={14} />
                     </button>
                 </div>
             )}
 
-            {/* The script panel seeds its textarea from the record when it
-                mounts. The copilot can change the same video from outside, so
-                the key gives it fresh initial state when the script actually
-                changed - without it the textarea keeps the old script. The
-                branding panel does the same reseeding inside itself, because
-                remounting it would also drop its template list mid-save. */}
-            <ScriptPanel key={`guion:${video.script}`} video={video} onUpdated={handleEdited} />
-            <ScenePanel video={video} sounds={sounds} soundsLoading={soundsLoading} onUpdated={handleEdited} />
-            <SoundPanel
-                video={video}
-                sounds={sounds}
-                soundsLoading={soundsLoading}
-                soundsError={soundsError}
-                onSoundsChanged={setSounds}
-                onUpdated={handleEdited}
-            />
-            <BrandingPanel
-                video={video}
-                onUpdated={handleEdited}
-                templates={brandTemplates}
-                templatesLoading={brandTemplatesLoading}
-                templatesError={brandTemplatesError}
-                onTemplatesChanged={setBrandTemplates}
-                onRetryTemplates={retryBrandTemplates}
-            />
-            <StatusPanel video={video} onUpdated={onUpdated} onDuplicated={onDuplicated} />
+            <div className="grid grid-cols-1 items-start gap-5 md:grid-cols-[minmax(0,1fr)_13rem]">
+                <div id="ws-guion" tabIndex={-1} className="min-w-0 scroll-mt-32 outline-none">
+                    {/* The script panel seeds its textarea from the record when
+                        it mounts. The copilot can change the same video from
+                        outside, so the key gives it fresh initial state when
+                        the script actually changed - without it the textarea
+                        keeps the old script. The branding panel does the same
+                        reseeding inside itself, because remounting it would
+                        also drop its template list mid-save. */}
+                    <ScriptPanel key={`guion:${video.script}`} video={video} onUpdated={handleEdited} />
+                </div>
+                <PreviewMonitor video={video} />
+            </div>
+
+            <div id="ws-escenas" tabIndex={-1} className="scroll-mt-32 outline-none">
+                <ScenePanel video={video} sounds={libraries.sounds} soundsLoading={libraries.soundsLoading} onUpdated={handleEdited} />
+            </div>
+            <div id="ws-sonido" tabIndex={-1} className="scroll-mt-32 outline-none">
+                <SoundPanel
+                    video={video}
+                    sounds={libraries.sounds}
+                    soundsLoading={libraries.soundsLoading}
+                    soundsError={libraries.soundsError}
+                    onSoundsChanged={libraries.onSoundsChanged}
+                    onUpdated={handleEdited}
+                />
+            </div>
+            <div id="ws-marca" tabIndex={-1} className="scroll-mt-32 outline-none">
+                <BrandingPanel
+                    video={video}
+                    onUpdated={handleEdited}
+                    templates={libraries.brandTemplates}
+                    templatesLoading={libraries.brandTemplatesLoading}
+                    templatesError={libraries.brandTemplatesError}
+                    onTemplatesChanged={libraries.onBrandTemplatesChanged}
+                    onRetryTemplates={libraries.onRetryBrandTemplates}
+                />
+            </div>
+            <div id="ws-aprobacion" tabIndex={-1} className="scroll-mt-32 outline-none">
+                <StatusPanel video={video} onUpdated={onUpdated} onDuplicated={onDuplicated} />
+            </div>
+            <div id="ws-exportar" tabIndex={-1} className="scroll-mt-32 outline-none">
+                <ExportPanel video={video} />
+            </div>
         </div>
+    );
+}
+
+// The real MP4 once it exists; until then a sketch drawn from the record
+// (brand colours, first scene), labelled as such so nobody mistakes it for
+// the render.
+function PreviewMonitor({ video }: { video: VideoRecord }) {
+    return (
+        <aside className="panel p-3 md:sticky md:top-[7.5rem]" aria-label="Vista previa">
+            <div className="mb-2 flex items-center justify-between gap-2 px-1">
+                <p className="eyebrow">Monitor</p>
+                <span className={`flex items-center gap-1.5 font-mono text-[0.625rem] uppercase tracking-wider ${video.video_url ? 'text-emerald-300' : 'text-slate-500'}`}>
+                    <span className={`h-1.5 w-1.5 rounded-full ${video.video_url ? 'bg-emerald-400' : 'bg-slate-500'}`} aria-hidden="true" />
+                    {video.video_url ? 'MP4' : 'Boceto'}
+                </span>
+            </div>
+            <div className="hud-frame mx-auto w-full max-w-[11rem] md:max-w-none">
+                {video.video_url ? (
+                    <video
+                        key={video.video_url}
+                        controls
+                        playsInline
+                        preload="metadata"
+                        src={video.video_url}
+                        aria-label={`Video final de ${video.topic}`}
+                        className="aspect-[9/16] w-full rounded-lg border border-white/10 bg-black object-cover"
+                    />
+                ) : (
+                    <VideoPoster video={video} className="w-full" />
+                )}
+            </div>
+            <p className="hint mt-2 px-1">
+                {video.video_url
+                    ? 'Archivo final generado por el servidor.'
+                    : 'Boceto con tu marca y la primera escena. El video real se genera tras la aprobación.'}
+            </p>
+        </aside>
     );
 }

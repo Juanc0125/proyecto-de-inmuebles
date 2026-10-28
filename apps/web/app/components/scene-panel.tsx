@@ -1,11 +1,12 @@
 'use client';
 
-import { useState } from 'react';
+import { useEffect, useState } from 'react';
 import type { SoundAsset } from '@shared-types/sounds';
 import type { CharacterType, Scene, SceneAction, ScenePropType } from '@shared-types/video';
 import { deleteScene, generateScenes, generateVoice, regenerateScene, updateScene, type ScenePatch, type VideoRecord } from './api';
 import { ACTION_OPTIONS, CHARACTER_OPTIONS, PROP_OPTIONS } from './constants';
 import SectionIcon from './section-icon';
+import Storyboard from './storyboard';
 
 interface ScenePanelProps {
     video: VideoRecord;
@@ -19,10 +20,29 @@ export default function ScenePanel({ video, sounds, soundsLoading, onUpdated }: 
     const [generatingVoice, setGeneratingVoice] = useState(false);
     const [panelError, setPanelError] = useState('');
     const [voiceNotice, setVoiceNotice] = useState('');
+    // The scene picked on the storyboard; its editor is scrolled to and
+    // outlined. Only a highlight - no state is copied from it.
+    const [activeSceneId, setActiveSceneId] = useState<string | null>(null);
+    const [pickSeq, setPickSeq] = useState(0);
+
+    useEffect(() => {
+        if (pickSeq === 0 || !activeSceneId) return;
+        const row = document.getElementById(`scene-row-${activeSceneId}`);
+        if (!row) return;
+        const frame = requestAnimationFrame(() => {
+            row.scrollIntoView({ behavior: 'smooth', block: 'center' });
+            row.focus({ preventScroll: true });
+        });
+        return () => cancelAnimationFrame(frame);
+    }, [pickSeq, activeSceneId]);
+
+    function pickScene(sceneId: string) {
+        setActiveSceneId(sceneId);
+        setPickSeq((current) => current + 1);
+    }
 
     const effects = sounds.filter((sound) => sound.kind === 'efecto');
     const scenes = [...video.scenes].sort((a, b) => a.order - b.order);
-    const totalDuration = scenes.reduce((sum, scene) => sum + scene.duration_seconds, 0);
 
     async function handleGenerateScenes() {
         if (scenes.length > 0) {
@@ -75,8 +95,8 @@ export default function ScenePanel({ video, sounds, soundsLoading, onUpdated }: 
                 <div className="panel-head-main">
                     <SectionIcon name="scenes" />
                     <div className="min-w-0">
-                        <h3 className="panel-title">Escenas</h3>
-                        <p className="hint">Personaje, acción, objeto y texto de cada momento del video.</p>
+                        <h3 className="panel-title">Storyboard y escenas</h3>
+                        <p className="hint">La secuencia completa arriba; personaje, acción, objeto y texto de cada escena abajo.</p>
                     </div>
                 </div>
                 <div className="flex flex-wrap gap-2">
@@ -118,22 +138,7 @@ export default function ScenePanel({ video, sounds, soundsLoading, onUpdated }: 
                 </div>
             ) : (
                 <>
-                    <div className="mb-5 rounded-2xl border border-white/[0.06] bg-ink-950/40 p-3.5">
-                        <div className="mb-2 flex items-center justify-between gap-2">
-                            <p className="eyebrow">Línea de tiempo</p>
-                            <span className="font-mono text-xs tabular-nums text-slate-400">~{totalDuration.toFixed(1)}s</span>
-                        </div>
-                        <div className="flex h-2.5 w-full gap-[3px] overflow-hidden rounded-full">
-                            {scenes.map((scene, index) => (
-                                <div
-                                    key={scene.id}
-                                    title={`Escena ${index + 1}: ${scene.duration_seconds}s`}
-                                    className={`h-full rounded-[3px] transition-[width] duration-500 ease-out-expo ${index % 2 === 0 ? 'bg-gradient-to-r from-brand-500 to-brand-400' : 'bg-gradient-to-r from-accent-500/80 to-accent-400/80'}`}
-                                    style={{ width: `${totalDuration > 0 ? (scene.duration_seconds / totalDuration) * 100 : 0}%` }}
-                                />
-                            ))}
-                        </div>
-                    </div>
+                    <Storyboard video={video} scenes={scenes} activeId={activeSceneId} onPick={pickScene} />
                     <ul className="space-y-3">
                         {scenes.map((scene, index) => (
                             // Keyed only by what the row copies into its own
@@ -149,6 +154,7 @@ export default function ScenePanel({ video, sounds, soundsLoading, onUpdated }: 
                                 index={index}
                                 effects={effects}
                                 soundsLoading={soundsLoading}
+                                active={scene.id === activeSceneId}
                                 onUpdated={onUpdated}
                             />
                         ))}
@@ -165,10 +171,11 @@ interface SceneRowProps {
     index: number;
     effects: SoundAsset[];
     soundsLoading: boolean;
+    active: boolean;
     onUpdated: (video: VideoRecord) => void;
 }
 
-function SceneRow({ videoId, scene, index, effects, soundsLoading, onUpdated }: SceneRowProps) {
+function SceneRow({ videoId, scene, index, effects, soundsLoading, active, onUpdated }: SceneRowProps) {
     const [description, setDescription] = useState(scene.description);
     const [durationSeconds, setDurationSeconds] = useState(scene.duration_seconds);
     const [busyAction, setBusyAction] = useState<'select' | 'text' | 'regenerate' | 'delete' | null>(null);
@@ -248,11 +255,18 @@ function SceneRow({ videoId, scene, index, effects, soundsLoading, onUpdated }: 
     }
 
     return (
-        <li className="tile tile-hover p-3.5 sm:p-5">
+        // Focusable (not tabbable) so a pick on the storyboard can move the
+        // keyboard here along with the scroll.
+        <li
+            id={`scene-row-${scene.id}`}
+            tabIndex={-1}
+            aria-label={`Escena ${index + 1}`}
+            className={`tile tile-hover scroll-mt-24 p-3.5 outline-none sm:p-5 ${active ? 'border-brand-400/40 shadow-[0_0_0_1px_rgba(34,211,238,0.18)]' : ''}`}
+        >
             <div className="flex flex-wrap items-center justify-between gap-2">
                 <span className="flex items-center gap-2.5 text-xs font-semibold text-slate-200">
-                    <span className="flex h-7 w-7 items-center justify-center rounded-lg bg-gradient-to-br from-brand-500/25 to-accent-500/15 font-mono text-[0.6875rem] text-brand-100 ring-1 ring-inset ring-brand-400/30">
-                        {index + 1}
+                    <span className="flex h-7 min-w-[2.25rem] items-center justify-center rounded-md bg-brand-500/15 px-1.5 font-mono text-[0.6875rem] text-brand-100 ring-1 ring-inset ring-brand-400/30">
+                        E{String(index + 1).padStart(2, '0')}
                     </span>
                     Escena {index + 1} · <span className="tabular-nums">{scene.duration_seconds}s</span>
                 </span>

@@ -6,6 +6,7 @@ import type {
     ScenePropType,
     VideoStatus,
 } from '@shared-types/video';
+import type { VideoTemplate } from '@shared-types/templates';
 
 export const PLATFORM_OPTIONS: { value: Platform; label: string }[] = [
     { value: 'reels', label: 'Instagram Reels' },
@@ -88,3 +89,15 @@ export const FONT_OPTIONS = [
     { value: 'condensed', label: 'Condensada (estrecha, titulares)' },
     { value: 'mono', label: 'Monoespaciada (técnica)' },
 ] as const;
+
+// The template catalogue lives in shared-types without accents (it doubles as
+// prompt text for the model). What a person reads on screen goes through this
+// map so it carries proper Spanish spelling.
+export const TEMPLATE_TEXT: Record<VideoTemplate, { label: string; description: string }> = {
+    libre: { label: 'Libre', description: 'Sin estructura fija. La IA decide cómo contar el tema.' },
+    conversacion: { label: 'Conversación', description: 'Dos personas hablando. El cliente pregunta, el asesor responde.' },
+    explicacion: { label: 'Explicación', description: 'Un asesor explica un concepto de principio a fin, a cámara.' },
+    comparacion: { label: 'Comparación', description: 'Dos opciones enfrentadas, y en qué se diferencian de verdad.' },
+    llamada: { label: 'Llamada telefónica', description: 'Una llamada que resuelve una duda urgente.' },
+    presentacion: { label: 'Presentación de propiedad', description: 'Se muestra una vivienda y lo que hace falta para acceder a ella.' },
+};

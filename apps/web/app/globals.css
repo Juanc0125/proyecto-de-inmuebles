@@ -4,22 +4,24 @@
 
 /* Design tokens. Tailwind's theme (tailwind.config.ts) carries the same
    values as utilities; these variables are for the hand-written CSS below
-   and for anything that needs a colour outside a class name. */
+   and for anything that needs a colour outside a class name.
+   Register: "mission control" - deep navy graphite, glass panels with
+   hairline borders, one restrained cyan accent plus the status colours. */
 :root {
-  --background: #06070b;
-  --surface: #0f1119;
-  --surface-raised: #141722;
-  --foreground: #e8eaf2;
-  --muted: #9aa1b5;
-  --border: rgba(255, 255, 255, 0.075);
-  --border-strong: rgba(255, 255, 255, 0.13);
-  --border-hover: rgba(255, 255, 255, 0.2);
-  --accent: #6366f1;
-  --accent-strong: #4f46e5;
-  --accent-violet: #9a5cf6;
-  --focus: #a3acfd;
-  --radius-panel: 1.25rem;
-  --radius-control: 0.75rem;
+  --background: #04070d;
+  --surface: #0b111d;
+  --surface-raised: #101828;
+  --foreground: #e6edf7;
+  --muted: #94a3b8;
+  --border: rgba(148, 197, 255, 0.08);
+  --border-strong: rgba(148, 197, 255, 0.14);
+  --border-hover: rgba(148, 197, 255, 0.24);
+  --accent: #22d3ee;
+  --accent-strong: #0e7490;
+  --accent-soft: rgba(34, 211, 238, 0.12);
+  --focus: #67e8f9;
+  --radius-panel: 1rem;
+  --radius-control: 0.625rem;
   --ease-out: cubic-bezier(0.16, 1, 0.3, 1);
   color-scheme: dark;
 }
@@ -47,7 +49,7 @@
     font-feature-settings: "cv11", "ss01", "ss03", "cv05";
     /* clip rather than hidden: it stops any stray wide child from causing a
        horizontal scroll on phones without turning the body into a scroll
-       container (which would break the sticky header). */
+       container (which would break the sticky top bar). */
     overflow-x: clip;
   }
 
@@ -109,16 +111,16 @@
      styling on the <select> and would otherwise render white text on white. */
   select option,
   select optgroup {
-    background: #141722;
+    background: #101828;
     color: var(--foreground);
   }
 
   ::placeholder {
-    color: #6b7287;
+    color: #64748b;
   }
 
   ::selection {
-    background: rgba(99, 102, 241, 0.4);
+    background: rgba(34, 211, 238, 0.32);
     color: #fff;
   }
 
@@ -129,14 +131,14 @@
   /* Thin, dark scrollbars everywhere, not just in the transcript. */
   * {
     scrollbar-width: thin;
-    scrollbar-color: rgba(255, 255, 255, 0.12) transparent;
+    scrollbar-color: rgba(148, 197, 255, 0.14) transparent;
   }
 }
 
 @layer components {
-  /* Page ground: an indigo/violet aurora over a faint grid that fades out
-     towards the bottom. Pure CSS, so it costs no download and stays put
-     (fixed) while the panels scroll over it. */
+  /* Page ground: a navy field with a faint engineering grid and two cold
+     glows. Pure CSS, fixed, so it costs no download and stays put while the
+     panels scroll over it. */
   .app-backdrop {
     position: fixed;
     inset: 0;
@@ -144,9 +146,9 @@
     pointer-events: none;
     overflow: hidden;
     background:
-      radial-gradient(56rem 32rem at 18% -14%, rgba(99, 102, 241, 0.2), transparent 62%),
-      radial-gradient(44rem 28rem at 88% -8%, rgba(154, 92, 246, 0.14), transparent 60%),
-      radial-gradient(40rem 26rem at 50% 115%, rgba(56, 189, 248, 0.05), transparent 60%),
+      radial-gradient(60rem 34rem at 12% -18%, rgba(14, 116, 144, 0.22), transparent 62%),
+      radial-gradient(46rem 30rem at 92% -10%, rgba(37, 99, 235, 0.12), transparent 60%),
+      radial-gradient(40rem 26rem at 50% 120%, rgba(34, 211, 238, 0.05), transparent 60%),
       var(--background);
   }
 
@@ -155,34 +157,40 @@
     position: absolute;
     inset: 0;
     background-image:
-      linear-gradient(rgba(255, 255, 255, 0.035) 1px, transparent 1px),
-      linear-gradient(90deg, rgba(255, 255, 255, 0.035) 1px, transparent 1px);
-    background-size: 56px 56px;
-    mask-image: radial-gradient(ellipse 80% 55% at 50% 0%, #000 0%, transparent 75%);
-    -webkit-mask-image: radial-gradient(ellipse 80% 55% at 50% 0%, #000 0%, transparent 75%);
+      linear-gradient(rgba(148, 197, 255, 0.04) 1px, transparent 1px),
+      linear-gradient(90deg, rgba(148, 197, 255, 0.04) 1px, transparent 1px);
+    background-size: 48px 48px;
+    mask-image: radial-gradient(ellipse 85% 60% at 50% 0%, #000 0%, transparent 78%);
+    -webkit-mask-image: radial-gradient(ellipse 85% 60% at 50% 0%, #000 0%, transparent 78%);
   }
 
-  /* A thin light beam along the very top edge, the "studio light". */
+  /* A thin cold beam along the very top edge. */
   .app-backdrop::after {
     content: "";
     position: absolute;
     top: 0;
     left: 50%;
-    width: min(64rem, 90vw);
+    width: min(70rem, 92vw);
     height: 1px;
     transform: translateX(-50%);
-    background: linear-gradient(90deg, transparent, rgba(163, 172, 253, 0.55), rgba(185, 140, 251, 0.45), transparent);
+    background: linear-gradient(90deg, transparent, rgba(103, 232, 249, 0.5), rgba(96, 165, 250, 0.35), transparent);
+  }
+
+  /* Glass: the shell's chrome (sidebar, top bar, dock). */
+  .glass {
+    background: rgba(7, 11, 20, 0.96);
+    backdrop-filter: blur(18px) saturate(150%);
+    -webkit-backdrop-filter: blur(18px) saturate(150%);
   }
 
   /* Panels: the one card style the whole studio is built from. A faint top
-     sheen over a translucent graphite, a hairline border and a deep, soft
-     drop shadow. */
+     sheen over translucent navy, a hairline border and a deep, soft shadow. */
   .panel {
     @apply rounded-[var(--radius-panel)] border shadow-panel;
     border-color: var(--border);
     background:
-      linear-gradient(180deg, rgba(255, 255, 255, 0.04), rgba(255, 255, 255, 0.012) 40%, rgba(255, 255, 255, 0) 100%),
-      rgba(15, 17, 25, 0.78);
+      linear-gradient(180deg, rgba(148, 197, 255, 0.045), rgba(148, 197, 255, 0.012) 40%, rgba(148, 197, 255, 0) 100%),
+      rgba(11, 17, 29, 0.78);
     backdrop-filter: blur(16px) saturate(140%);
     -webkit-backdrop-filter: blur(16px) saturate(140%);
     transition: border-color 200ms var(--ease-out);
@@ -213,14 +221,15 @@
 
   /* Small square that carries a panel's icon. */
   .section-icon {
-    @apply inline-flex h-9 w-9 shrink-0 items-center justify-center rounded-xl text-brand-200;
-    background: linear-gradient(180deg, rgba(99, 102, 241, 0.22), rgba(154, 92, 246, 0.1));
-    box-shadow: inset 0 0 0 1px rgba(163, 172, 253, 0.22), inset 0 1px 0 rgba(255, 255, 255, 0.08);
+    @apply inline-flex h-9 w-9 shrink-0 items-center justify-center rounded-lg text-brand-200;
+    background: linear-gradient(180deg, rgba(34, 211, 238, 0.16), rgba(37, 99, 235, 0.06));
+    box-shadow: inset 0 0 0 1px rgba(103, 232, 249, 0.2), inset 0 1px 0 rgba(255, 255, 255, 0.06);
   }
 
-  /* Small uppercase label above a group inside a panel. */
+  /* Small uppercase technical label above a group: monospaced, so the
+     interface reads as an instrument panel rather than a brochure. */
   .eyebrow {
-    @apply text-[0.6875rem] font-semibold uppercase tracking-[0.1em] text-slate-400;
+    @apply font-mono text-[0.6875rem] font-medium uppercase tracking-[0.12em] text-slate-400;
   }
 
   .divider {
@@ -230,7 +239,7 @@
 
   /* Sub-card inside a panel: a scene, an uploaded sound, a saved template. */
   .tile {
-    @apply rounded-2xl border bg-white/[0.022];
+    @apply rounded-xl border bg-white/[0.022];
     border-color: var(--border);
     transition: border-color 200ms var(--ease-out), background-color 200ms var(--ease-out);
   }
@@ -238,21 +247,21 @@
   /* A tile that is itself clickable or hoverable. */
   .tile-hover:hover {
     border-color: var(--border-strong);
-    background-color: rgba(255, 255, 255, 0.04);
+    background-color: rgba(148, 197, 255, 0.04);
   }
 
   /* Gradient text for the hero lines. Falls back to plain white. */
   .text-gradient {
     color: #fff;
-    background: linear-gradient(180deg, #ffffff 30%, #c5ccff 100%);
+    background: linear-gradient(180deg, #ffffff 30%, #bae6fd 100%);
     -webkit-background-clip: text;
     background-clip: text;
     -webkit-text-fill-color: transparent;
   }
 
   .text-gradient-brand {
-    color: #c5ccff;
-    background: linear-gradient(90deg, #a3acfd, #d0b4fe);
+    color: #a5f3fc;
+    background: linear-gradient(90deg, #67e8f9, #93c5fd);
     -webkit-background-clip: text;
     background-clip: text;
     -webkit-text-fill-color: transparent;
@@ -278,7 +287,7 @@
   }
 
   .btn-sm {
-    @apply h-8 gap-1.5 rounded-[0.625rem] px-3 text-xs;
+    @apply h-8 gap-1.5 rounded-[0.5rem] px-3 text-xs;
   }
 
   .btn-lg {
@@ -289,29 +298,29 @@
     @apply w-full;
   }
 
-  /* Indigo into violet; both ends keep white text above 4.5:1. */
+  /* Deep cyan: both gradient ends keep white text above 4.5:1. */
   .btn-primary {
     @apply text-white;
-    background-color: #4f46e5;
-    background-image: linear-gradient(180deg, rgba(255, 255, 255, 0.14), rgba(255, 255, 255, 0) 55%), linear-gradient(100deg, #4f46e5, #6d38e0);
-    box-shadow: inset 0 0 0 1px rgba(255, 255, 255, 0.12), 0 1px 2px rgba(0, 0, 0, 0.4), 0 6px 18px -8px rgba(99, 102, 241, 0.7);
+    background-color: #0e7490;
+    background-image: linear-gradient(180deg, rgba(255, 255, 255, 0.12), rgba(255, 255, 255, 0) 55%), linear-gradient(100deg, #0e7490, #155e75);
+    box-shadow: inset 0 0 0 1px rgba(103, 232, 249, 0.3), 0 1px 2px rgba(0, 0, 0, 0.4), 0 6px 18px -8px rgba(6, 182, 212, 0.65);
   }
 
   .btn-primary:enabled:hover,
   a.btn-primary:hover {
-    filter: brightness(1.08);
-    box-shadow: inset 0 0 0 1px rgba(255, 255, 255, 0.18), 0 1px 2px rgba(0, 0, 0, 0.4), 0 10px 28px -8px rgba(99, 102, 241, 0.85);
+    filter: brightness(1.12);
+    box-shadow: inset 0 0 0 1px rgba(103, 232, 249, 0.45), 0 1px 2px rgba(0, 0, 0, 0.4), 0 10px 28px -8px rgba(6, 182, 212, 0.8);
   }
 
   .btn-secondary {
-    @apply border bg-white/[0.045] text-slate-100;
+    @apply border bg-white/[0.04] text-slate-100;
     border-color: var(--border-strong);
-    box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.05);
+    box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.04);
   }
 
   .btn-secondary:enabled:hover,
   a.btn-secondary:hover {
-    @apply bg-white/[0.085] text-white;
+    @apply bg-white/[0.08] text-white;
     border-color: var(--border-hover);
   }
 
@@ -320,7 +329,7 @@
   }
 
   /* Approval: the one action that commits the client. Bright green with dark
-     text so it reads as distinct from every other indigo button. */
+     text so it reads as distinct from every cyan button. */
   .btn-approve {
     @apply bg-emerald-400 font-semibold text-emerald-950;
     background-image: linear-gradient(180deg, rgba(255, 255, 255, 0.25), rgba(255, 255, 255, 0) 60%);
@@ -342,7 +351,7 @@
 
   /* Square icon-only button (delete, mute...). Pair with an aria-label. */
   .btn-icon {
-    @apply inline-flex h-8 w-8 shrink-0 items-center justify-center rounded-[0.625rem] text-slate-400 hover:bg-white/[0.07] hover:text-slate-100 disabled:cursor-not-allowed disabled:opacity-45;
+    @apply inline-flex h-8 w-8 shrink-0 items-center justify-center rounded-[0.5rem] text-slate-400 hover:bg-white/[0.07] hover:text-slate-100 disabled:cursor-not-allowed disabled:opacity-45;
     transition: background-color 160ms var(--ease-out), color 160ms var(--ease-out), opacity 160ms var(--ease-out), transform 120ms var(--ease-out);
   }
 
@@ -375,7 +384,7 @@
     appearance: none;
     -webkit-appearance: none;
     padding-right: 2.5rem;
-    background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='16' height='16' viewBox='0 0 24 24' fill='none' stroke='%239aa1b5' stroke-width='2' stroke-linecap='round' stroke-linejoin='round'%3E%3Cpath d='m6 9 6 6 6-6'/%3E%3C/svg%3E");
+    background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='16' height='16' viewBox='0 0 24 24' fill='none' stroke='%2394a3b8' stroke-width='2' stroke-linecap='round' stroke-linejoin='round'%3E%3Cpath d='m6 9 6 6 6-6'/%3E%3C/svg%3E");
     background-repeat: no-repeat;
     background-position: right 0.85rem center;
     background-size: 1rem;
@@ -395,7 +404,7 @@
   }
 
   .file-input {
-    @apply block w-full rounded-[var(--radius-control)] border border-dashed bg-white/[0.02] p-2 text-sm text-slate-300 file:mr-3 file:cursor-pointer file:rounded-lg file:border-0 file:bg-brand-600 file:px-3 file:py-1.5 file:text-sm file:font-medium file:text-white hover:border-brand-400/40 hover:bg-brand-500/[0.04] hover:file:bg-brand-700 disabled:opacity-60;
+    @apply block w-full rounded-[var(--radius-control)] border border-dashed bg-white/[0.02] p-2 text-sm text-slate-300 file:mr-3 file:cursor-pointer file:rounded-md file:border-0 file:bg-brand-700 file:px-3 file:py-1.5 file:text-sm file:font-medium file:text-white hover:border-brand-400/40 hover:bg-brand-500/[0.04] hover:file:bg-brand-800 disabled:opacity-60;
     border-color: var(--border-strong);
     transition: border-color 160ms var(--ease-out), background-color 160ms var(--ease-out);
   }
@@ -407,7 +416,7 @@
   /* Inline messages. Error is assertive in colour only; screen readers get
      role="alert" where the component sets it. */
   .alert {
-    @apply flex gap-2.5 rounded-xl border px-3.5 py-3 text-sm leading-relaxed;
+    @apply flex gap-2.5 rounded-lg border px-3.5 py-3 text-sm leading-relaxed;
   }
 
   .alert-error {
@@ -432,10 +441,11 @@
     border-color: var(--border);
   }
 
-  /* Keyboard-key style, for example prompts. */
+  /* Keyboard-key style, for shortcuts and example prompts. */
   .kbd {
-    @apply inline-flex items-center rounded-md border bg-white/[0.05] px-1.5 font-mono text-[0.6875rem] text-slate-300;
+    @apply inline-flex min-w-[1.375rem] items-center justify-center rounded-md border bg-white/[0.05] px-1.5 font-mono text-[0.6875rem] leading-5 text-slate-300;
     border-color: var(--border-strong);
+    box-shadow: inset 0 -1px 0 rgba(0, 0, 0, 0.35);
   }
 
   /* Spinner for buttons and inline loading states. */
@@ -445,16 +455,166 @@
 
   /* Placeholder block while content loads. */
   .skeleton {
-    @apply rounded-lg bg-white/[0.05];
-    background-image: linear-gradient(90deg, transparent, rgba(255, 255, 255, 0.06), transparent);
+    @apply rounded-md bg-white/[0.05];
+    background-image: linear-gradient(90deg, transparent, rgba(148, 197, 255, 0.07), transparent);
     background-size: 200% 100%;
     animation: skeleton-sweep 1.6s ease-in-out infinite;
   }
 
-  /* Entrance for content that swaps in (the selected video, empty states). */
+  /* Entrance for content that swaps in (a section, the selected video). */
   .enter {
-    animation: enter-up 0.5s var(--ease-out) both;
+    animation: enter-up 0.45s var(--ease-out) both;
   }
+
+  /* --- Shell --------------------------------------------------------- */
+
+  /* A sidebar entry. The active one carries a cyan rail on its left edge
+     and a soft fill; the rest stay quiet until hovered. */
+  .nav-item {
+    @apply relative flex h-10 w-full items-center gap-3 rounded-lg px-3 text-sm font-medium text-slate-400 hover:bg-white/[0.05] hover:text-slate-100;
+    transition: background-color 160ms var(--ease-out), color 160ms var(--ease-out);
+  }
+
+  .nav-item[aria-current="page"] {
+    @apply bg-brand-500/[0.1] text-white;
+    box-shadow: inset 0 0 0 1px rgba(103, 232, 249, 0.14);
+  }
+
+  .nav-item[aria-current="page"]::before {
+    content: "";
+    position: absolute;
+    left: -0.5rem;
+    top: 0.5rem;
+    bottom: 0.5rem;
+    width: 2px;
+    border-radius: 2px;
+    background: var(--accent);
+    box-shadow: 0 0 10px rgba(34, 211, 238, 0.8);
+  }
+
+  .nav-item[aria-current="page"] svg {
+    @apply text-brand-300;
+  }
+
+  /* KPI tile on the dashboard: a big monospaced figure over a label. */
+  .kpi {
+    @apply relative overflow-hidden rounded-[var(--radius-panel)] border p-4 sm:p-5;
+    border-color: var(--border);
+    background:
+      linear-gradient(180deg, rgba(148, 197, 255, 0.05), rgba(148, 197, 255, 0) 70%),
+      rgba(11, 17, 29, 0.78);
+  }
+
+  .kpi::after {
+    content: "";
+    position: absolute;
+    left: 0;
+    top: 0;
+    width: 100%;
+    height: 1px;
+    background: linear-gradient(90deg, rgba(103, 232, 249, 0.45), transparent 60%);
+  }
+
+  .kpi-value {
+    @apply font-mono text-[1.75rem] font-semibold leading-none tabular-nums text-white sm:text-[2rem];
+    letter-spacing: -0.03em;
+  }
+
+  /* Corner brackets: the HUD frame on the live preview and the storyboard
+     frames. Decorative only. */
+  .hud-frame {
+    position: relative;
+  }
+
+  .hud-frame::before,
+  .hud-frame::after {
+    content: "";
+    position: absolute;
+    width: 10px;
+    height: 10px;
+    pointer-events: none;
+    z-index: 1;
+  }
+
+  .hud-frame::before {
+    top: -2px;
+    left: -2px;
+    border-top: 1.5px solid rgba(103, 232, 249, 0.6);
+    border-left: 1.5px solid rgba(103, 232, 249, 0.6);
+  }
+
+  .hud-frame::after {
+    bottom: -2px;
+    right: -2px;
+    border-bottom: 1.5px solid rgba(103, 232, 249, 0.6);
+    border-right: 1.5px solid rgba(103, 232, 249, 0.6);
+  }
+
+  /* Segmented control track and its options. */
+  .segmented {
+    @apply inline-flex gap-1 rounded-lg border bg-ink-950/60 p-1;
+    border-color: var(--border);
+  }
+
+  .segmented > button {
+    @apply inline-flex h-8 items-center justify-center gap-1.5 rounded-md px-3 text-xs font-medium text-slate-400 hover:text-slate-100 disabled:cursor-not-allowed disabled:opacity-50;
+    transition: background-color 160ms var(--ease-out), color 160ms var(--ease-out);
+  }
+
+  .segmented > button[aria-pressed="true"] {
+    @apply bg-ink-700 text-white;
+    box-shadow: inset 0 0 0 1px rgba(148, 197, 255, 0.14), 0 1px 2px rgba(0, 0, 0, 0.4);
+  }
+
+  /* Modal dialogs (command palette, shortcuts) use the native <dialog>:
+     showModal() makes everything behind it inert, which is the focus trap,
+     and Esc closes it for free. */
+  .modal {
+    margin: 0;
+    padding: 0;
+    border: 0;
+    width: 100%;
+    max-width: none;
+    height: 100%;
+    max-height: none;
+    background: transparent;
+    color: var(--foreground);
+  }
+
+  .modal::backdrop {
+    background: rgba(2, 5, 10, 0.66);
+    backdrop-filter: blur(4px);
+    -webkit-backdrop-filter: blur(4px);
+  }
+
+  .modal[open] .modal-card {
+    animation: modal-in 0.22s var(--ease-out) both;
+  }
+
+  .modal-card {
+    @apply mx-auto w-[calc(100%-2rem)] max-w-xl overflow-hidden rounded-[var(--radius-panel)] border shadow-panel;
+    margin-top: min(12vh, 6rem);
+    background: rgba(9, 14, 24, 0.97);
+    border-color: var(--border-strong);
+  }
+}
+
+@layer components {
+  /* The phone navigation: a full-height sheet from the left edge. */
+  .drawer-card {
+    @apply flex h-full w-[17.5rem] max-w-[85vw] flex-col overflow-y-auto border-r;
+    background: rgba(7, 11, 20, 0.97);
+    border-color: var(--border-strong);
+  }
+
+  .modal[open] .drawer-card {
+    animation: drawer-in 0.26s var(--ease-out) both;
+  }
+}
+
+@keyframes drawer-in {
+  from { transform: translateX(-100%); }
+  to { transform: translateX(0); }
 }
 
 @keyframes skeleton-sweep {
@@ -465,6 +625,11 @@
 @keyframes enter-up {
   from { opacity: 0; transform: translateY(8px); }
   to { opacity: 1; transform: translateY(0); }
+}
+
+@keyframes modal-in {
+  from { opacity: 0; transform: translateY(-6px) scale(0.985); }
+  to { opacity: 1; transform: translateY(0) scale(1); }
 }
 
 @keyframes pulse-ring {
@@ -478,6 +643,12 @@
   50% { transform: translateY(-4px); }
 }
 
+/* A slow light sweep across a progress bar while a render runs. */
+@keyframes bar-sheen {
+  from { transform: translateX(-100%); }
+  to { transform: translateX(250%); }
+}
+
 .listening-ring {
   animation: pulse-ring 1.6s ease-out infinite;
 }
@@ -486,19 +657,34 @@
   animation: float-soft 5s ease-in-out infinite;
 }
 
+.bar-sheen {
+  position: relative;
+  overflow: hidden;
+}
+
+.bar-sheen::after {
+  content: "";
+  position: absolute;
+  inset: 0;
+  width: 40%;
+  background: linear-gradient(90deg, transparent, rgba(255, 255, 255, 0.35), transparent);
+  animation: bar-sheen 1.8s ease-in-out infinite;
+}
+
 /* Thin scrollbars, so a scrolling transcript does not cut the panel with a
    chunky light-coloured bar. */
 .thin-scroll {
   scrollbar-width: thin;
-  scrollbar-color: rgba(255, 255, 255, 0.14) transparent;
+  scrollbar-color: rgba(148, 197, 255, 0.16) transparent;
 }
 
 .thin-scroll::-webkit-scrollbar {
   width: 8px;
+  height: 8px;
 }
 
 .thin-scroll::-webkit-scrollbar-thumb {
-  background: rgba(255, 255, 255, 0.14);
+  background: rgba(148, 197, 255, 0.16);
   border-radius: 999px;
 }
 
@@ -520,7 +706,8 @@
 
   .listening-ring,
   .skeleton,
-  .float-soft {
+  .float-soft,
+  .bar-sheen::after {
     animation: none;
   }
 

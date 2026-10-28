@@ -18,6 +18,13 @@ interface AssistantProps {
     onUpdated: (video: VideoRecord) => void;
     onSelect: (id: string) => void;
     onDeleted: (id: string) => void;
+    // Docked in the shell: the panel fills its column and offers a close
+    // button. The shell keeps it mounted while closed (the conversation and
+    // an open hands-free microphone must survive), so it reports what it is
+    // doing for the top bar to show.
+    onClose?: () => void;
+    onMoodChange?: (mood: EntityMood) => void;
+    className?: string;
 }
 
 interface Turn {
@@ -101,7 +108,9 @@ function getRecognition(): Recognition | null {
 
 const VOICE_KEY = 'stickman:voz';
 
-export default function Assistant({ videos, loading, loadError, selected, onCreated, onUpdated, onSelect, onDeleted }: AssistantProps) {
+export default function Assistant({
+    videos, loading, loadError, selected, onCreated, onUpdated, onSelect, onDeleted, onClose, onMoodChange, className,
+}: AssistantProps) {
     const [listening, setListening] = useState(false);
     // Hands-free is never restored from storage: an open microphone is not a
     // display preference like mute/unmute, it is a live sensor in what can be
@@ -754,6 +763,9 @@ export default function Assistant({ videos, loading, loadError, selected, onCrea
         : 'Voz apagada: te respondo por escrito';
 
     const mood: EntityMood = speaking ? 'speaking' : busy ? 'thinking' : listening ? 'listening' : 'idle';
+    useEffect(() => {
+        onMoodChange?.(mood);
+    }, [mood, onMoodChange]);
 
     const micPlaceholder = speaking
         ? (handsFree ? 'Hablando... interrúmpeme cuando quieras' : 'Hablando... pulsa el micrófono para interrumpir')
@@ -762,12 +774,12 @@ export default function Assistant({ videos, loading, loadError, selected, onCrea
         : 'Escribe o pulsa el micrófono';
 
     return (
-        <section className="panel flex max-h-[44rem] min-h-[30rem] flex-col overflow-hidden" aria-label="Asistente de voz">
+        <section className={`panel flex flex-col overflow-hidden ${className ?? 'max-h-[44rem] min-h-[30rem]'}`} aria-label="Copiloto de voz">
             <header className="flex flex-wrap items-center gap-2 border-b border-white/[0.07] px-4 py-3">
                 <LogoMark size={32} />
                 <span className="min-w-0 flex-1">
                     <span className="flex items-center gap-2">
-                        <span className="panel-title">Asistente</span>
+                        <span className="panel-title">Copiloto</span>
                         <span className={`h-2 w-2 shrink-0 rounded-full ${
                             speaking ? 'animate-pulse bg-brand-300' : listening ? 'animate-pulse bg-red-400' : busy ? 'bg-amber-400' : 'bg-emerald-400'
                         }`} aria-hidden="true" />
@@ -824,12 +836,25 @@ export default function Assistant({ videos, loading, loadError, selected, onCrea
                         )}
                     </svg>
                 </button>
+                {onClose && (
+                    <button
+                        type="button"
+                        onClick={onClose}
+                        aria-label="Cerrar el panel del copiloto"
+                        title="Cerrar (sigue activo en segundo plano)"
+                        className="btn-icon rounded-full"
+                    >
+                        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" aria-hidden="true">
+                            <path d="M6 6l12 12M18 6 6 18" />
+                        </svg>
+                    </button>
+                )}
             </header>
 
             {/* The assistant's body, between the controls and the conversation:
                 it is what tells you, at a glance, whether it is listening,
                 thinking or talking. */}
-            <div className="flex flex-col items-center border-b border-white/[0.07] bg-gradient-to-b from-brand-500/[0.07] to-transparent pb-3 pt-2">
+            <div className="flex shrink-0 flex-col items-center border-b border-white/[0.07] bg-gradient-to-b from-brand-500/[0.07] to-transparent pb-3 pt-2">
                 <AssistantEntity mood={mood} pulse={pulse} />
                 <span className="chip -mt-1" aria-live="polite">{statusText}</span>
             </div>
@@ -854,7 +879,7 @@ export default function Assistant({ videos, loading, loadError, selected, onCrea
                         key={index}
                         className={`max-w-[88%] rounded-2xl px-3.5 py-2.5 text-sm leading-relaxed ${
                             turn.who === 'tu'
-                                ? 'ml-auto rounded-br-md bg-brand-600 text-white'
+                                ? 'ml-auto rounded-br-md bg-brand-700 text-white'
                                 : 'rounded-bl-md border border-white/[0.08] bg-white/[0.04] text-slate-100'
                         }`}
                     >

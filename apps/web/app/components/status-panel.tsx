@@ -9,6 +9,7 @@ import { duplicateVideo, transitionStatus, type StatusAction, type VideoRecord }
 import { PLATFORM_LABELS, PLATFORM_OPTIONS } from './constants';
 import StatusBadge from './status-badge';
 import SectionIcon from './section-icon';
+import ComplianceChecklist from './compliance-checklist';
 
 interface StatusPanelProps {
     video: VideoRecord;
@@ -98,6 +99,10 @@ export default function StatusPanel({ video, onUpdated, onDuplicated }: StatusPa
                         <p className="mb-4 text-sm leading-relaxed text-slate-300">
                             El video está en borrador. Envíalo a aprobación cuando el guion y las escenas estén listos.
                         </p>
+                        {/* Advisory: it lists, it never disables the button. */}
+                        <div className="mb-4">
+                            <ComplianceChecklist video={video} />
+                        </div>
                         <button
                             type="button"
                             onClick={() => runAction('submit')}
@@ -121,6 +126,9 @@ export default function StatusPanel({ video, onUpdated, onDuplicated }: StatusPa
                                 Este video requiere aprobación humana antes de poder generarse o publicarse. Revisa el
                                 guion, las escenas y la marca antes de decidir.
                             </p>
+                        </div>
+                        <div className="mb-5">
+                            <ComplianceChecklist video={video} />
                         </div>
                         <div className="flex flex-col gap-2 min-[420px]:flex-row min-[420px]:flex-wrap">
                             <button
@@ -176,7 +184,7 @@ export default function StatusPanel({ video, onUpdated, onDuplicated }: StatusPa
                                 </div>
                                 <div className="h-2 w-full overflow-hidden rounded-full bg-ink-950/60 ring-1 ring-inset ring-white/[0.06]">
                                     <div
-                                        className="h-full rounded-full bg-gradient-to-r from-brand-500 via-brand-400 to-accent-400 shadow-[0_0_12px_rgba(129,137,248,0.6)] transition-[width] duration-700 ease-out-expo"
+                                        className="bar-sheen h-full rounded-full bg-gradient-to-r from-brand-500 via-brand-400 to-accent-400 shadow-[0_0_12px_rgba(34,211,238,0.55)] transition-[width] duration-700 ease-out-expo"
                                         style={{ width: `${Math.max(2, video.render_progress)}%` }}
                                     />
                                 </div>

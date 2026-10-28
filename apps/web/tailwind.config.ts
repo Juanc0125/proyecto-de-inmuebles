@@ -5,58 +5,62 @@ const config: Config = {
     theme: {
         extend: {
             // The faces are loaded in layout.tsx as CSS variables. Inter carries
-            // the UI, Instrument Serif is the editorial accent for display
-            // headlines only, Geist Mono the numbers and codes.
+            // the UI, Geist Mono the technical layer (labels, numbers, codes);
+            // Instrument Serif stays loaded for the login page's headline.
             fontFamily: {
                 sans: ['var(--font-sans)', 'ui-sans-serif', 'system-ui', 'Segoe UI', 'Roboto', 'Arial', 'sans-serif'],
                 display: ['var(--font-display)', 'ui-serif', 'Georgia', 'serif'],
                 mono: ['var(--font-mono)', 'ui-monospace', 'SFMono-Regular', 'Consolas', 'monospace'],
             },
             colors: {
-                // Brand: an electric indigo, matching the logo tile. 600 is the
-                // lightest shade white text still passes WCAG AA on, so it is
-                // the fill for primary buttons; 200-400 are for text and focus
-                // rings on the dark ground.
+                // Brand: one restrained electric cyan, the "mission control"
+                // accent. 700 is the lightest shade white text still passes
+                // WCAG AA on, so it is the fill for primary buttons; 200-400
+                // are for text, focus rings and glows on the dark ground.
                 brand: {
-                    50: '#eef1ff',
-                    100: '#e0e5ff',
-                    200: '#c5ccff',
-                    300: '#a3acfd',
-                    400: '#8189f8',
-                    500: '#6366f1',
-                    600: '#4f46e5',
-                    700: '#4338ca',
-                    800: '#3730a3',
-                    900: '#2e2a7a',
+                    50: '#ecfeff',
+                    100: '#cffafe',
+                    200: '#a5f3fc',
+                    300: '#67e8f9',
+                    400: '#22d3ee',
+                    500: '#06b6d4',
+                    600: '#0891b2',
+                    700: '#0e7490',
+                    800: '#155e75',
+                    900: '#164e63',
                 },
-                // Secondary accent for gradients: violet next to the indigo.
+                // Secondary tone for gradients only: a cool steel blue next to
+                // the cyan, so a gradient reads as light, not as a second brand.
                 accent: {
-                    300: '#d0b4fe',
-                    400: '#b98cfb',
-                    500: '#9a5cf6',
-                    600: '#7c3aed',
+                    300: '#93c5fd',
+                    400: '#60a5fa',
+                    500: '#3b82f6',
+                    600: '#2563eb',
                 },
-                // Surfaces, from the page ground up to a raised control. A
-                // near-neutral graphite with only a hint of blue, so the brand
-                // colour is what reads as colour on screen.
+                // Surfaces, from the page ground up to a raised control: a deep
+                // navy graphite, so the cyan is what reads as colour on screen.
                 ink: {
-                    950: '#06070b',
-                    900: '#0a0c12',
-                    850: '#0f1119',
-                    800: '#141722',
-                    700: '#1c202d',
-                    600: '#262b3a',
+                    950: '#04070d',
+                    900: '#070b14',
+                    850: '#0b111d',
+                    800: '#101828',
+                    700: '#172135',
+                    600: '#223049',
                 },
             },
             boxShadow: {
                 panel: '0 1px 0 0 rgba(255, 255, 255, 0.05) inset, 0 0 0 1px rgba(0, 0, 0, 0.25), 0 24px 48px -24px rgba(0, 0, 0, 0.85)',
-                glow: '0 0 0 1px rgba(129, 137, 248, 0.35), 0 8px 32px -8px rgba(99, 102, 241, 0.55)',
+                glow: '0 0 0 1px rgba(34, 211, 238, 0.35), 0 8px 32px -8px rgba(6, 182, 212, 0.5)',
                 'glow-emerald': '0 0 0 1px rgba(52, 211, 153, 0.4), 0 8px 28px -10px rgba(16, 185, 129, 0.6)',
             },
             transitionTimingFunction: {
                 'out-expo': 'cubic-bezier(0.16, 1, 0.3, 1)',
             },
             keyframes: {
+                'slide-in-right': {
+                    from: { opacity: '0', transform: 'translateX(16px)' },
+                    to: { opacity: '1', transform: 'translateX(0)' },
+                },
                 'fade-up': {
                     from: { opacity: '0', transform: 'translateY(6px)' },
                     to: { opacity: '1', transform: 'translateY(0)' },
@@ -67,6 +71,7 @@ const config: Config = {
                 },
             },
             animation: {
+                'slide-in-right': 'slide-in-right 0.35s cubic-bezier(0.16, 1, 0.3, 1) both',
                 'fade-up': 'fade-up 0.45s cubic-bezier(0.16, 1, 0.3, 1) both',
                 'fade-in': 'fade-in 0.3s ease-out both',
             },

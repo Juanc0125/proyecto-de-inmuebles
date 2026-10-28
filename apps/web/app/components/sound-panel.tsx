@@ -41,7 +41,7 @@ function withAudioType(file: File): File {
     return type ? new File([file], file.name, { type }) : file;
 }
 
-const KIND_LABELS: Record<SoundKind, string> = {
+export const KIND_LABELS: Record<SoundKind, string> = {
     musica: 'Música',
     efecto: 'Efecto',
 };
@@ -89,7 +89,7 @@ interface MusicPickerProps {
     onUpdated: (video: VideoRecord) => void;
 }
 
-function MusicPicker({ video, sounds, soundsLoading, onUpdated }: MusicPickerProps) {
+export function MusicPicker({ video, sounds, soundsLoading, onUpdated }: MusicPickerProps) {
     const stored = video.music_id ?? '';
     // A candidate separate from the stored value so the person can listen to
     // a track before it becomes the video's music.
@@ -198,6 +198,9 @@ interface BusinessSoundsProps {
     sounds: SoundAsset[];
     onSoundsChanged: (update: (current: SoundAsset[]) => SoundAsset[]) => void;
     onUpdated: (video: VideoRecord) => void;
+    // In the Sonidos section it is a panel of its own, with nothing above
+    // it to divide from.
+    standalone?: boolean;
 }
 
 type UploadStep = 'preparing' | 'uploading' | 'registering' | null;
@@ -208,7 +211,7 @@ const UPLOAD_STEP_LABELS: Record<Exclude<UploadStep, null>, string> = {
     registering: 'Registrando sonido...',
 };
 
-function BusinessSounds({ sounds, onSoundsChanged, onUpdated }: BusinessSoundsProps) {
+export function BusinessSounds({ sounds, onSoundsChanged, onUpdated, standalone = false }: BusinessSoundsProps) {
     const [name, setName] = useState('');
     const [kind, setKind] = useState<SoundKind>('musica');
     const [file, setFile] = useState<File | null>(null);
@@ -291,7 +294,7 @@ function BusinessSounds({ sounds, onSoundsChanged, onUpdated }: BusinessSoundsPr
     }
 
     return (
-        <div className="divider mt-6 pt-5">
+        <div className={standalone ? '' : 'divider mt-6 pt-5'}>
             <h4 className="panel-title mb-1">Sonidos del negocio</h4>
             <p className="panel-subtitle mb-4">
                 Sube música o efectos propios para usarlos en cualquier video. Solo audios que el negocio pueda usar
@@ -356,7 +359,7 @@ function BusinessSounds({ sounds, onSoundsChanged, onUpdated }: BusinessSoundsPr
                 </div>
             </div>
 
-            <label className="mt-4 flex items-start gap-2.5 rounded-xl border border-white/[0.08] bg-white/[0.02] p-3 text-sm text-slate-200" htmlFor="sound-rights">
+            <label className="mt-4 flex items-start gap-2.5 rounded-lg border border-white/[0.08] bg-white/[0.02] p-3 text-sm text-slate-200" htmlFor="sound-rights">
                 <input
                     id="sound-rights"
                     type="checkbox"
