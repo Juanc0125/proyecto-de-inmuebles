@@ -91,14 +91,19 @@ fal.ai, que cobra por segundo de video — unos USD 2,70 por uno de 30 segundos.
 La suite ya se niega a correr en ese caso y explica cómo seguir, pero conviene
 saberlo antes de perder cinco minutos.
 
-Para correrla gratis, levanta el entorno con la clave neutralizada:
+Para correrla gratis, levanta el entorno con **todas** las claves de pago
+neutralizadas, no solo la de fal:
 
 ```
-FAL_KEY=" " npm run dev
+FAL_KEY=" " HEYGEN_API_KEY=" " ELEVENLABS_API_KEY=" " npm run dev
 ```
 
 `process.loadEnvFile` no pisa una variable que ya viene definida, y el `.trim()`
-del worker la deja vacía, así que dibuja con canvas.
+del worker la deja vacía, así que dibuja con canvas. Las otras dos importan
+igual: con `HEYGEN_API_KEY` cada escena sería un avatar de HeyGen (cobra por
+video) y con `ELEVENLABS_API_KEY` la narración cobraría por carácter. Antes de
+lanzar la suite, confirma en `/health` que `video_engine` dice `canvas` y que
+ni `heygen` ni `voice` reportan un motor de pago.
 
 ## 7. La suite end-to-end
 
@@ -106,7 +111,7 @@ del worker la deja vacía, así que dibuja con canvas.
 npm run e2e
 ```
 
-Son 38 comprobaciones e incluyen un render de verdad con descarga del MP4, así
+Son 42 comprobaciones e incluyen un render de verdad con descarga del MP4, así
 que tarda unos minutos. Recorre el flujo entero: guion, escenas, marca, la
 puerta de aprobación, publicar, duplicar, plantillas, el lote y el copiloto.
 

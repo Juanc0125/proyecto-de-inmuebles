@@ -79,6 +79,26 @@ async function api(path, options = {}, base = S) {
 const sleep = (ms) => new Promise((r) => setTimeout(r, ms));
 let videoId = null;
 
+// Every video the suite creates is tracked here and deleted in the final
+// `finally`, so a check that throws halfway never leaves test data behind in
+// the shared Supabase project.
+const createdIds = new Set();
+const track = (id) => { if (id) createdIds.add(id); return id; };
+async function removeVideo(id) {
+    if (!id) return null;
+    const res = await api(`/api/videos/${id}`, { method: 'DELETE' });
+    if (res.status === 204 || res.status === 404) createdIds.delete(id);
+    return res;
+}
+// Same for brand templates.
+const createdTemplateIds = new Set();
+async function removeTemplate(id) {
+    if (!id) return null;
+    const res = await api(`/api/brand-templates/${id}`, { method: 'DELETE' });
+    if (res.status === 204 || res.status === 404) createdTemplateIds.delete(id);
+    return res;
+}
+
 console.log(`web=${S}  worker=${W}\n`);
 
 // Credentials come from the environment, never from this file: the suite
@@ -136,14 +156,26 @@ try {
     record('GET /api/videos', list.status === 200 && Array.isArray(list.body?.videos),
         `${list.body?.videos?.length} videos`);
 
-    // 2. create
+    // 2. create. POST /api/videos takes camelCase targetDurationSeconds (the
+    // batch route takes snake_case); an unknown key is silently ignored and
+    // the video falls back to 30 s, so the stored value is asserted too.
     const created = await api('/api/videos', {
         method: 'POST',
-        body: JSON.stringify({ topic: 'QA end to end', platform: 'reels', target_duration_seconds: 12 }),
+        body: JSON.stringify({ topic: 'QA end to end', platform: 'reels', targetDurationSeconds: 12 }),
     });
-    videoId = created.body?.video?.id;
-    record('crear video', created.status === 201 && !!videoId,
-        created.body?.video?.script ? `guion de ${created.body.video.script.length} chars` : 'sin guion');
+    videoId = track(created.body?.video?.id);
+    record('crear video', created.status === 201 && !!videoId && created.body?.video?.target_duration_seconds === 12,
+        `duracion=${created.body?.video?.target_duration_seconds}s, `
+        + (created.body?.video?.script ? `guion de ${created.body.video.script.length} chars` : 'sin guion'));
+
+    // Target duration is capped at 180 s.
+    const tooLong = await api('/api/videos', {
+        method: 'POST',
+        body: JSON.stringify({ topic: 'QA duracion excesiva', platform: 'reels', targetDurationSeconds: 500 }),
+    });
+    track(tooLong.body?.video?.id);
+    record('duracion objetivo de 500 s se rechaza', tooLong.status === 400, `HTTP ${tooLong.status}`);
+    await removeVideo(tooLong.body?.video?.id);
 
     // 3. scenes
     const scenes = await api(`/api/videos/${videoId}/scenes`, { method: 'POST' });
@@ -159,6 +191,16 @@ try {
     const e1 = edited.body?.video?.scenes?.find((s) => s.id === first.id);
     record('editar escena', edited.status === 200 && e1?.action === 'caminar' && e1?.prop === 'casa',
         `${e1?.character}/${e1?.action}/${e1?.prop}`);
+
+    // Scene durations are clamped to 2-10 s; a manual edit outside that range
+    // must be refused, and the stored scene must keep its old duration.
+    const longScene = await api(`/api/videos/${videoId}/scenes/${first.id}`, {
+        method: 'PATCH',
+        body: JSON.stringify({ duration_seconds: 50 }),
+    });
+    const afterLong = (await api('/api/videos')).body?.videos?.find((x) => x.id === videoId)?.scenes?.find((sc) => sc.id === first.id);
+    record('duracion de escena 50 s se rechaza', longScene.status === 400 && afterLong?.duration_seconds === first.duration_seconds,
+        `HTTP ${longScene.status}, guardada=${afterLong?.duration_seconds} (antes ${first.duration_seconds})`);
 
     // 5. manual script edit
     const script = await api(`/api/videos/${videoId}`, {
@@ -192,16 +234,33 @@ try {
     record('render devuelve al instante', render.status === 200 && Date.now() - started < 5000,
         `${Date.now() - started}ms, estado=${render.body?.video?.render_status}`);
 
-    let seenProgress = false, final = null;
+    // The web claims the render slot atomically: a second click while the
+    // first render runs must be refused, not sent to the worker again.
+    const secondRender = await api(`/api/videos/${videoId}`, { method: 'PATCH', body: JSON.stringify({ action: 'render' }) });
+    record('segundo render simultaneo da 409', secondRender.status === 409,
+        `HTTP ${secondRender.status} ${secondRender.body?.error ?? ''}`);
+
+    // A poll that comes back without the video (a transient 500, a list that
+    // briefly misses it) is retried a few times before the suite gives up with
+    // a clear message instead of a TypeError.
+    let seenProgress = false, final = null, misses = 0, lastMiss = '';
     for (let i = 0; i < 160; i += 1) {
         await sleep(1000);
         const poll = await api('/api/videos');
-        const v = poll.body.videos.find((x) => x.id === videoId);
+        const v = Array.isArray(poll.body?.videos) ? poll.body.videos.find((x) => x.id === videoId) : undefined;
+        if (!v) {
+            misses += 1;
+            lastMiss = `HTTP ${poll.status}, ${Array.isArray(poll.body?.videos) ? 'el video no aparece en la lista' : 'respuesta sin lista de videos'}`;
+            if (misses >= 5) break;
+            continue;
+        }
+        misses = 0;
         if (v.render_progress > 0 && v.render_progress < 100) seenProgress = true;
         if (v.render_status === 'listo' || v.render_status === 'error') { final = v; break; }
     }
     record('render termina', final?.render_status === 'listo',
-        `estado=${final?.render_status} error=${final?.render_error ?? 'ninguno'}`);
+        final ? `estado=${final.render_status} error=${final.render_error ?? 'ninguno'}`
+            : misses >= 5 ? `el sondeo no encontro el video 5 veces seguidas (${lastMiss})` : 'no termino en 160 s');
     record('progreso intermedio visible', seenProgress);
     record('URL en Supabase', !!final?.video_url?.includes('supabase.co'), final?.video_url?.slice(0, 60));
 
@@ -220,10 +279,10 @@ try {
 
     // 11. reuse across platforms
     const dup = await api(`/api/videos/${videoId}/duplicate`, { method: 'POST', body: JSON.stringify({ platform: 'tiktok' }) });
-    const dupId = dup.body?.video?.id;
+    const dupId = track(dup.body?.video?.id);
     record('duplicar a otra plataforma', dup.status === 201 && dup.body?.video?.platform === 'tiktok'
         && dup.body?.video?.status === 'borrador', `escenas copiadas: ${dup.body?.video?.scenes?.length}`);
-    if (dupId) await api(`/api/videos/${dupId}`, { method: 'DELETE' });
+    await removeVideo(dupId);
 
     // 12. assistant
     const a1 = await api('/api/assistant', {
@@ -248,9 +307,9 @@ try {
     // 14. plantillas (RF-019)
     const tpl = await api('/api/videos', {
         method: 'POST',
-        body: JSON.stringify({ topic: 'QA plantilla llamada', platform: 'reels', target_duration_seconds: 12, template: 'llamada' }),
+        body: JSON.stringify({ topic: 'QA plantilla llamada', platform: 'reels', targetDurationSeconds: 12, template: 'llamada' }),
     });
-    const tplId = tpl.body?.video?.id;
+    const tplId = track(tpl.body?.video?.id);
     record('crear con plantilla', tpl.status === 201 && tpl.body?.video?.template === 'llamada',
         `template=${tpl.body?.video?.template}`);
 
@@ -268,19 +327,20 @@ try {
             `${list2.length} escenas, ${conTelefono} con telefono; 1a=${first2?.character}/${first2?.action}/${first2?.prop}`);
 
         const dup2 = await api(`/api/videos/${tplId}/duplicate`, { method: 'POST', body: JSON.stringify({ platform: 'tiktok' }) });
+        track(dup2.body?.video?.id);
         record('duplicar conserva la plantilla', dup2.body?.video?.template === 'llamada', `template=${dup2.body?.video?.template}`);
-        if (dup2.body?.video?.id) await api(`/api/videos/${dup2.body.video.id}`, { method: 'DELETE' });
+        await removeVideo(dup2.body?.video?.id);
 
-        await api(`/api/videos/${tplId}`, { method: 'DELETE' });
+        await removeVideo(tplId);
     }
 
     const bad = await api('/api/videos', {
         method: 'POST',
-        body: JSON.stringify({ topic: 'QA plantilla invalida', platform: 'reels', target_duration_seconds: 12, template: 'inventada' }),
+        body: JSON.stringify({ topic: 'QA plantilla invalida', platform: 'reels', targetDurationSeconds: 12, template: 'inventada' }),
     });
     record('plantilla desconocida cae en libre', bad.status === 201 && bad.body?.video?.template === 'libre',
         `template=${bad.body?.video?.template}`);
-    if (bad.body?.video?.id) await api(`/api/videos/${bad.body.video.id}`, { method: 'DELETE' });
+    await removeVideo(track(bad.body?.video?.id));
 
     const a4 = await api('/api/assistant', {
         method: 'POST',
@@ -293,14 +353,25 @@ try {
     // 15. plantillas de marca (RF-028)
     const brandA = await api('/api/videos', {
         method: 'POST',
-        body: JSON.stringify({ topic: 'QA marca origen', platform: 'reels', target_duration_seconds: 12 }),
+        body: JSON.stringify({ topic: 'QA marca origen', platform: 'reels', targetDurationSeconds: 12 }),
     });
     const brandB = await api('/api/videos', {
         method: 'POST',
-        body: JSON.stringify({ topic: 'QA marca destino', platform: 'reels', target_duration_seconds: 12 }),
+        body: JSON.stringify({ topic: 'QA marca destino', platform: 'reels', targetDurationSeconds: 12 }),
     });
-    const aId = brandA.body?.video?.id;
-    const bId = brandB.body?.video?.id;
+    const aId = track(brandA.body?.video?.id);
+    const bId = track(brandB.body?.video?.id);
+
+    // RF-012: an approval covers the content as it was. Editing an approved
+    // video must send it back to 'borrador' - asserted on the stored record,
+    // not only on the reply.
+    await api(`/api/videos/${aId}`, { method: 'PATCH', body: JSON.stringify({ action: 'submit' }) });
+    const approvedA = await api(`/api/videos/${aId}`, { method: 'PATCH', body: JSON.stringify({ action: 'approve' }) });
+    const editedA = await api(`/api/videos/${aId}`, { method: 'PATCH', body: JSON.stringify({ script: 'Guion cambiado despues de aprobar.' }) });
+    const storedA = (await api('/api/videos')).body?.videos?.find((x) => x.id === aId);
+    record('editar un video aprobado lo devuelve a borrador', approvedA.body?.video?.status === 'aprobado'
+        && editedA.status === 200 && editedA.body?.video?.status === 'borrador' && storedA?.status === 'borrador',
+        `aprobado=${approvedA.body?.video?.status} respuesta=${editedA.body?.video?.status} guardado=${storedA?.status}`);
 
     await api(`/api/videos/${aId}/branding`, {
         method: 'PATCH',
@@ -312,6 +383,7 @@ try {
         body: JSON.stringify({ name: 'QA marca del negocio', video_id: aId }),
     });
     const brandTplId = savedTpl.body?.template?.id;
+    if (brandTplId) createdTemplateIds.add(brandTplId);
     record('guardar plantilla de marca', savedTpl.status === 201 && !!brandTplId
         && savedTpl.body?.template?.branding?.primary_color === '#0a3d2f',
         `${savedTpl.body?.template?.name} / ${savedTpl.body?.template?.branding?.font_family}`);
@@ -340,13 +412,13 @@ try {
     const noName = await api('/api/brand-templates', { method: 'POST', body: JSON.stringify({ video_id: aId }) });
     record('plantilla de marca sin nombre se rechaza', noName.status === 400, `HTTP ${noName.status}`);
 
-    const delTpl = await api(`/api/brand-templates/${brandTplId}`, { method: 'DELETE' });
+    const delTpl = await removeTemplate(brandTplId);
     const afterTpl = await api('/api/brand-templates');
     record('eliminar plantilla de marca', delTpl.status === 204
         && !(afterTpl.body?.templates ?? []).some((t) => t.id === brandTplId));
 
-    if (aId) await api(`/api/videos/${aId}`, { method: 'DELETE' });
-    if (bId) await api(`/api/videos/${bId}`, { method: 'DELETE' });
+    await removeVideo(aId);
+    await removeVideo(bId);
 
     // 16. lote de videos (RF-024). Two real topics plus a repeat and a blank,
     // which the route drops quietly. Warnings are fine here - the free model
@@ -363,6 +435,7 @@ try {
         }),
     });
     const creados = batch.body?.creados ?? [];
+    creados.forEach((v) => track(v.id));
     try {
         record('lote crea un borrador por tema', batch.status === 200 && creados.length === 2
             && (batch.body?.fallidos ?? []).length === 0
@@ -384,18 +457,22 @@ try {
         record('lote rechaza entradas invalidas', tooMany.status === 400 && noTopics.status === 400 && badPlatform.status === 400,
             `9 temas=${tooMany.status} vacio=${noTopics.status} plataforma=${badPlatform.status}`);
     } finally {
-        for (const v of creados) await api(`/api/videos/${v.id}`, { method: 'DELETE' });
+        for (const v of creados) await removeVideo(v.id);
     }
 
     // 13. delete
-    const del = await api(`/api/videos/${videoId}`, { method: 'DELETE' });
+    const del = await removeVideo(videoId);
     const after = await api('/api/videos');
     record('eliminar video', del.status === 204 && !after.body.videos.some((v) => v.id === videoId));
     videoId = null;
 } catch (error) {
     record('EXCEPCION', false, error.message);
 } finally {
-    if (videoId) await api(`/api/videos/${videoId}`, { method: 'DELETE' }).catch(() => {});
+    // Whatever a failed check left behind goes now.
+    for (const id of [...createdTemplateIds]) await removeTemplate(id).catch(() => {});
+    if (createdTemplateIds.size) console.log(`AVISO: no se pudieron borrar ${createdTemplateIds.size} plantillas de marca de prueba: ${[...createdTemplateIds].join(', ')}`);
+    for (const id of [...createdIds]) await removeVideo(id).catch(() => {});
+    if (createdIds.size) console.log(`AVISO: no se pudieron borrar ${createdIds.size} videos de prueba: ${[...createdIds].join(', ')}`);
 }
 
 const fail = results.filter((r) => !r.ok);
