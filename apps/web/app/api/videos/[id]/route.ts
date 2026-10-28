@@ -1,6 +1,6 @@
 import { NextResponse } from 'next/server';
 import { requireSession } from '../../../../lib/sign-in-required';
-import { deleteVideo, renderVideo, updateScript, updateVideoStatus } from '../../../../lib/video-persistence';
+import { deleteVideo, errorStatus, renderVideo, updateScript, updateVideoStatus } from '../../../../lib/video-persistence';
 
 type RouteContext = { params: Promise<{ id: string }> };
 
@@ -15,8 +15,7 @@ export async function PATCH(request: Request, context: RouteContext) {
             return NextResponse.json({ video: updated });
         } catch (error) {
             const message = error instanceof Error ? error.message : 'Error desconocido';
-            const status = message === 'Video no encontrado.' ? 404 : 500;
-            return NextResponse.json({ error: message }, { status });
+            return NextResponse.json({ error: message }, { status: errorStatus(error, 500) });
         }
     }
 
@@ -40,9 +39,10 @@ export async function PATCH(request: Request, context: RouteContext) {
         const updated = await updateVideoStatus(id, action);
         return NextResponse.json({ video: updated });
     } catch (error) {
+        // Business rules (a transition not allowed, a render already running,
+        // the worker busy) arrive as VideoError with their own status.
         const message = error instanceof Error ? error.message : 'Error desconocido';
-        const status = message === 'Video no encontrado.' ? 404 : 409;
-        return NextResponse.json({ error: message }, { status });
+        return NextResponse.json({ error: message }, { status: errorStatus(error, 409) });
     }
 }
 
@@ -53,7 +53,6 @@ export async function DELETE(_request: Request, context: RouteContext) {
         return new NextResponse(null, { status: 204 });
     } catch (error) {
         const message = error instanceof Error ? error.message : 'Error desconocido';
-        const status = message === 'Video no encontrado.' ? 404 : 500;
-        return NextResponse.json({ error: message }, { status });
+        return NextResponse.json({ error: message }, { status: errorStatus(error, 500) });
     }
 }

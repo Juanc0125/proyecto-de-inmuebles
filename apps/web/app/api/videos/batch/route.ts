@@ -1,6 +1,7 @@
 import { NextResponse } from 'next/server';
 import { getTemplate } from '@shared-types/templates';
 import type { Platform } from '@shared-types/video';
+import { MAX_TARGET_DURATION_SECONDS } from '@shared-types/video';
 import { POST as planScenesRoute } from '../[id]/scenes/route';
 import { createVideo, generateScript } from '../../../../lib/video-persistence';
 import type { VideoRecord } from '../store';
@@ -106,9 +107,9 @@ export async function POST(request: Request) {
     const rawDuration = body?.target_duration_seconds;
     const targetDurationSeconds = rawDuration === undefined || rawDuration === null
         ? 30
-        : (typeof rawDuration === 'number' && Number.isFinite(rawDuration) && rawDuration > 0 ? rawDuration : null);
+        : (typeof rawDuration === 'number' && Number.isFinite(rawDuration) && rawDuration > 0 && rawDuration <= MAX_TARGET_DURATION_SECONDS ? rawDuration : null);
     if (targetDurationSeconds === null) {
-        return NextResponse.json({ error: 'La duracion objetivo debe ser un numero positivo.' }, { status: 400 });
+        return NextResponse.json({ error: `La duración objetivo debe ser un número positivo de hasta ${MAX_TARGET_DURATION_SECONDS} segundos.` }, { status: 400 });
     }
 
     // Unknown template names fall back to 'libre' rather than failing the whole

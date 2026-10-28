@@ -1,8 +1,9 @@
 import { NextResponse } from 'next/server';
 import type { CharacterType, Scene, SceneAction, ScenePropType } from '@shared-types/video';
+import { MAX_SCENE_SECONDS, MIN_SCENE_SECONDS } from '@shared-types/video';
 import { generateWithFallback } from '../../../../../../lib/ai-provider';
 import { getSound } from '../../../../../../lib/sounds';
-import { deleteScene, getVideo, updateScene } from '../../../../../../lib/video-persistence';
+import { deleteScene, errorStatus, getVideo, updateScene } from '../../../../../../lib/video-persistence';
 
 type RouteContext = { params: Promise<{ id: string; sceneId: string }> };
 type SceneInput = Omit<Scene, 'id' | 'video_id'>;
@@ -186,8 +187,11 @@ export async function PATCH(request: Request, context: RouteContext) {
 
     if ('duration_seconds' in body) {
         const value = body.duration_seconds;
-        if (typeof value !== 'number' || !Number.isFinite(value) || value <= 0) {
-            return NextResponse.json({ error: 'La duracion debe ser un numero positivo.' }, { status: 400 });
+        if (typeof value !== 'number' || !Number.isFinite(value) || value < MIN_SCENE_SECONDS || value > MAX_SCENE_SECONDS) {
+            return NextResponse.json(
+                { error: `La duración de una escena debe estar entre ${MIN_SCENE_SECONDS} y ${MAX_SCENE_SECONDS} segundos.` },
+                { status: 400 },
+            );
         }
         patch.duration_seconds = value;
     }
@@ -219,8 +223,7 @@ export async function PATCH(request: Request, context: RouteContext) {
         return NextResponse.json({ video: updated });
     } catch (error) {
         const message = error instanceof Error ? error.message : 'Error desconocido';
-        const status = message === 'Video no encontrado.' ? 404 : 500;
-        return NextResponse.json({ error: message }, { status });
+        return NextResponse.json({ error: message }, { status: errorStatus(error, 500) });
     }
 }
 
@@ -231,7 +234,6 @@ export async function DELETE(_request: Request, context: RouteContext) {
         return NextResponse.json({ video: updated });
     } catch (error) {
         const message = error instanceof Error ? error.message : 'Error desconocido';
-        const status = message === 'Video no encontrado.' ? 404 : 500;
-        return NextResponse.json({ error: message }, { status });
+        return NextResponse.json({ error: message }, { status: errorStatus(error, 500) });
     }
 }

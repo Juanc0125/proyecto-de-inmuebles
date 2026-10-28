@@ -1,6 +1,7 @@
 import { NextResponse } from 'next/server';
 import { getTemplate, type VideoTemplate } from '@shared-types/templates';
 import type { CharacterType, Scene, SceneAction, ScenePropType } from '@shared-types/video';
+import { MAX_SCENE_SECONDS, MIN_SCENE_SECONDS } from '@shared-types/video';
 import { generateWithFallback } from '../../../../../lib/ai-provider';
 import { getVideo, replaceScenes } from '../../../../../lib/video-persistence';
 
@@ -26,9 +27,12 @@ function coerceProp(value: unknown): ScenePropType {
     return typeof value === 'string' && (PROPS as string[]).includes(value) ? (value as ScenePropType) : 'ninguno';
 }
 
+// The prompt asks for 2-10 s, but a model's number is a suggestion: clamp it
+// instead of trusting it, so one 45 s scene cannot swallow the whole video.
 function coerceDuration(value: unknown, fallback: number): number {
     const num = typeof value === 'number' ? value : Number(value);
-    return Number.isFinite(num) && num > 0 ? num : fallback;
+    const seconds = Number.isFinite(num) && num > 0 ? num : fallback;
+    return Math.min(MAX_SCENE_SECONDS, Math.max(MIN_SCENE_SECONDS, seconds));
 }
 
 function coerceDescription(value: unknown, fallback: string): string {
@@ -66,7 +70,7 @@ function buildSystemPrompt(targetDurationSeconds: number, template: VideoTemplat
         '- "action": uno de estos valores exactos: "hablar", "caminar", "senalar", "sentarse", "pensar", "telefono", "mostrar_objeto"',
         '- "prop": uno de estos valores exactos: "ninguno", "casa", "carro", "banco", "telefono", "documento", "dinero", "grafico", "oficina" (usa "ninguno" si no aplica ningun objeto)',
         '- "description": una linea corta de narracion/subtitulo para esa escena, basada en el guion',
-        '- "duration_seconds": un numero entre 2 y 10',
+        `- "duration_seconds": un numero entre ${MIN_SCENE_SECONDS} y ${MAX_SCENE_SECONDS}`,
         // Last so the chosen template overrides the generic staging advice above.
         ...(guidance ? ['', `ESTRUCTURA OBLIGATORIA PARA ESTE VIDEO: ${guidance}`] : []),
     ].join('\n');
@@ -102,7 +106,7 @@ function buildSentenceFallback(script: string, targetDurationSeconds: number, te
     const lines = sentences.length ? sentences : [script.trim() || 'Contenido del video.'];
     const safeTarget = Number.isFinite(targetDurationSeconds) && targetDurationSeconds > 0 ? targetDurationSeconds : 30;
     const rawDuration = safeTarget / lines.length;
-    const clampedDuration = Math.min(10, Math.max(2, Number.isFinite(rawDuration) ? rawDuration : 4));
+    const clampedDuration = Math.min(MAX_SCENE_SECONDS, Math.max(MIN_SCENE_SECONDS, Number.isFinite(rawDuration) ? rawDuration : 4));
 
     // Without the model this is what the user actually gets, so it casts each
     // scene from cues in its own line rather than stamping every one as

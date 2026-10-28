@@ -5,6 +5,7 @@
 
 import { getTemplate, VIDEO_TEMPLATES } from '@shared-types/templates';
 import type { CharacterType, Platform, Scene, SceneAction, ScenePropType } from '@shared-types/video';
+import { MAX_SCENE_SECONDS, MAX_TARGET_DURATION_SECONDS, MIN_SCENE_SECONDS } from '@shared-types/video';
 import { POST as applyBrandTemplateRoute } from '../app/api/videos/[id]/brand-template/route';
 import { PATCH as patchSceneRoute } from '../app/api/videos/[id]/scenes/[sceneId]/route';
 import { POST as planScenesRoute } from '../app/api/videos/[id]/scenes/route';
@@ -74,7 +75,7 @@ const PROPS: ScenePropType[] = PROP_OPTIONS.map((option) => option.value);
 const TEMPLATE_IDS = VIDEO_TEMPLATES.map((template) => template.id);
 
 const MIN_DURATION = 10;
-const MAX_DURATION = 180;
+const MAX_DURATION = MAX_TARGET_DURATION_SECONDS;
 const DEFAULT_DURATION = 30;
 
 // A confused model must not be able to spin: five rounds is more than enough
@@ -207,7 +208,7 @@ const TOOLS: ToolSchema[] = [
                 accion: { type: 'string', enum: ACTIONS },
                 objeto: { type: 'string', enum: PROPS },
                 descripcion: { type: 'string', description: 'Linea hablada, que es tambien el subtitulo.' },
-                duracion_segundos: { type: 'number' },
+                duracion_segundos: { type: 'number', description: `${MIN_SCENE_SECONDS}-${MAX_SCENE_SECONDS} segundos.` },
             },
             required: ['numero_escena'],
             additionalProperties: false,
@@ -659,9 +660,11 @@ async function editarEscena(args: ToolArgs, state: CopilotState): Promise<string
         else ignored.push(`"${value}"`);
     }
 
-    // The scene route owns the rule (a positive number); this only reads it.
+    // The scene route owns the rule and rejects anything outside 2-10 s. A
+    // model saying "15 segundos" means "as long as it can be", so the copilot
+    // clamps to the range instead of turning the request into an error.
     const seconds = typeof args.duracion_segundos === 'number' ? args.duracion_segundos : Number(readText(args.duracion_segundos));
-    if (Number.isFinite(seconds) && seconds > 0) patch.duration_seconds = seconds;
+    if (Number.isFinite(seconds) && seconds > 0) patch.duration_seconds = Math.min(MAX_SCENE_SECONDS, Math.max(MIN_SCENE_SECONDS, seconds));
 
     if (!Object.keys(patch).length) {
         return `No hay nada valido que cambiar en la escena ${found.value.order}. Personajes: ${CHARACTERS.join(', ')}. Acciones: ${ACTIONS.join(', ')}. Objetos: ${PROPS.join(', ')}.`;

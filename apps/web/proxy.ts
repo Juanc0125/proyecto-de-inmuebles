@@ -34,6 +34,11 @@ const PROTECTED_ROUTES: Array<{ method: string; pattern: RegExp }> = [
     { method: 'POST', pattern: /^\/api\/sounds(\/upload-url)?$/ },
     { method: 'DELETE', pattern: /^\/api\/sounds\/[^/]+$/ },
     { method: 'DELETE', pattern: /^\/api\/brand-templates\/[^/]+$/ },
+    // Both write a logo_url that the render worker later downloads. The routes
+    // restrict it to this project's logo bucket; the session keeps anonymous
+    // visitors from planting templates at all.
+    { method: 'POST', pattern: /^\/api\/brand-templates$/ },
+    { method: 'POST', pattern: /^\/api\/videos\/[^/]+\/brand-template$/ },
 ];
 
 function needsSession(method: string, pathname: string): boolean {

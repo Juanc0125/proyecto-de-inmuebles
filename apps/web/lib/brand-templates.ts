@@ -8,12 +8,35 @@
 import type { BrandTemplate } from '@shared-types/templates';
 import type { Branding } from '@shared-types/video';
 import { DEFAULT_BRANDING } from '@shared-types/video';
-import { getSupabaseClient } from './supabaseClient';
+import { getSupabaseClient, supabaseUrl } from './supabaseClient';
 import { ensureDemoUser } from './video-persistence';
 
 type DatabaseRow = Record<string, unknown>;
 
 const mockTemplates = new Map<string, BrandTemplate>();
+
+export const LOGO_BUCKET = 'branding-logos';
+
+// The render worker downloads logo_url server side, so a URL taken from a
+// client would let anyone make it fetch an arbitrary address (SSRF). Only a
+// file in this project's public logo bucket - what /api/videos/[id]/logo
+// stores - is accepted; anything else becomes "no logo". Parsed with URL so a
+// "../" or a look-alike host cannot slip past a plain prefix check.
+export function safeLogoUrl(value: unknown): string | null {
+    if (typeof value !== 'string' || !value || !supabaseUrl) return null;
+    try {
+        const base = new URL(supabaseUrl);
+        const url = new URL(value);
+        const prefix = `${base.pathname.replace(/\/+$/, '')}/storage/v1/object/public/${LOGO_BUCKET}/`;
+        if (url.protocol !== base.protocol || url.host !== base.host) return null;
+        if (url.username || url.password) return null;
+        if (!url.pathname.startsWith(prefix) || url.pathname.length === prefix.length) return null;
+        if (/%2e|%2f|%5c/i.test(url.pathname)) return null;
+        return value.startsWith(`${base.origin}${prefix}`) ? value : null;
+    } catch {
+        return null;
+    }
+}
 
 function toBranding(value: unknown): Branding {
     if (!value || typeof value !== 'object') return { ...DEFAULT_BRANDING };

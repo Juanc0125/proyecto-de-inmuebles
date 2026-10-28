@@ -1,14 +1,21 @@
 import { NextResponse } from 'next/server';
-import { getBrandTemplate } from '../../../../../lib/brand-templates';
-import { getVideo, updateBranding } from '../../../../../lib/video-persistence';
+import { getBrandTemplate, safeLogoUrl } from '../../../../../lib/brand-templates';
+import { requireSession } from '../../../../../lib/sign-in-required';
+import { errorStatus, getVideo, updateBranding } from '../../../../../lib/video-persistence';
 
 type RouteContext = { params: Promise<{ id: string }> };
 
 // Applying a brand template writes the whole identity at once, logo included.
 // That is why this is not a PATCH on /branding, which deliberately refuses
 // logo_url: there the URL would come from the client, here it comes from a
-// template the studio itself stored.
+// template the studio itself stored - and is checked again on the way out,
+// since a template saved before that check existed may hold any URL.
 export async function POST(request: Request, context: RouteContext) {
+    // Guarded in proxy.ts too; repeated here because the copilot calls this
+    // handler in process, where the proxy never runs.
+    const signInRequired = await requireSession();
+    if (signInRequired) return signInRequired;
+
     const { id } = await context.params;
     const body = await request.json().catch(() => null) as { template_id?: unknown } | null;
 
@@ -28,12 +35,11 @@ export async function POST(request: Request, context: RouteContext) {
     }
 
     try {
-        const updated = await updateBranding(id, template.branding);
+        const updated = await updateBranding(id, { ...template.branding, logo_url: safeLogoUrl(template.branding.logo_url) });
         return NextResponse.json({ video: updated });
     } catch (error) {
         console.error('Error al aplicar la plantilla de marca', error);
         const message = error instanceof Error ? error.message : 'Error desconocido';
-        const status = message === 'Video no encontrado.' ? 404 : 500;
-        return NextResponse.json({ error: message }, { status });
+        return NextResponse.json({ error: message }, { status: errorStatus(error, 500) });
     }
 }

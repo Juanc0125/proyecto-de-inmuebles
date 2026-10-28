@@ -1,7 +1,8 @@
-import type { Branding, Platform, Scene, Video } from '@shared-types/video';
-import { DEFAULT_BRANDING, RENDER_STALLED_ERROR, isRenderStalled } from '@shared-types/video';
+import type { User } from '@supabase/supabase-js';
+import type { Branding, Platform, Scene, Video, VideoStatus } from '@shared-types/video';
+import { DEFAULT_BRANDING, RENDER_STALLED_ERROR, RENDER_STALL_TIMEOUT_MS, isRenderStalled } from '@shared-types/video';
 import { getTemplate, type VideoTemplate } from '@shared-types/templates';
-import { canTransition, transitions, videos as mockVideos } from '../app/api/videos/store';
+import { EDIT_REVERTS_TO_DRAFT_FROM, canTransition, revertsToDraftOnEdit, transitions, videos as mockVideos } from '../app/api/videos/store';
 import { getSupabaseClient } from './supabaseClient';
 import { generateWithFallback } from './ai-provider';
 import { SOUNDS_MIGRATION_MISSING_ERROR, isMissingSchemaError, resolveSoundUrls } from './sounds';
@@ -12,6 +13,57 @@ type DatabaseRow = Record<string, unknown>;
 // Derived instead of imported from supabase-js: the factory already pins the
 // generics, and naming them here again would need an `any`.
 type SupabaseClient = NonNullable<ReturnType<typeof getSupabaseClient>>;
+
+export const VIDEO_NOT_FOUND = 'Video no encontrado.';
+
+// An error the routes can answer with as it is: the message is for a person,
+// the status for the HTTP response. Plain Errors keep meaning "something
+// broke" and the routes keep mapping them as before.
+export class VideoError extends Error {
+    constructor(message: string, readonly status: number) {
+        super(message);
+        this.name = 'VideoError';
+    }
+}
+
+export function errorStatus(error: unknown, fallback: number): number {
+    if (error instanceof VideoError) return error.status;
+    if (error instanceof Error && error.message === VIDEO_NOT_FOUND) return 404;
+    return fallback;
+}
+
+// supabase-js does not throw when the fetch itself fails: it resolves with an
+// error whose code is empty and whose message is the TypeError's. Anything
+// carrying a PostgREST or Postgres code is a real answer from the database.
+function isNetworkError(error: unknown): boolean {
+    if (error instanceof TypeError) return true;
+    if (!error || typeof error !== 'object' || error instanceof VideoError) return false;
+    const { code, message } = error as { code?: unknown; message?: unknown };
+    if (typeof code === 'string' && code !== '') return false;
+    return typeof message === 'string' && /fetch failed|TypeError|network|ECONNREFUSED|ECONNRESET|ENOTFOUND|ETIMEDOUT|aborted/i.test(message);
+}
+
+// The in-memory map is a development convenience. In production every
+// serverless instance has its own empty copy, so "falling back" there answers
+// success for a write nobody will ever see again - which is how real database
+// failures used to stay hidden.
+function canFallBackToMemory(error: unknown): boolean {
+    return process.env.NODE_ENV !== 'production' && isNetworkError(error);
+}
+
+// PostgrestError is a plain object, not an Error: without this the routes
+// would only ever see "Error desconocido".
+function toVideoError(error: unknown): Error {
+    if (error instanceof Error) return error;
+    console.error('Supabase rechazó la operación.', error);
+    return new VideoError('No se pudo guardar el cambio en la base de datos. Intenta de nuevo.', 500);
+}
+
+// Returns only when the caller may continue with the in-memory copy.
+function fallBackOrThrow(error: unknown, what: string): void {
+    if (!canFallBackToMemory(error)) throw toVideoError(error);
+    console.warn(`${what}, usando fallback en memoria.`, error);
+}
 
 function nullableString(value: unknown): string | null {
     return typeof value === 'string' ? value : null;
@@ -119,13 +171,21 @@ export async function ensureDemoUser(): Promise<string | null> {
     if (!client) return null;
 
     const demoEmail = 'demo@stickman.local';
-    const { data: users, error: listError } = await client.auth.admin.listUsers();
-    if (listError) {
-        console.warn('No fue posible listar usuarios demo', listError.message);
-        return null;
+    // listUsers pages (50 by default): once the project has more accounts than
+    // one page holds, the demo user stops being found and a duplicate create
+    // fails. Walk the pages until a short one says there are no more.
+    const perPage = 1000;
+    let user: User | undefined;
+    for (let page = 1; !user; page += 1) {
+        const { data: users, error: listError } = await client.auth.admin.listUsers({ page, perPage });
+        if (listError) {
+            console.warn('No fue posible listar usuarios demo', listError.message);
+            return null;
+        }
+        user = users.users.find((entry) => entry.email === demoEmail);
+        if (users.users.length < perPage) break;
     }
 
-    let user = users.users.find((entry) => entry.email === demoEmail);
     if (!user) {
         const demoPassword = process.env.DEMO_USER_PASSWORD;
         if (!demoPassword) {
@@ -252,18 +312,13 @@ export async function generateScript(topic: string, template: VideoTemplate): Pr
     return { text: result.text.trim(), fromModel: true };
 }
 
-async function createInSupabase(topic: string, platform: Platform, targetDurationSeconds: number, script: string, template: VideoTemplate): Promise<VideoRecord> {
-    const serviceClient = getSupabaseClient({ serviceRole: true });
-    if (!serviceClient) {
-        throw new Error('No hay servicio de Supabase configurado para crear el video.');
-    }
-
+async function createInSupabase(client: SupabaseClient, topic: string, platform: Platform, targetDurationSeconds: number, script: string, template: VideoTemplate): Promise<VideoRecord> {
     const userId = await ensureDemoUser();
     if (!userId) {
         throw new Error('No fue posible preparar el usuario demo para Supabase.');
     }
 
-    const { data: videoData, error: videoError } = await serviceClient.from('videos').insert({
+    const { data: videoData, error: videoError } = await client.from('videos').insert({
         user_id: userId,
         topic,
         platform,
@@ -305,6 +360,49 @@ function buildLocalVideoRecord(topic: string, platform: Platform, targetDuration
     return { ...video, scenes: [] };
 }
 
+function sceneRows(videoId: string, scenes: SceneInput[]): DatabaseRow[] {
+    return scenes.map((scene) => ({
+        video_id: videoId,
+        order: scene.order,
+        character: scene.character,
+        action: scene.action,
+        prop: scene.prop,
+        description: scene.description,
+        duration_seconds: scene.duration_seconds,
+        audio_url: scene.audio_url,
+        ...soundEffectColumn(scene.sound_effect_id),
+    }));
+}
+
+// The record as it is now, after a write. maybeSingle so a missing row is a
+// clean 404 instead of a PostgREST error that reads like a database failure.
+async function readVideoFromSupabase(client: SupabaseClient, id: string): Promise<VideoRecord> {
+    const { data: videoData, error: videoError } = await client.from('videos').select('*').eq('id', id).maybeSingle();
+    if (videoError) throw videoError;
+    if (!videoData) throw new VideoError(VIDEO_NOT_FOUND, 404);
+    const { data: scenesData, error: scenesError } = await client.from('scenes').select('*').eq('video_id', id);
+    if (scenesError) throw scenesError;
+    return toVideoRecord(videoData, scenesData ?? []);
+}
+
+// RF-012: the approval was for the content as it was. Run BEFORE the content
+// write on purpose: if the edit then fails, the video has only lost its
+// approval (the safe side); the reverse order could leave edited content still
+// marked as approved. The status filter makes it a no-op on drafts and keeps it
+// from ever moving a video anywhere but back to 'borrador'.
+async function revertApprovalInSupabase(client: SupabaseClient, id: string): Promise<void> {
+    const { error } = await client
+        .from('videos')
+        .update({ status: 'borrador' })
+        .eq('id', id)
+        .in('status', [...EDIT_REVERTS_TO_DRAFT_FROM]);
+    if (error) throw error;
+}
+
+function revertApprovalInMemory(video: VideoRecord): VideoRecord {
+    return revertsToDraftOnEdit(video.status) ? { ...video, status: 'borrador' } : video;
+}
+
 export async function listVideos(): Promise<VideoRecord[]> {
     return readFromSupabase();
 }
@@ -320,103 +418,147 @@ export async function getVideo(id: string): Promise<VideoRecord | null> {
 export async function createVideo(topic: string, platform: Platform, targetDurationSeconds: number, template: VideoTemplate = 'libre', preparedScript?: string): Promise<VideoRecord> {
     const script = preparedScript ?? (await generateScript(topic, template)).text;
 
-    try {
-        return await createInSupabase(topic, platform, targetDurationSeconds, script, template);
-    } catch (error) {
-        console.warn('Fallo en Supabase, usando fallback en memoria.', error);
-        const record = buildLocalVideoRecord(topic, platform, targetDurationSeconds, script, template);
-        mockVideos.set(record.id, record);
-        return record;
+    const client = getSupabaseClient({ serviceRole: true });
+    if (client) {
+        try {
+            return await createInSupabase(client, topic, platform, targetDurationSeconds, script, template);
+        } catch (error) {
+            fallBackOrThrow(error, 'Fallo al crear el video en Supabase');
+        }
     }
+
+    const record = buildLocalVideoRecord(topic, platform, targetDurationSeconds, script, template);
+    mockVideos.set(record.id, record);
+    return record;
 }
 
 export async function updateScript(id: string, script: string): Promise<VideoRecord> {
     const client = getSupabaseClient({ serviceRole: true }) ?? getSupabaseClient();
     if (client) {
         try {
-            const { data: updated, error } = await client.from('videos').update({ script }).eq('id', id).select('*').single();
-            if (error || !updated) throw error ?? new Error('No se pudo actualizar el guion.');
+            await revertApprovalInSupabase(client, id);
+            const { data: updated, error } = await client.from('videos').update({ script }).eq('id', id).select('*').maybeSingle();
+            if (error) throw error;
+            if (!updated) throw new VideoError(VIDEO_NOT_FOUND, 404);
             const { data: scenesData } = await client.from('scenes').select('*').eq('video_id', id);
             return toVideoRecord(updated, scenesData ?? []);
         } catch (error) {
-            console.warn('Fallo al actualizar el guion en Supabase, usando fallback en memoria.', error);
+            fallBackOrThrow(error, 'Fallo al actualizar el guion en Supabase');
         }
     }
 
     const video = mockVideos.get(id);
-    if (!video) throw new Error('Video no encontrado.');
-    const updated = { ...video, script };
+    if (!video) throw new VideoError(VIDEO_NOT_FOUND, 404);
+    const updated = revertApprovalInMemory({ ...video, script });
     mockVideos.set(id, updated);
     return updated;
 }
 
+// New scenes go in before the old ones come out, so a failure at any step
+// leaves the video with a full set of scenes - the old ones or the new ones,
+// never zero. The old rows are deleted by id, not by video_id, because by then
+// the new rows share that video_id.
 export async function replaceScenes(id: string, scenes: SceneInput[]): Promise<VideoRecord> {
     const client = getSupabaseClient({ serviceRole: true }) ?? getSupabaseClient();
     if (client) {
         try {
-            const { data: videoData, error: videoError } = await client.from('videos').select('*').eq('id', id).single();
-            if (videoError || !videoData) throw videoError ?? new Error('Video no encontrado.');
+            const { data: videoData, error: videoError } = await client.from('videos').select('id').eq('id', id).maybeSingle();
+            if (videoError) throw videoError;
+            if (!videoData) throw new VideoError(VIDEO_NOT_FOUND, 404);
 
-            const { error: deleteError } = await client.from('scenes').delete().eq('video_id', id);
-            if (deleteError) throw deleteError;
+            const { data: oldRows, error: oldError } = await client.from('scenes').select('id').eq('video_id', id);
+            if (oldError) throw oldError;
+            const oldIds = (oldRows ?? []).map((row) => String(row.id));
 
+            await revertApprovalInSupabase(client, id);
+
+            let newIds: string[] = [];
             if (scenes.length) {
-                const rows = scenes.map((scene) => ({
-                    video_id: id,
-                    order: scene.order,
-                    character: scene.character,
-                    action: scene.action,
-                    prop: scene.prop,
-                    description: scene.description,
-                    duration_seconds: scene.duration_seconds,
-                    audio_url: scene.audio_url,
-                    ...soundEffectColumn(scene.sound_effect_id),
-                }));
-                const { error: insertError } = await client.from('scenes').insert(rows);
+                const { data: inserted, error: insertError } = await client.from('scenes').insert(sceneRows(id, scenes)).select('id');
                 if (insertError) throw insertError;
+                newIds = (inserted ?? []).map((row) => String(row.id));
             }
 
-            const { data: scenesData, error: scenesError } = await client.from('scenes').select('*').eq('video_id', id);
-            if (scenesError) throw scenesError;
-            return toVideoRecord(videoData, scenesData ?? []);
+            if (oldIds.length) {
+                const { error: deleteError } = await client.from('scenes').delete().in('id', oldIds);
+                if (deleteError) {
+                    // Old and new would now be shown together, doubled. Take the
+                    // new ones back out so the video stays as it was.
+                    if (newIds.length) {
+                        const { error: rollbackError } = await client.from('scenes').delete().in('id', newIds);
+                        if (rollbackError) console.error('No fue posible deshacer las escenas nuevas tras un fallo.', rollbackError);
+                    }
+                    throw deleteError;
+                }
+            }
+
+            return await readVideoFromSupabase(client, id);
         } catch (error) {
-            console.warn('Fallo al reemplazar escenas en Supabase, usando fallback en memoria.', error);
+            fallBackOrThrow(error, 'Fallo al reemplazar escenas en Supabase');
         }
     }
 
     const video = mockVideos.get(id);
-    if (!video) throw new Error('Video no encontrado.');
+    if (!video) throw new VideoError(VIDEO_NOT_FOUND, 404);
     const newScenes: Scene[] = scenes.map((scene) => ({ ...scene, id: crypto.randomUUID(), video_id: id }));
-    const updated = { ...video, scenes: newScenes };
+    const updated = revertApprovalInMemory({ ...video, scenes: newScenes });
     mockVideos.set(id, updated);
     return updated;
 }
 
-export async function updateScene(id: string, sceneId: string, patch: Partial<SceneInput>): Promise<VideoRecord> {
+const SCENE_FIELDS: readonly (keyof SceneInput)[] = ['order', 'character', 'action', 'prop', 'description', 'duration_seconds', 'audio_url', 'sound_effect_id'];
+
+// Only what actually differs from the stored scene. A regeneration that fell
+// back to the original content therefore writes nothing and costs nobody an
+// approval. A new description also drops the narration recorded for the old
+// one: the render would otherwise play a voice saying the previous line.
+function effectiveScenePatch(scene: Scene, patch: Partial<SceneInput>): Partial<SceneInput> {
+    const changed: Partial<SceneInput> = {};
+    for (const field of SCENE_FIELDS) {
+        if (field in patch && patch[field] !== undefined && patch[field] !== scene[field]) {
+            Object.assign(changed, { [field]: patch[field] });
+        }
+    }
+    if ('description' in changed && !('audio_url' in changed) && scene.audio_url !== null) {
+        changed.audio_url = null;
+    }
+    return changed;
+}
+
+// `keepApproval` is for writes that are not an edit of what the approver saw:
+// the TTS route recording the narration of the approved lines.
+export async function updateScene(id: string, sceneId: string, patch: Partial<SceneInput>, options: { keepApproval?: boolean } = {}): Promise<VideoRecord> {
     const client = getSupabaseClient({ serviceRole: true }) ?? getSupabaseClient();
     if (client) {
         try {
-            const { error: updateError } = await client.from('scenes').update(patch).eq('id', sceneId).eq('video_id', id);
-            if (updateError && 'sound_effect_id' in patch && isMissingSchemaError(updateError)) {
-                throw new Error(SOUNDS_MIGRATION_MISSING_ERROR);
-            }
-            if (updateError) throw updateError;
+            const { data: current, error: currentError } = await client.from('scenes').select('*').eq('id', sceneId).eq('video_id', id).maybeSingle();
+            if (currentError) throw currentError;
+            const effective = current ? effectiveScenePatch(toScene(current), patch) : {};
 
-            const { data: videoData, error: videoError } = await client.from('videos').select('*').eq('id', id).single();
-            if (videoError || !videoData) throw videoError ?? new Error('Video no encontrado.');
-            const { data: scenesData, error: scenesError } = await client.from('scenes').select('*').eq('video_id', id);
-            if (scenesError) throw scenesError;
-            return toVideoRecord(videoData, scenesData ?? []);
+            if (Object.keys(effective).length) {
+                if (!options.keepApproval) await revertApprovalInSupabase(client, id);
+                const { error: updateError } = await client.from('scenes').update(effective).eq('id', sceneId).eq('video_id', id);
+                if (updateError && 'sound_effect_id' in effective && isMissingSchemaError(updateError)) {
+                    throw new Error(SOUNDS_MIGRATION_MISSING_ERROR);
+                }
+                if (updateError) throw updateError;
+            }
+
+            return await readVideoFromSupabase(client, id);
         } catch (error) {
             if (error instanceof Error && error.message === SOUNDS_MIGRATION_MISSING_ERROR) throw error;
-            console.warn('Fallo al actualizar la escena en Supabase, usando fallback en memoria.', error);
+            fallBackOrThrow(error, 'Fallo al actualizar la escena en Supabase');
         }
     }
 
     const video = mockVideos.get(id);
-    if (!video) throw new Error('Video no encontrado.');
-    const scenes = video.scenes.map((scene) => (scene.id === sceneId ? { ...scene, ...patch } : scene));
-    const updated = { ...video, scenes };
+    if (!video) throw new VideoError(VIDEO_NOT_FOUND, 404);
+    const currentScene = video.scenes.find((scene) => scene.id === sceneId);
+    const effective = currentScene ? effectiveScenePatch(currentScene, patch) : {};
+    if (!Object.keys(effective).length) return video;
+    const scenes = video.scenes.map((scene) => (scene.id === sceneId ? { ...scene, ...effective } : scene));
+    const edited = { ...video, scenes };
+    const updated = options.keepApproval ? edited : revertApprovalInMemory(edited);
     mockVideos.set(id, updated);
     return updated;
 }
@@ -425,6 +567,7 @@ export async function deleteScene(id: string, sceneId: string): Promise<VideoRec
     const client = getSupabaseClient({ serviceRole: true }) ?? getSupabaseClient();
     if (client) {
         try {
+            await revertApprovalInSupabase(client, id);
             const { error: deleteError } = await client.from('scenes').delete().eq('id', sceneId).eq('video_id', id);
             if (deleteError) throw deleteError;
 
@@ -436,83 +579,94 @@ export async function deleteScene(id: string, sceneId: string): Promise<VideoRec
             for (let index = 0; index < ordered.length; index += 1) {
                 if (Number(ordered[index].order) !== index + 1) {
                     await client.from('scenes').update({ order: index + 1 }).eq('id', ordered[index].id);
-                    ordered[index].order = index + 1;
                 }
             }
 
-            const { data: videoData, error: videoError } = await client.from('videos').select('*').eq('id', id).single();
-            if (videoError || !videoData) throw videoError ?? new Error('Video no encontrado.');
-            return toVideoRecord(videoData, ordered);
+            return await readVideoFromSupabase(client, id);
         } catch (error) {
-            console.warn('Fallo al eliminar la escena en Supabase, usando fallback en memoria.', error);
+            fallBackOrThrow(error, 'Fallo al eliminar la escena en Supabase');
         }
     }
 
     const video = mockVideos.get(id);
-    if (!video) throw new Error('Video no encontrado.');
+    if (!video) throw new VideoError(VIDEO_NOT_FOUND, 404);
     const scenes = video.scenes
         .filter((scene) => scene.id !== sceneId)
         .sort((a, b) => a.order - b.order)
         .map((scene, index) => ({ ...scene, order: index + 1 }));
-    const updated = { ...video, scenes };
+    const updated = revertApprovalInMemory({ ...video, scenes });
     mockVideos.set(id, updated);
     return updated;
 }
 
+function sameBranding(a: Branding, b: Branding): boolean {
+    return a.logo_url === b.logo_url
+        && a.logo_position === b.logo_position
+        && a.primary_color === b.primary_color
+        && a.secondary_color === b.secondary_color
+        && a.font_family === b.font_family;
+}
+
+// Branding is part of what the approver signed off on - the logo and colours
+// are on every frame of a regulated ad - so a real change reverts approval
+// like any other edit. Re-applying the identity the video already has does not.
 export async function updateBranding(id: string, branding: Partial<Branding>): Promise<VideoRecord> {
     const current = await findVideoRecord(id);
-    if (!current) throw new Error('Video no encontrado.');
+    if (!current) throw new VideoError(VIDEO_NOT_FOUND, 404);
     const mergedBranding: Branding = { ...current.branding, ...branding };
+    if (sameBranding(current.branding, mergedBranding)) return current;
 
     const client = getSupabaseClient({ serviceRole: true }) ?? getSupabaseClient();
     if (client) {
         try {
-            const { data: updated, error } = await client.from('videos').update({ branding: mergedBranding }).eq('id', id).select('*').single();
-            if (error || !updated) throw error ?? new Error('No se pudo actualizar el branding.');
+            await revertApprovalInSupabase(client, id);
+            const { data: updated, error } = await client.from('videos').update({ branding: mergedBranding }).eq('id', id).select('*').maybeSingle();
+            if (error) throw error;
+            if (!updated) throw new VideoError(VIDEO_NOT_FOUND, 404);
             const { data: scenesData } = await client.from('scenes').select('*').eq('video_id', id);
             return toVideoRecord(updated, scenesData ?? []);
         } catch (error) {
-            console.warn('Fallo al actualizar branding en Supabase, usando fallback en memoria.', error);
+            fallBackOrThrow(error, 'Fallo al actualizar branding en Supabase');
         }
     }
 
     const video = mockVideos.get(id);
-    if (!video) throw new Error('Video no encontrado.');
-    const updated = { ...video, branding: mergedBranding };
+    if (!video) throw new VideoError(VIDEO_NOT_FOUND, 404);
+    const updated = revertApprovalInMemory({ ...video, branding: mergedBranding });
     mockVideos.set(id, updated);
     return updated;
 }
 
-// RF-010: like branding, the soundtrack is presentation and leaves the
-// approval status alone. Validating the id (exists, is music) is the route's
-// job; this only stores it.
+// RF-010: the soundtrack is part of the ad, so changing it reverts approval
+// like any other edit (RF-012). Validating the id (exists, is music) is the
+// route's job; this only stores it.
 export async function setVideoMusic(id: string, musicId: string | null): Promise<VideoRecord> {
     const client = getSupabaseClient({ serviceRole: true }) ?? getSupabaseClient();
     if (client) {
         try {
+            await revertApprovalInSupabase(client, id);
             const { data: updated, error } = await client.from('videos').update({ music_id: musicId }).eq('id', id).select('*').maybeSingle();
             if (error && isMissingSchemaError(error)) throw new Error(SOUNDS_MIGRATION_MISSING_ERROR);
             if (error) throw error;
-            if (updated) {
-                const { data: scenesData } = await client.from('scenes').select('*').eq('video_id', id);
-                return toVideoRecord(updated, scenesData ?? []);
-            }
+            if (!updated) throw new VideoError(VIDEO_NOT_FOUND, 404);
+            const { data: scenesData } = await client.from('scenes').select('*').eq('video_id', id);
+            return toVideoRecord(updated, scenesData ?? []);
         } catch (error) {
             if (error instanceof Error && error.message === SOUNDS_MIGRATION_MISSING_ERROR) throw error;
-            console.warn('Fallo al actualizar la musica en Supabase, usando fallback en memoria.', error);
+            fallBackOrThrow(error, 'Fallo al actualizar la música en Supabase');
         }
     }
 
     const video = mockVideos.get(id);
-    if (!video) throw new Error('Video no encontrado.');
-    const updated = { ...video, music_id: musicId };
+    if (!video) throw new VideoError(VIDEO_NOT_FOUND, 404);
+    const updated = revertApprovalInMemory({ ...video, music_id: musicId });
     mockVideos.set(id, updated);
     return updated;
 }
 
 export async function duplicateForPlatform(id: string, platform: Platform): Promise<VideoRecord> {
     const original = await findVideoRecord(id);
-    if (!original) throw new Error('Video no encontrado.');
+    if (!original) throw new VideoError(VIDEO_NOT_FOUND, 404);
 
     const sceneInputs: SceneInput[] = original.scenes.map((scene) => ({
         order: scene.order,
@@ -544,26 +698,19 @@ export async function duplicateForPlatform(id: string, platform: Platform): Prom
 
             const newId = String(videoData.id);
             if (sceneInputs.length) {
-                const rows = sceneInputs.map((scene) => ({
-                    video_id: newId,
-                    order: scene.order,
-                    character: scene.character,
-                    action: scene.action,
-                    prop: scene.prop,
-                    description: scene.description,
-                    duration_seconds: scene.duration_seconds,
-                    audio_url: scene.audio_url,
-                    ...soundEffectColumn(scene.sound_effect_id),
-                }));
-                const { error: insertError } = await client.from('scenes').insert(rows);
-                if (insertError) throw insertError;
+                const { error: insertError } = await client.from('scenes').insert(sceneRows(newId, sceneInputs));
+                if (insertError) {
+                    // A copy without its scenes looks like a finished duplicate
+                    // and is not one; take it back out rather than leave it.
+                    const { error: cleanupError } = await client.from('videos').delete().eq('id', newId);
+                    if (cleanupError) console.error('No fue posible borrar la copia incompleta del video.', cleanupError);
+                    throw insertError;
+                }
             }
 
-            const { data: scenesData, error: scenesError } = await client.from('scenes').select('*').eq('video_id', newId);
-            if (scenesError) throw scenesError;
-            return toVideoRecord(videoData, scenesData ?? []);
+            return await readVideoFromSupabase(client, newId);
         } catch (error) {
-            console.warn('Fallo al duplicar el video en Supabase, usando fallback en memoria.', error);
+            fallBackOrThrow(error, 'Fallo al duplicar el video en Supabase');
         }
     }
 
@@ -595,62 +742,64 @@ export async function duplicateForPlatform(id: string, platform: Platform): Prom
     return record;
 }
 
-async function patchInSupabase(id: string, action: string): Promise<VideoRecord> {
-    const client = getSupabaseClient({ serviceRole: true }) ?? getSupabaseClient();
-    if (!client) {
-        const video = mockVideos.get(id);
-        if (!video) throw new Error('Video no encontrado.');
-        if (action === 'publish' && !video.video_url) throw new Error('Genera el video antes de publicarlo.');
-        const nextStatus = transitions[action];
-        if (!nextStatus || !canTransition(video.status, nextStatus)) {
-            throw new Error(`Transicion no permitida desde ${video.status}.`);
-        }
-        const updated = { ...video, status: nextStatus };
-        mockVideos.set(id, updated);
-        return updated;
-    }
-
-    const { data: videoData, error: fetchError } = await client.from('videos').select('*').eq('id', id).single();
-    if (fetchError || !videoData) {
-        throw new Error('Video no encontrado.');
-    }
-    if (action === 'publish' && !videoData.video_url) throw new Error('Genera el video antes de publicarlo.');
-
+// The business rules of a status change, shared by the database and memory
+// paths. Thrown as VideoError(409) so they reach the client as what they are
+// instead of being mistaken for a storage failure.
+function nextStatusFor(video: { status: unknown; video_url: unknown }, action: string): VideoStatus {
+    if (action === 'publish' && !video.video_url) throw new VideoError('Genera el video antes de publicarlo.', 409);
     const nextStatus = transitions[action];
-    if (!nextStatus || !canTransition(videoData.status, nextStatus)) {
-        throw new Error(`Transicion no permitida desde ${videoData.status}.`);
+    if (!nextStatus || !canTransition(video.status as VideoStatus, nextStatus)) {
+        throw new VideoError(`Transición no permitida desde ${String(video.status)}.`, 409);
     }
+    return nextStatus;
+}
 
-    const { data: updated, error: updateError } = await client.from('videos').update({ status: nextStatus }).eq('id', id).select('*').single();
-    if (updateError || !updated) {
-        throw updateError ?? new Error('No se pudo actualizar el estado.');
-    }
+function patchInMemory(id: string, action: string): VideoRecord {
+    const video = mockVideos.get(id);
+    if (!video) throw new VideoError(VIDEO_NOT_FOUND, 404);
+    const updated = { ...video, status: nextStatusFor(video, action) };
+    mockVideos.set(id, updated);
+    return updated;
+}
+
+async function patchInSupabase(client: SupabaseClient, id: string, action: string): Promise<VideoRecord> {
+    const { data: videoData, error: fetchError } = await client.from('videos').select('*').eq('id', id).maybeSingle();
+    if (fetchError) throw fetchError;
+    if (!videoData) throw new VideoError(VIDEO_NOT_FOUND, 404);
+
+    const nextStatus = nextStatusFor(videoData, action);
+
+    // Conditional on the status just read: an edit that reverted the video to
+    // 'borrador' a moment ago must not be overwritten by an approval clicked
+    // on the version the person saw before it.
+    const { data: updated, error: updateError } = await client
+        .from('videos')
+        .update({ status: nextStatus })
+        .eq('id', id)
+        .eq('status', String(videoData.status))
+        .select('*')
+        .maybeSingle();
+    if (updateError) throw updateError;
+    if (!updated) throw new VideoError('El video cambió mientras tanto. Recarga la página y vuelve a intentarlo.', 409);
 
     const { data: scenesData } = await client.from('scenes').select('*').eq('video_id', id);
     return toVideoRecord(updated, scenesData ?? []);
 }
 
 export async function updateVideoStatus(id: string, action: string): Promise<VideoRecord> {
+    const client = getSupabaseClient({ serviceRole: true }) ?? getSupabaseClient();
+    if (!client) return patchInMemory(id, action);
     try {
-        return await patchInSupabase(id, action);
+        return await patchInSupabase(client, id, action);
     } catch (error) {
-        console.warn('Fallo al actualizar estado en Supabase, usando fallback en memoria.', error);
-        const video = mockVideos.get(id);
-        if (!video) throw new Error('Video no encontrado.');
-        if (action === 'publish' && !video.video_url) throw new Error('Genera el video antes de publicarlo.');
-        const nextStatus = transitions[action];
-        if (!nextStatus || !canTransition(video.status, nextStatus)) {
-            throw new Error(`Transicion no permitida desde ${video.status}.`);
-        }
-        const updated = { ...video, status: nextStatus };
-        mockVideos.set(id, updated);
-        return updated;
+        fallBackOrThrow(error, 'Fallo al actualizar estado en Supabase');
+        return patchInMemory(id, action);
     }
 }
 
 export async function deleteVideo(id: string): Promise<void> {
     const video = await findVideoRecord(id);
-    if (!video) throw new Error('Video no encontrado.');
+    if (!video) throw new VideoError(VIDEO_NOT_FOUND, 404);
 
     const client = getSupabaseClient({ serviceRole: true }) ?? getSupabaseClient();
     if (client) {
@@ -662,21 +811,71 @@ export async function deleteVideo(id: string): Promise<void> {
             const { error } = await client.from('videos').delete().eq('id', id);
             if (error) throw error;
         } catch (error) {
-            console.warn('Fallo al eliminar el video en Supabase, usando fallback en memoria.', error);
+            fallBackOrThrow(error, 'Fallo al eliminar el video en Supabase');
         }
     }
 
     mockVideos.delete(id);
 }
 
+type RenderState = Pick<Video, 'render_status' | 'render_progress' | 'render_error' | 'render_started_at'>;
+
+const RENDER_ALREADY_RUNNING = 'Este video ya se está generando.';
+const RENDER_WORKER_BUSY = 'El generador está ocupado con otro video; intenta en unos minutos.';
+
+// Takes the render slot for this video in one conditional write, so two
+// clicks (or two tabs) cannot both reach the worker. A row still marked
+// 'procesando' is only taken over once it is past the same stall threshold
+// the reads use to give a job up for dead.
+async function claimRender(client: SupabaseClient | null, video: VideoRecord, claim: RenderState): Promise<VideoRecord> {
+    if (!client) {
+        const local = mockVideos.get(video.id) ?? video;
+        if (local.render_status === 'procesando' && !isRenderStalled(local.render_status, local.render_started_at)) {
+            throw new VideoError(RENDER_ALREADY_RUNNING, 409);
+        }
+        const claimed = { ...local, ...claim };
+        mockVideos.set(video.id, claimed);
+        return claimed;
+    }
+
+    const stallCutoff = new Date(Date.now() - RENDER_STALL_TIMEOUT_MS).toISOString();
+    const { data: claimed, error } = await client
+        .from('videos')
+        .update(claim)
+        .eq('id', video.id)
+        .or(`render_status.is.null,render_status.neq.procesando,render_started_at.lt."${stallCutoff}"`)
+        .select('*')
+        .maybeSingle();
+    if (error) throw toVideoError(error);
+    if (!claimed) throw new VideoError(RENDER_ALREADY_RUNNING, 409);
+    return toVideoRecord(claimed, video.scenes as unknown as DatabaseRow[]);
+}
+
+// Gives the slot back when the worker never took the job. Guarded by our own
+// start time so it cannot undo a claim someone else made after ours.
+async function releaseRender(client: SupabaseClient | null, id: string, claim: RenderState, previous: RenderState): Promise<void> {
+    if (!client) {
+        const local = mockVideos.get(id);
+        if (local && local.render_started_at === claim.render_started_at) mockVideos.set(id, { ...local, ...previous });
+        return;
+    }
+    const { error } = await client
+        .from('videos')
+        .update(previous)
+        .eq('id', id)
+        .eq('render_status', 'procesando')
+        .eq('render_started_at', claim.render_started_at ?? '');
+    if (error) console.error('No fue posible liberar el render tras el rechazo del generador.', error);
+}
+
 export async function renderVideo(id: string): Promise<VideoRecord> {
     const video = await findVideoRecord(id);
-    if (!video) throw new Error('Video no encontrado.');
-    if (video.status !== 'aprobado') throw new Error('Solo se pueden generar videos aprobados.');
+    if (!video) throw new VideoError(VIDEO_NOT_FOUND, 404);
+    if (video.status !== 'aprobado') throw new VideoError('Solo se pueden generar videos aprobados.', 409);
 
     const configuredWorkerUrl = process.env.RENDER_WORKER_URL?.trim();
     if (!configuredWorkerUrl && process.env.NODE_ENV === 'production') {
-        throw new Error('RENDER_WORKER_URL es obligatoria en produccion.');
+        throw new VideoError('RENDER_WORKER_URL es obligatoria en producción.', 500);
     }
     const workerUrl = (configuredWorkerUrl || 'http://localhost:8080').replace(/\/+$/, '');
 
@@ -688,7 +887,7 @@ export async function renderVideo(id: string): Promise<VideoRecord> {
     // instead of a confusing 401 from that fetch.
     const workerToken = process.env.RENDER_WORKER_TOKEN?.trim();
     if (!workerToken && process.env.NODE_ENV === 'production') {
-        throw new Error('RENDER_WORKER_TOKEN es obligatoria en produccion.');
+        throw new VideoError('RENDER_WORKER_TOKEN es obligatoria en producción.', 500);
     }
     const sortedScenes = [...video.scenes].sort((a, b) => a.order - b.order);
 
@@ -698,58 +897,66 @@ export async function renderVideo(id: string): Promise<VideoRecord> {
     const soundUrls = await resolveSoundUrls([video.music_id, ...sortedScenes.map((scene) => scene.sound_effect_id)]);
     const urlFor = (soundId: string | null) => (soundId ? soundUrls.get(soundId) ?? null : null);
 
-    // The worker answers 202 as soon as it has accepted the job and then
-    // reports progress on the video row, so this only has to confirm the job
-    // was queued. A render can run for minutes once scenes come from an AI
-    // model - far longer than this request may stay open.
-    const response = await fetch(`${workerUrl}/render`, {
-        method: 'POST',
-        headers: {
-            'Content-Type': 'application/json',
-            ...(workerToken ? { Authorization: `Bearer ${workerToken}` } : {}),
-        },
-        body: JSON.stringify({
-            id,
-            platform: video.platform,
-            branding: video.branding,
-            music_url: urlFor(video.music_id),
-            scenes: sortedScenes.map((scene) => ({
-                order: scene.order,
-                character: scene.character,
-                action: scene.action,
-                prop: scene.prop,
-                description: scene.description,
-                duration_seconds: scene.duration_seconds,
-                audio_url: scene.audio_url,
-                sound_effect_url: urlFor(scene.sound_effect_id),
-            })),
-        }),
-    });
-
-    if (!response.ok) {
-        const result = await response.json().catch(() => ({})) as { error?: unknown };
-        throw new Error(typeof result.error === 'string' ? result.error : 'No se pudo encolar la generacion del video.');
-    }
-
-    const queued = {
-        render_status: 'procesando' as const,
+    const client = getSupabaseClient({ serviceRole: true }) ?? getSupabaseClient();
+    const previous: RenderState = {
+        render_status: video.render_status,
+        render_progress: video.render_progress,
+        render_error: video.render_error,
+        render_started_at: video.render_started_at,
+    };
+    const claim: RenderState = {
+        render_status: 'procesando',
         render_progress: 0,
         render_error: null,
         render_started_at: new Date().toISOString(),
     };
+    // Claimed before the worker is called, and never written again here once
+    // it answers: from the 202 on, the worker owns the row and reports its own
+    // progress, and a late write from this side would overwrite that.
+    const claimed = await claimRender(client, video, claim);
 
-    const databaseClient = getSupabaseClient({ serviceRole: true }) ?? getSupabaseClient();
-    if (databaseClient) {
-        try {
-            const { data: updated, error } = await databaseClient.from('videos').update(queued).eq('id', id).select('*').single();
-            if (error || !updated) throw error ?? new Error('No se pudo marcar el video como en proceso.');
-            return toVideoRecord(updated, video.scenes as unknown as DatabaseRow[]);
-        } catch (error) {
-            console.warn('Fallo al marcar el render como en proceso en Supabase, usando fallback en memoria.', error);
-        }
+    // The worker answers 202 as soon as it has accepted the job and then
+    // reports progress on the video row, so this only has to confirm the job
+    // was queued. A render can run for minutes once scenes come from an AI
+    // model - far longer than this request may stay open.
+    let response: Response;
+    try {
+        response = await fetch(`${workerUrl}/render`, {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json',
+                ...(workerToken ? { Authorization: `Bearer ${workerToken}` } : {}),
+            },
+            body: JSON.stringify({
+                id,
+                platform: video.platform,
+                branding: video.branding,
+                music_url: urlFor(video.music_id),
+                scenes: sortedScenes.map((scene) => ({
+                    order: scene.order,
+                    character: scene.character,
+                    action: scene.action,
+                    prop: scene.prop,
+                    description: scene.description,
+                    duration_seconds: scene.duration_seconds,
+                    audio_url: scene.audio_url,
+                    sound_effect_url: urlFor(scene.sound_effect_id),
+                })),
+            }),
+        });
+    } catch (error) {
+        console.error('No fue posible contactar al generador de video.', error);
+        await releaseRender(client, id, claim, previous);
+        throw new VideoError('No fue posible contactar al generador de video. Intenta de nuevo en unos minutos.', 502);
     }
 
-    const updated = { ...video, ...queued };
-    mockVideos.set(id, updated);
-    return updated;
+    if (!response.ok) {
+        await releaseRender(client, id, claim, previous);
+        if (response.status === 409) throw new VideoError(RENDER_ALREADY_RUNNING, 409);
+        if (response.status === 503) throw new VideoError(RENDER_WORKER_BUSY, 503);
+        const result = await response.json().catch(() => ({})) as { error?: unknown };
+        throw new VideoError(typeof result.error === 'string' ? result.error : 'No se pudo encolar la generación del video.', 502);
+    }
+
+    return claimed;
 }

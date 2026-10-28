@@ -1,6 +1,7 @@
 import { NextResponse } from 'next/server';
 import { getTemplate } from '@shared-types/templates';
 import type { Platform } from '@shared-types/video';
+import { MAX_TARGET_DURATION_SECONDS } from '@shared-types/video';
 import { createVideo, listVideos } from '../../../lib/video-persistence';
 
 const PLATFORMS: Platform[] = ['reels', 'tiktok', 'shorts'];
@@ -18,7 +19,7 @@ export async function POST(request: Request) {
     const rawDuration = body?.targetDurationSeconds;
     const targetDurationSeconds = rawDuration === undefined || rawDuration === null
         ? 30
-        : (typeof rawDuration === 'number' && Number.isFinite(rawDuration) && rawDuration > 0 ? rawDuration : null);
+        : (typeof rawDuration === 'number' && Number.isFinite(rawDuration) && rawDuration > 0 && rawDuration <= MAX_TARGET_DURATION_SECONDS ? rawDuration : null);
 
     // Unknown names fall back to 'libre' rather than being rejected: a template
     // is a hint about shape, not something worth failing a creation over.
@@ -26,7 +27,7 @@ export async function POST(request: Request) {
 
     if (!topic) return NextResponse.json({ error: 'El tema es obligatorio.' }, { status: 400 });
     if (!platform) return NextResponse.json({ error: 'La plataforma debe ser reels, tiktok o shorts.' }, { status: 400 });
-    if (targetDurationSeconds === null) return NextResponse.json({ error: 'La duracion objetivo debe ser un numero positivo.' }, { status: 400 });
+    if (targetDurationSeconds === null) return NextResponse.json({ error: `La duración objetivo debe ser un número positivo de hasta ${MAX_TARGET_DURATION_SECONDS} segundos.` }, { status: 400 });
 
     try {
         const record = await createVideo(topic, platform, targetDurationSeconds, template);

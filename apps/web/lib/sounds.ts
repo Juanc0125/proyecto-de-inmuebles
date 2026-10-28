@@ -291,11 +291,13 @@ export async function deleteUploadedSound(id: string): Promise<DeleteSoundResult
     if (!record) return 'no_encontrado';
 
     if (client) {
-        try {
-            const { error } = await client.from('sound_assets').delete().eq('id', parsed.uuid);
-            if (error) throw error;
-        } catch (error) {
-            console.warn('Fallo al eliminar la fila del sonido en Supabase.', error);
+        // Row first, file only once the row is gone: the other order could
+        // leave a catalog entry pointing at a file that no longer exists, and
+        // every video using it would render silent with no sign of why.
+        const { error: rowError } = await client.from('sound_assets').delete().eq('id', parsed.uuid);
+        if (rowError) {
+            console.error('Fallo al eliminar la fila del sonido en Supabase.', rowError);
+            throw new Error('No se pudo eliminar el sonido. Intenta de nuevo.');
         }
 
         try {

@@ -1,7 +1,7 @@
 import { NextResponse } from 'next/server';
 import type { Branding, LogoPosition } from '@shared-types/video';
 import { DEFAULT_BRANDING } from '@shared-types/video';
-import { createBrandTemplate, listBrandTemplates } from '../../../lib/brand-templates';
+import { createBrandTemplate, listBrandTemplates, safeLogoUrl } from '../../../lib/brand-templates';
 import { getVideo } from '../../../lib/video-persistence';
 
 const LOGO_POSITIONS: LogoPosition[] = ['top-left', 'top-right', 'bottom-left', 'bottom-right'];
@@ -42,7 +42,9 @@ function coerceBranding(value: unknown): Branding | string {
     }
 
     return {
-        logo_url: typeof source.logo_url === 'string' ? source.logo_url : null,
+        // Only a logo already uploaded to this project's bucket; any other URL
+        // is dropped rather than handed to the render worker to fetch.
+        logo_url: safeLogoUrl(source.logo_url),
         logo_position: logoPosition as LogoPosition,
         primary_color: primary,
         secondary_color: secondary,
@@ -83,7 +85,7 @@ export async function POST(request: Request) {
         if (!video) {
             return NextResponse.json({ error: 'Video no encontrado.' }, { status: 404 });
         }
-        branding = video.branding;
+        branding = { ...video.branding, logo_url: safeLogoUrl(video.branding.logo_url) };
     } else {
         const coerced = coerceBranding(body.branding);
         if (typeof coerced === 'string') {

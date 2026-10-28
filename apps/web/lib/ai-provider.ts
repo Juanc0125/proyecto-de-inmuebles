@@ -123,13 +123,46 @@ function providers(): Provider[] {
     return MODELS.order.map((id) => byId[id]).filter((provider): provider is Provider => Boolean(provider));
 }
 
-function toWireMessage(message: ChatMessage): WireMessage {
+const MISTRAL_ID_PATTERN = /^[a-zA-Z0-9]{9}$/;
+const BASE62 = '0123456789abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ';
+
+// Mistral rejects any tool_call id that is not exactly 9 alphanumeric
+// characters, and a conversation that started on Groq or Gemini carries ids
+// like "call_abc..." into it. The mapping is a pure function of the original
+// id, so an assistant tool_call and the tool reply that answers it still match
+// after both are rewritten in the same request. Ids Mistral itself issued are
+// already valid and pass through untouched.
+function mistralToolCallId(id: string): string {
+    if (MISTRAL_ID_PATTERN.test(id)) return id;
+    // Two independent 32-bit hash passes (~53 bits once squeezed into 9
+    // base-62 digits), plenty for the handful of calls in one conversation.
+    let a = 0x811c9dc5;
+    let b = 0x01000193 ^ id.length;
+    for (let index = 0; index < id.length; index += 1) {
+        const code = id.charCodeAt(index);
+        a = Math.imul(a ^ code, 0x01000193) >>> 0;
+        b = Math.imul(b ^ code, 0x5bd1e995) >>> 0;
+    }
+    // Plain numbers instead of BigInt: the web tsconfig targets ES2017.
+    let out = '';
+    for (const [seed, digits] of [[a, 5], [b, 4]] as const) {
+        let value = seed;
+        for (let index = 0; index < digits; index += 1) {
+            out += BASE62[value % 62];
+            value = Math.floor(value / 62);
+        }
+    }
+    return out;
+}
+
+function toWireMessage(message: ChatMessage, provider: Provider): WireMessage {
+    const wireId = provider.id === 'mistral' ? mistralToolCallId : (id: string) => id;
     const wire: WireMessage = { role: message.role, content: message.content };
-    if (message.tool_call_id) wire.tool_call_id = message.tool_call_id;
+    if (message.tool_call_id) wire.tool_call_id = wireId(message.tool_call_id);
     if (message.name) wire.name = message.name;
     if (message.tool_calls?.length) {
         wire.tool_calls = message.tool_calls.map((call) => ({
-            id: call.id,
+            id: wireId(call.id),
             type: 'function',
             function: { name: call.name, arguments: JSON.stringify(call.arguments ?? {}) },
         }));
@@ -202,7 +235,7 @@ async function requestCompletion(provider: Provider, system: string, messages: C
         ...(provider.alternates?.length ? { models: [provider.model, ...provider.alternates] } : {}),
         temperature: options.temperature ?? 0.6,
         max_tokens: Math.max(options.maxTokens ?? 1024, provider.minTokens ?? 0),
-        messages: [{ role: 'system', content: system }, ...messages.map(toWireMessage)],
+        messages: [{ role: 'system', content: system }, ...messages.map((message) => toWireMessage(message, provider))],
         ...provider.extraBody,
     };
     if (options.tools?.length) {

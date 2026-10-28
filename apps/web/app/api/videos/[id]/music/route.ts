@@ -4,8 +4,8 @@ import { getVideo, setVideoMusic } from '../../../../../lib/video-persistence';
 
 type RouteContext = { params: Promise<{ id: string }> };
 
-// RF-010: one background track per video. Changing it does not touch the
-// approval status, the same as branding.
+// RF-010: one background track per video. Changing it sends an approved
+// video back to draft (RF-012), the same as branding: see setVideoMusic.
 export async function PATCH(request: Request, context: RouteContext) {
     const { id } = await context.params;
     const body = await request.json().catch(() => null) as { music_id?: unknown } | null;

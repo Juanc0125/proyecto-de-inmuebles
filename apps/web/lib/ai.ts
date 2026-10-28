@@ -10,7 +10,7 @@ function configuredProviders(): AiProvider[] {
 }
 
 function providerKey(provider: AiProvider) {
-    return provider === 'anthropic' ? process.env.ANTHROPIC_API_KEY : process.env.LLM_API_KEY ?? process.env.OPENAI_API_KEY;
+    return provider === 'anthropic' ? process.env.ANTHROPIC_API_KEY : process.env.LLM_API_KEY || process.env.OPENAI_API_KEY;
 }
 
 async function requestOpenAi(system: string, messages: { role: 'user' | 'assistant'; content: string }[], maxTokens: number): Promise<string> {
@@ -31,7 +31,7 @@ async function requestAnthropic(system: string, messages: { role: 'user' | 'assi
     const response = await fetch(process.env.ANTHROPIC_API_URL ?? 'https://api.anthropic.com/v1/messages', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json', 'x-api-key': providerKey('anthropic') ?? '', 'anthropic-version': '2023-06-01' },
-        body: JSON.stringify({ model: process.env.ANTHROPIC_MODEL ?? 'claude-3-5-haiku-latest', system, max_tokens: maxTokens, messages }),
+        body: JSON.stringify({ model: process.env.ANTHROPIC_MODEL || 'claude-haiku-5-5', system, max_tokens: maxTokens, messages }),
         signal: AbortSignal.timeout(30000),
     });
     if (!response.ok) throw new Error(`Claude respondio con ${response.status}.`);

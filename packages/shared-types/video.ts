@@ -24,6 +24,17 @@ export const DEFAULT_BRANDING: Branding = {
     font_family: 'Arial',
 };
 
+// One scene is one spoken line: under 2 s it cannot be read, over 10 s the
+// stick figure stands still long enough to lose the viewer. The scene planner,
+// the manual edit and the copilot all clamp or reject against these.
+export const MIN_SCENE_SECONDS = 2;
+export const MAX_SCENE_SECONDS = 10;
+
+// Upper bound for a whole video's target length. These are short vertical
+// clips; a bigger target only makes the planner ask for more scenes than the
+// format can hold.
+export const MAX_TARGET_DURATION_SECONDS = 180;
+
 // Rendering is asynchronous: generating a scene with an AI model takes
 // minutes, so the request returns immediately and the worker reports progress
 // on the video row.

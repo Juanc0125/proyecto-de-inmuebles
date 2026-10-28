@@ -21,3 +21,15 @@ export function canTransition(current: VideoStatus, next: VideoStatus): boolean 
     if (current === 'pendiente_aprobacion' && next === 'borrador') return true;
     return current === 'aprobado' && next === 'publicado';
 }
+
+// RF-012: an approval is for the content as it was when a person looked at it.
+// A content edit made in any of these statuses sends the video back to
+// 'borrador'. This is deliberately not a `transitions` entry and does not go
+// through canTransition: the status PATCH must never be able to reach
+// 'borrador' from 'aprobado' or 'publicado' on request. Only the persistence
+// layer applies it, and only as the side effect of a real edit.
+export const EDIT_REVERTS_TO_DRAFT_FROM: readonly VideoStatus[] = ['pendiente_aprobacion', 'aprobado', 'publicado'];
+
+export function revertsToDraftOnEdit(status: unknown): boolean {
+    return (EDIT_REVERTS_TO_DRAFT_FROM as readonly unknown[]).includes(status);
+}

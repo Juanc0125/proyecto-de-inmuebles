@@ -4,7 +4,7 @@
 import { NextResponse } from 'next/server';
 import { createSupabaseRouteClient } from './supabase-server';
 
-export const SIGN_IN_REQUIRED_ERROR = 'Inicia sesion para generar, aprobar, borrar o subir archivos.';
+export const SIGN_IN_REQUIRED_ERROR = 'Inicia sesión para generar, aprobar, borrar o subir archivos.';
 
 /**
  * Off by default since 13-oct-2026: the owner asked for free entry, approvals
