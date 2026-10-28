@@ -2,7 +2,8 @@
 
 import { useCallback, useEffect, useState } from 'react';
 import type { SoundAsset } from '@shared-types/sounds';
-import { fetchSounds, type VideoRecord } from './api';
+import type { BrandTemplate } from '@shared-types/templates';
+import { fetchBrandTemplates, fetchSounds, type VideoRecord } from './api';
 import { PLATFORM_LABELS } from './constants';
 import StatusBadge from './status-badge';
 import ScriptPanel from './script-panel';
@@ -18,11 +19,10 @@ interface VideoWorkspaceProps {
     onDuplicated: (video: VideoRecord) => void;
 }
 
-// Only the fields the branding panel copies into its own state.
-function brandSignature(video: VideoRecord): string {
-    const { primary_color, secondary_color, font_family, logo_position, logo_url } = video.branding;
-    return [primary_color, secondary_color, font_family, logo_position, logo_url ?? ''].join('|');
-}
+// Content edits on a video already sent to approval (or approved, or
+// published) send it back to draft on the server. Said out loud, because the
+// status badge changing on its own reads as a glitch.
+const BACK_TO_DRAFT_NOTICE = 'El video volvió a borrador: hay que aprobarlo de nuevo.';
 
 export default function VideoWorkspace({ video, onUpdated, onDuplicated }: VideoWorkspaceProps) {
     // RF-010: one sound list for the music picker, the per-scene effect
@@ -44,11 +44,46 @@ export default function VideoWorkspace({ video, onUpdated, onDuplicated }: Video
     }, []);
 
     useEffect(() => {
-        // Deferred by a tick, as in the branding panel: the lint rule cannot
-        // tell that state only changes once the fetch resolves.
+        // Deferred by a tick: the lint rule cannot tell that state only
+        // changes once the fetch resolves.
         const timer = setTimeout(() => { void loadSounds(); }, 0);
         return () => clearTimeout(timer);
     }, [loadSounds]);
+
+    // Brand templates live here rather than in the branding panel for the
+    // same reason as the sounds, plus one: the panel's form follows the
+    // video's brand, and saving a template first saves pending brand edits.
+    // When the list lived in the panel, that save changed the brand
+    // mid-request, the panel was rebuilt, and the new template (or its error)
+    // landed in a component that no longer existed.
+    const [brandTemplates, setBrandTemplates] = useState<BrandTemplate[]>([]);
+    const [brandTemplatesLoading, setBrandTemplatesLoading] = useState(true);
+    const [brandTemplatesError, setBrandTemplatesError] = useState('');
+
+    const loadBrandTemplates = useCallback(async () => {
+        try {
+            setBrandTemplates(await fetchBrandTemplates());
+            setBrandTemplatesError('');
+        } catch (err) {
+            setBrandTemplatesError(err instanceof Error ? err.message : 'No se pudieron cargar las plantillas de marca.');
+        } finally {
+            setBrandTemplatesLoading(false);
+        }
+    }, []);
+
+    useEffect(() => {
+        const timer = setTimeout(() => { void loadBrandTemplates(); }, 0);
+        return () => clearTimeout(timer);
+    }, [loadBrandTemplates]);
+
+    function retryBrandTemplates() {
+        setBrandTemplatesLoading(true);
+        setBrandTemplatesError('');
+        void loadBrandTemplates();
+    }
+
+    // Tied to the video it is about, so switching videos hides it.
+    const [notice, setNotice] = useState<{ videoId: string; text: string } | null>(null);
 
     if (!video) {
         return (
@@ -73,16 +108,16 @@ export default function VideoWorkspace({ video, onUpdated, onDuplicated }: Video
                         </h2>
                         <p className="mx-auto max-w-xl text-pretty text-sm leading-relaxed text-slate-400 sm:text-base">
                             Stickman escribe la historia, la reparte en escenas, la narra en español y arma el MP4
-                            vertical para Reels, TikTok o Shorts. Tu solo dices el tema.
+                            vertical para Reels, TikTok o Shorts. Tú solo dices el tema.
                         </p>
                     </div>
 
                     <ol className="mb-10 grid gap-3 sm:grid-cols-2 lg:grid-cols-4">
                         {[
                             { n: '01', t: 'Dices el tema', d: 'Hablas o escribes. Se genera un guion con forma de historia, no un folleto.' },
-                            { n: '02', t: 'Se arma en escenas', d: 'Cada escena con su personaje, su accion y su objeto. Puedes editarlas o borrarlas.' },
-                            { n: '03', t: 'Tu lo apruebas', d: 'Nada se publica sin que una persona lo revise. El asistente no puede saltarse este paso.' },
-                            { n: '04', t: 'Sale el video', d: 'MP4 vertical con voz y subtitulos, listo para descargar o publicar.' },
+                            { n: '02', t: 'Se arma en escenas', d: 'Cada escena con su personaje, su acción y su objeto. Puedes editarlas o borrarlas.' },
+                            { n: '03', t: 'Tú lo apruebas', d: 'Nada se publica sin que una persona lo revise. El asistente no puede saltarse este paso.' },
+                            { n: '04', t: 'Sale el video', d: 'MP4 vertical con voz y subtítulos, listo para descargar o publicar.' },
                         ].map((step) => (
                             <li key={step.n} className="tile tile-hover group relative overflow-hidden p-5">
                                 <span
@@ -98,13 +133,13 @@ export default function VideoWorkspace({ video, onUpdated, onDuplicated }: Video
 
                     <div className="grid gap-4 sm:grid-cols-2">
                         <div className="tile p-5">
-                            <h3 className="eyebrow mb-4">Pruebalo diciendo</h3>
+                            <h3 className="eyebrow mb-4">Pruébalo diciendo</h3>
                             <ul className="space-y-2">
                                 {[
                                     'Crea un video sobre tasas fijas para TikTok',
                                     'Genera las escenas',
                                     'En la escena 2 que el broker camine con una casa',
-                                    'Cuantos videos tengo pendientes',
+                                    '¿Cuántos videos tengo pendientes?',
                                 ].map((example) => (
                                     <li
                                         key={example}
@@ -120,11 +155,11 @@ export default function VideoWorkspace({ video, onUpdated, onDuplicated }: Video
                             </ul>
                         </div>
                         <div className="tile p-5">
-                            <h3 className="eyebrow mb-4">Tambien puedes</h3>
+                            <h3 className="eyebrow mb-4">También puedes</h3>
                             <ul className="space-y-3 text-sm text-slate-200">
                                 {[
                                     'Editar el guion y cada escena a mano',
-                                    'Poner tu logo, tus colores y tu tipografia',
+                                    'Poner tu logo, tus colores y tu tipografía',
                                     'Reutilizar un video para otra plataforma',
                                     'Descargar el MP4 o publicarlo',
                                 ].map((item) => (
@@ -157,6 +192,18 @@ export default function VideoWorkspace({ video, onUpdated, onDuplicated }: Video
     ];
     // The first step not yet done is "where you are": highlighted, not clickable.
     const currentIndex = steps.findIndex((step) => !step.done);
+
+    // For the editing panels only. The approval panel's own "reject" also
+    // lands in draft, but there the operator asked for exactly that.
+    const previousStatus = video.status;
+    function handleEdited(updated: VideoRecord) {
+        if (updated.id === video?.id && updated.status !== previousStatus && updated.status === 'borrador') {
+            setNotice({ videoId: updated.id, text: BACK_TO_DRAFT_NOTICE });
+        }
+        onUpdated(updated);
+    }
+    // Once it is back in approval there is nothing left to warn about.
+    const visibleNotice = notice && notice.videoId === video.id && video.status === 'borrador' ? notice.text : '';
 
     return (
         <div key={video.id} className="enter space-y-5 sm:space-y-6">
@@ -226,22 +273,47 @@ export default function VideoWorkspace({ video, onUpdated, onDuplicated }: Video
                 </ol>
             </header>
 
-            {/* These two panels seed their fields from the record when they
-                mount. The copilot can now change the same video from outside,
-                so the key gives them fresh initial state when the value they
-                show actually changed - without it the textarea keeps the old
-                script and the colour pickers the old brand. */}
-            <ScriptPanel key={`guion:${video.script}`} video={video} onUpdated={onUpdated} />
-            <ScenePanel video={video} sounds={sounds} soundsLoading={soundsLoading} onUpdated={onUpdated} />
+            {visibleNotice && (
+                <div className="alert alert-warning flex items-start justify-between gap-3" role="status">
+                    <span className="min-w-0">{visibleNotice}</span>
+                    <button
+                        type="button"
+                        onClick={() => setNotice(null)}
+                        aria-label="Cerrar aviso"
+                        className="btn-icon -my-1 shrink-0"
+                    >
+                        <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" aria-hidden="true">
+                            <path d="M6 6l12 12M18 6 6 18" />
+                        </svg>
+                    </button>
+                </div>
+            )}
+
+            {/* The script panel seeds its textarea from the record when it
+                mounts. The copilot can change the same video from outside, so
+                the key gives it fresh initial state when the script actually
+                changed - without it the textarea keeps the old script. The
+                branding panel does the same reseeding inside itself, because
+                remounting it would also drop its template list mid-save. */}
+            <ScriptPanel key={`guion:${video.script}`} video={video} onUpdated={handleEdited} />
+            <ScenePanel video={video} sounds={sounds} soundsLoading={soundsLoading} onUpdated={handleEdited} />
             <SoundPanel
                 video={video}
                 sounds={sounds}
                 soundsLoading={soundsLoading}
                 soundsError={soundsError}
                 onSoundsChanged={setSounds}
-                onUpdated={onUpdated}
+                onUpdated={handleEdited}
             />
-            <BrandingPanel key={`marca:${brandSignature(video)}`} video={video} onUpdated={onUpdated} />
+            <BrandingPanel
+                video={video}
+                onUpdated={handleEdited}
+                templates={brandTemplates}
+                templatesLoading={brandTemplatesLoading}
+                templatesError={brandTemplatesError}
+                onTemplatesChanged={setBrandTemplates}
+                onRetryTemplates={retryBrandTemplates}
+            />
             <StatusPanel video={video} onUpdated={onUpdated} onDuplicated={onDuplicated} />
         </div>
     );

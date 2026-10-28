@@ -1,10 +1,10 @@
 'use client';
 
-import { useCallback, useEffect, useRef, useState, type ChangeEvent } from 'react';
+import { useRef, useState, type ChangeEvent, type Dispatch, type SetStateAction } from 'react';
 import type { BrandTemplate } from '@shared-types/templates';
 import type { LogoPosition } from '@shared-types/video';
 import {
-    applyBrandTemplate, deleteBrandTemplate, fetchBrandTemplates, saveBrandTemplate,
+    applyBrandTemplate, deleteBrandTemplate, saveBrandTemplate,
     updateBranding, uploadLogo, type BrandingPatch, type VideoRecord,
 } from './api';
 import { FONT_OPTIONS, LOGO_POSITION_OPTIONS } from './constants';
@@ -13,6 +13,21 @@ import SectionIcon from './section-icon';
 interface BrandingPanelProps {
     video: VideoRecord;
     onUpdated: (video: VideoRecord) => void;
+    // Owned by the workspace, so a save that changes the brand mid-request
+    // cannot lose the template it was creating.
+    templates: BrandTemplate[];
+    templatesLoading: boolean;
+    templatesError: string;
+    onTemplatesChanged: Dispatch<SetStateAction<BrandTemplate[]>>;
+    onRetryTemplates: () => void;
+}
+
+// Only the fields the form copies into its own state. The logo is left out on
+// purpose: it is shown straight from the record, and uploading one must not
+// throw away colour or font edits that were not saved yet.
+function brandSignature(branding: VideoRecord['branding']): string {
+    const { primary_color, secondary_color, font_family, logo_position } = branding;
+    return [primary_color, secondary_color, font_family, logo_position].join('|');
 }
 
 const ACCEPTED_LOGO_TYPES = 'image/png,image/jpeg,image/webp,image/svg+xml';
@@ -26,12 +41,29 @@ function readFileAsDataUrl(file: File): Promise<string> {
     });
 }
 
-export default function BrandingPanel({ video, onUpdated }: BrandingPanelProps) {
+export default function BrandingPanel({
+    video, onUpdated, templates: brandTemplates, templatesLoading, templatesError, onTemplatesChanged, onRetryTemplates,
+}: BrandingPanelProps) {
     const branding = video.branding;
     const [primaryColor, setPrimaryColor] = useState(branding.primary_color);
     const [secondaryColor, setSecondaryColor] = useState(branding.secondary_color);
     const [fontFamily, setFontFamily] = useState(branding.font_family);
     const [logoPosition, setLogoPosition] = useState<LogoPosition>(branding.logo_position);
+
+    // The copilot can change this brand from outside. Instead of a key on the
+    // whole panel (which would also wipe the template name, an in-flight save
+    // and its error), only the form fields are reseeded when the stored brand
+    // they copy actually changed - React's "adjust state on prop change"
+    // pattern, done during render so the stale values never paint.
+    const signature = brandSignature(branding);
+    const [seededFrom, setSeededFrom] = useState(signature);
+    if (seededFrom !== signature) {
+        setSeededFrom(signature);
+        setPrimaryColor(branding.primary_color);
+        setSecondaryColor(branding.secondary_color);
+        setFontFamily(branding.font_family);
+        setLogoPosition(branding.logo_position);
+    }
     const [saving, setSaving] = useState(false);
     const [saveError, setSaveError] = useState('');
 
@@ -39,27 +71,11 @@ export default function BrandingPanel({ video, onUpdated }: BrandingPanelProps) 
     const [uploadError, setUploadError] = useState('');
     const fileInputRef = useRef<HTMLInputElement>(null);
 
-    const [brandTemplates, setBrandTemplates] = useState<BrandTemplate[]>([]);
     const [templateName, setTemplateName] = useState('');
     const [templateError, setTemplateError] = useState('');
     const [savingTemplate, setSavingTemplate] = useState(false);
     const [applyingId, setApplyingId] = useState<string | null>(null);
     const [deletingTemplateId, setDeletingTemplateId] = useState<string | null>(null);
-
-    const loadTemplates = useCallback(async () => {
-        try {
-            setBrandTemplates(await fetchBrandTemplates());
-        } catch (err) {
-            setTemplateError(err instanceof Error ? err.message : 'No se pudieron cargar las plantillas de marca.');
-        }
-    }, []);
-
-    useEffect(() => {
-        // Deferred by a tick: the state only changes once the fetch resolves,
-        // but the lint rule sees a call inside the effect body and cannot tell.
-        const timer = setTimeout(() => { void loadTemplates(); }, 0);
-        return () => clearTimeout(timer);
-    }, [loadTemplates]);
 
     const dirty =
         primaryColor !== branding.primary_color ||
@@ -111,7 +127,7 @@ export default function BrandingPanel({ video, onUpdated }: BrandingPanelProps) 
         try {
             await persistBranding();
             const created = await saveBrandTemplate(name, video.id);
-            setBrandTemplates((current) => [created, ...current]);
+            onTemplatesChanged((current) => [created, ...current.filter((item) => item.id !== created.id)]);
             setTemplateName('');
         } catch (err) {
             setTemplateError(err instanceof Error ? err.message : 'No se pudo guardar la plantilla de marca.');
@@ -140,14 +156,14 @@ export default function BrandingPanel({ video, onUpdated }: BrandingPanelProps) 
     }
 
     async function handleDeleteTemplate(template: BrandTemplate) {
-        const confirmed = window.confirm(`Se eliminara la plantilla de marca "${template.name}". Continuar?`);
+        const confirmed = window.confirm(`Se eliminará la plantilla de marca "${template.name}". ¿Continuar?`);
         if (!confirmed) return;
 
         setDeletingTemplateId(template.id);
         setTemplateError('');
         try {
             await deleteBrandTemplate(template.id);
-            setBrandTemplates((current) => current.filter((item) => item.id !== template.id));
+            onTemplatesChanged((current) => current.filter((item) => item.id !== template.id));
         } catch (err) {
             setTemplateError(err instanceof Error ? err.message : 'No se pudo eliminar la plantilla de marca.');
         } finally {
@@ -315,8 +331,25 @@ export default function BrandingPanel({ video, onUpdated }: BrandingPanelProps) 
 
                 {templateError && <p className="alert alert-error mt-3" role="alert">{templateError}</p>}
 
-                {brandTemplates.length === 0 ? (
-                    <p className="mt-4 rounded-xl border border-dashed border-white/[0.12] px-4 py-5 text-center text-sm text-slate-400">Todavía no hay plantillas de marca guardadas.</p>
+                {templatesError && (
+                    <div className="alert alert-error mt-3 flex flex-wrap items-center justify-between gap-2" role="alert">
+                        <span className="min-w-0">{templatesError}</span>
+                        <button type="button" onClick={onRetryTemplates} disabled={templatesLoading} className="btn btn-secondary btn-sm">
+                            Reintentar
+                        </button>
+                    </div>
+                )}
+
+                {templatesLoading && brandTemplates.length === 0 ? (
+                    <div className="mt-3 space-y-2" aria-hidden="true">
+                        <div className="skeleton h-11 w-full rounded-xl" />
+                    </div>
+                ) : brandTemplates.length === 0 ? (
+                    // Only when the list really loaded empty: after a failed
+                    // load, "there are none" would be a claim we cannot make.
+                    !templatesError && (
+                        <p className="mt-4 rounded-xl border border-dashed border-white/[0.12] px-4 py-5 text-center text-sm text-slate-400">Todavía no hay plantillas de marca guardadas.</p>
+                    )
                 ) : (
                     <ul className="mt-3 space-y-2">
                         {brandTemplates.map((template) => (

@@ -136,8 +136,14 @@ export default function ScenePanel({ video, sounds, soundsLoading, onUpdated }: 
                     </div>
                     <ul className="space-y-3">
                         {scenes.map((scene, index) => (
+                            // Keyed only by what the row copies into its own
+                            // state (description and duration). Character,
+                            // action, prop and effect are read straight from
+                            // the record, so changing one of those selects
+                            // must not remount the row and wipe a description
+                            // the operator is still typing.
                             <SceneRow
-                                key={`${scene.id}:${scene.character}:${scene.action}:${scene.prop}:${scene.description}:${scene.duration_seconds}:${scene.audio_url ?? ''}`}
+                                key={`${scene.id}:${scene.description}:${scene.duration_seconds}`}
                                 videoId={video.id}
                                 scene={scene}
                                 index={index}
@@ -215,7 +221,7 @@ function SceneRow({ videoId, scene, index, effects, soundsLoading, onUpdated }: 
     }
 
     async function handleDelete() {
-        const confirmed = window.confirm(`Se eliminara la escena ${index + 1}. Las siguientes se renumeran. Continuar?`);
+        const confirmed = window.confirm(`Se eliminará la escena ${index + 1}. Las siguientes se renumeran. ¿Continuar?`);
         if (!confirmed) return;
         setBusyAction('delete');
         setError('');

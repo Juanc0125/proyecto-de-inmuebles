@@ -20,6 +20,7 @@ interface VideoListProps {
     videos: VideoRecord[];
     loading: boolean;
     loadError: string;
+    onRetry: () => void;
     selectedId: string | null;
     onSelect: (id: string) => void;
     onCreated: (video: VideoRecord) => void;
@@ -61,14 +62,14 @@ function formatElapsed(totalSeconds: number): string {
 const NEXT_STEP: Record<BatchWarningCause, string> = {
     guion_generico: 'Vuelve a generar el guion desde el panel de este video cuando el modelo responda.',
     sin_escenas: 'Pulsa "Generar escenas" en el panel de este video.',
-    guion_generico_y_sin_escenas: 'Regenera el guion cuando el modelo responda y despues genera las escenas.',
+    guion_generico_y_sin_escenas: 'Regenera el guion cuando el modelo responda y después genera las escenas.',
 };
 
 function warningNextStep(warning: BatchCreateWarning): string {
     return NEXT_STEP[warning.causa] ?? NEXT_STEP.guion_generico;
 }
 
-export default function VideoList({ videos, loading, loadError, selectedId, onSelect, onCreated, onDeleted }: VideoListProps) {
+export default function VideoList({ videos, loading, loadError, onRetry, selectedId, onSelect, onCreated, onDeleted }: VideoListProps) {
     const [mode, setMode] = useState<CreateMode>('single');
     const [topic, setTopic] = useState('');
     const [batchTopics, setBatchTopics] = useState('');
@@ -106,7 +107,7 @@ export default function VideoList({ videos, loading, loadError, selectedId, onSe
 
     async function handleDelete(video: VideoRecord) {
         const confirmed = window.confirm(
-            `Se eliminara "${video.topic}" y todas sus escenas. Esta accion no se puede deshacer. Continuar?`,
+            `Se eliminará "${video.topic}" y todas sus escenas. Esta acción no se puede deshacer. ¿Continuar?`,
         );
         if (!confirmed) return;
 
@@ -436,7 +437,14 @@ export default function VideoList({ videos, loading, loadError, selectedId, onSe
                         ))}
                     </ul>
                 )}
-                {loadError && <p role="alert" className="alert alert-error">{loadError}</p>}
+                {loadError && !loading && (
+                    <div role="alert" className="alert alert-error flex flex-wrap items-center justify-between gap-2">
+                        <span className="min-w-0">{loadError}</span>
+                        <button type="button" onClick={onRetry} className="btn btn-secondary btn-sm">
+                            Reintentar
+                        </button>
+                    </div>
+                )}
                 {!loading && !loadError && videos.length === 0 && (
                     <div className="flex flex-col items-center rounded-2xl border border-dashed border-white/[0.1] bg-white/[0.012] px-4 py-10 text-center">
                         <span className="mb-3 flex h-11 w-11 items-center justify-center rounded-2xl bg-gradient-to-br from-brand-500/20 to-accent-500/10 text-brand-200 ring-1 ring-inset ring-brand-400/25" aria-hidden="true">

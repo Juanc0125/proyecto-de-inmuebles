@@ -1,11 +1,25 @@
 'use client';
 
-import { useEffect, useState } from 'react';
-import { fetchSession, fetchVideos, logout, type VideoRecord } from './api';
+import { useCallback, useEffect, useRef, useState } from 'react';
+import { SIGN_IN_REQUIRED_EVENT, fetchSession, fetchVideos, logout, type VideoRecord } from './api';
 import VideoList from './video-list';
 import VideoWorkspace from './video-workspace';
 import Assistant from './assistant';
 import Logo from './logo';
+
+// Below this width the workspace stacks under the assistant and the list
+// (the grid only splits at Tailwind's xl), so picking a video changes
+// nothing visible unless the page is moved to it.
+const STACKED_QUERY = '(max-width: 1279px)';
+
+interface RevealRequest {
+    // Bumped on every request so picking the same video twice still scrolls.
+    seq: number;
+    // Focus follows the scroll only for actions taken in the panels. When the
+    // assistant opens a video the operator is mid-conversation, and pulling
+    // focus out of the chat would cut what they are typing or dictating.
+    focus: boolean;
+}
 
 export default function VideoStudio() {
     const [videos, setVideos] = useState<VideoRecord[]>([]);
@@ -17,19 +31,78 @@ export default function VideoStudio() {
     // "Entrar"; it never blocks the page.
     const [email, setEmail] = useState<string | null>(null);
     const [loggingOut, setLoggingOut] = useState(false);
+    // Set once any action answered 401: only then is "Entrar" worth showing.
+    const [signInNeeded, setSignInNeeded] = useState(false);
+    const [reveal, setReveal] = useState<RevealRequest>({ seq: 0, focus: false });
+    const workspaceRef = useRef<HTMLDivElement>(null);
+
+    // Bumped by every local change to the list (create, update, delete). A
+    // list fetch that started before the latest bump answers with a snapshot
+    // older than what is on screen, and applying it would make a new video
+    // vanish or a saved edit revert.
+    const mutationRef = useRef(0);
+    const deletedIdsRef = useRef(new Set<string>());
+
+    const loadVideos = useCallback(async () => {
+        const startedAt = mutationRef.current;
+        try {
+            const loaded = await fetchVideos();
+            if (mutationRef.current === startedAt) {
+                setVideos(loaded);
+            } else {
+                // Something was created, edited or deleted while this load
+                // was in flight: keep the local versions and only add the
+                // rows this browser had not seen yet.
+                setVideos((current) => {
+                    const known = new Set(current.map((video) => video.id));
+                    const missing = loaded.filter((video) => !known.has(video.id) && !deletedIdsRef.current.has(video.id));
+                    return [...current, ...missing];
+                });
+            }
+            setLoadError('');
+        } catch (error) {
+            setLoadError(error instanceof Error ? error.message : 'No se pudieron cargar los videos.');
+        } finally {
+            setLoading(false);
+        }
+    }, []);
 
     useEffect(() => {
-        fetchVideos()
-            .then((loaded) => setVideos(loaded))
-            .catch((error) => setLoadError(error instanceof Error ? error.message : 'No se pudieron cargar los videos.'))
-            .finally(() => setLoading(false));
-    }, []);
+        // Deferred by a tick: state only changes once the fetch resolves, but
+        // the lint rule sees a call inside the effect body and cannot tell.
+        const timer = setTimeout(() => { void loadVideos(); }, 0);
+        return () => clearTimeout(timer);
+    }, [loadVideos]);
+
+    function retryLoad() {
+        setLoading(true);
+        setLoadError('');
+        void loadVideos();
+    }
 
     useEffect(() => {
         fetchSession()
             .then((session) => setEmail(session.email))
             .catch(() => undefined);
     }, []);
+
+    useEffect(() => {
+        const onSignInRequired = () => setSignInNeeded(true);
+        window.addEventListener(SIGN_IN_REQUIRED_EVENT, onSignInRequired);
+        return () => window.removeEventListener(SIGN_IN_REQUIRED_EVENT, onSignInRequired);
+    }, []);
+
+    useEffect(() => {
+        if (reveal.seq === 0) return;
+        const target = workspaceRef.current;
+        if (!target || !window.matchMedia(STACKED_QUERY).matches) return;
+        // After paint, so the workspace already shows the new video.
+        const frame = requestAnimationFrame(() => {
+            target.scrollIntoView({ behavior: 'smooth', block: 'start' });
+            if (reveal.focus) target.focus({ preventScroll: true });
+        });
+        return () => cancelAnimationFrame(frame);
+    }, [reveal]);
 
     async function handleLogout() {
         setLoggingOut(true);
@@ -50,23 +123,38 @@ export default function VideoStudio() {
     useEffect(() => {
         if (!isRendering) return;
         const timer = setInterval(() => {
+            const startedAt = mutationRef.current;
             fetchVideos()
-                .then((loaded) => setVideos(loaded))
+                .then((loaded) => {
+                    // Stale: a local change landed after this poll left. The
+                    // next tick brings a snapshot that already includes it.
+                    if (mutationRef.current !== startedAt) return;
+                    setVideos(loaded);
+                })
                 .catch(() => undefined);
         }, 4000);
         return () => clearInterval(timer);
     }, [isRendering]);
 
-    function handleCreated(video: VideoRecord) {
-        setVideos((current) => [video, ...current]);
-        setSelectedId(video.id);
+    function selectVideo(id: string, focus: boolean) {
+        setSelectedId(id);
+        setReveal((current) => ({ seq: current.seq + 1, focus }));
+    }
+
+    function handleCreated(video: VideoRecord, focus = true) {
+        mutationRef.current += 1;
+        setVideos((current) => [video, ...current.filter((entry) => entry.id !== video.id)]);
+        selectVideo(video.id, focus);
     }
 
     function handleUpdated(video: VideoRecord) {
+        mutationRef.current += 1;
         setVideos((current) => current.map((entry) => (entry.id === video.id ? video : entry)));
     }
 
     function handleDeleted(id: string) {
+        mutationRef.current += 1;
+        deletedIdsRef.current.add(id);
         setVideos((current) => current.filter((entry) => entry.id !== id));
         setSelectedId((current) => (current === id ? null : current));
     }
@@ -123,10 +211,13 @@ export default function VideoStudio() {
                             >
                                 {loggingOut ? 'Saliendo...' : 'Salir'}
                             </button>
+                        ) : signInNeeded ? (
+                            <a href="/login" className="btn btn-primary btn-sm">Entrar</a>
                         ) : null}
-                        {/* No "Entrar" button: since 13-oct-2026 nothing needs
-                            an account unless REQUIRE_LOGIN is on, and /login is
-                            still there for whoever has one. */}
+                        {/* "Entrar" only after an action answered 401: since
+                            13-oct-2026 nothing needs an account unless
+                            REQUIRE_LOGIN is on, so a permanent button would
+                            suggest a login the studio does not ask for. */}
                     </div>
                 </div>
             </header>
@@ -140,24 +231,34 @@ export default function VideoStudio() {
                         <Assistant
                             videos={videos}
                             loading={loading}
+                            loadError={loadError}
                             selected={selectedVideo}
-                            onCreated={handleCreated}
+                            onCreated={(video) => handleCreated(video, false)}
                             onUpdated={handleUpdated}
-                            onSelect={setSelectedId}
+                            onSelect={(id) => selectVideo(id, false)}
                             onDeleted={handleDeleted}
                         />
                         <VideoList
                             videos={videos}
                             loading={loading}
                             loadError={loadError}
+                            onRetry={retryLoad}
                             selectedId={selectedId}
-                            onSelect={setSelectedId}
-                            onCreated={handleCreated}
+                            onSelect={(id) => selectVideo(id, true)}
+                            onCreated={(video) => handleCreated(video)}
                             onDeleted={handleDeleted}
                         />
                     </div>
-                    <div className="min-w-0">
-                        <VideoWorkspace video={selectedVideo} onUpdated={handleUpdated} onDuplicated={handleCreated} />
+                    {/* Focusable so a stacked (below xl) layout can move the
+                        keyboard and screen reader here along with the scroll;
+                        scroll-mt clears the sticky header. */}
+                    <div
+                        ref={workspaceRef}
+                        tabIndex={-1}
+                        aria-label="Área de trabajo del video"
+                        className="min-w-0 scroll-mt-20 rounded-3xl outline-none"
+                    >
+                        <VideoWorkspace video={selectedVideo} onUpdated={handleUpdated} onDuplicated={(video) => handleCreated(video)} />
                     </div>
                 </div>
             </main>

@@ -206,10 +206,10 @@ export default function AssistantEntity({ mood, pulse, size = 132 }: AssistantEn
             ref={canvasRef}
             role="img"
             aria-label={
-                mood === 'listening' ? 'El asistente te esta escuchando'
-                    : mood === 'thinking' ? 'El asistente esta pensando'
-                    : mood === 'speaking' ? 'El asistente esta hablando'
-                    : 'El asistente esta disponible'
+                mood === 'listening' ? 'El asistente te está escuchando'
+                    : mood === 'thinking' ? 'El asistente está pensando'
+                    : mood === 'speaking' ? 'El asistente está hablando'
+                    : 'El asistente está disponible'
             }
             style={{ width: size, height: size }}
         />

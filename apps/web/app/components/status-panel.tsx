@@ -151,10 +151,10 @@ export default function StatusPanel({ video, onUpdated, onDuplicated }: StatusPa
 
                         {stalled ? (
                             <div className="rounded-xl border border-amber-400/30 bg-amber-400/10 p-4">
-                                <p className="text-sm font-medium text-amber-200">Esta generacion se quedo colgada.</p>
+                                <p className="text-sm font-medium text-amber-200">Esta generación se quedó colgada.</p>
                                 <p className="mt-1 text-xs text-amber-100/90">
-                                    Empezo hace mas de {Math.round(STALLED_AFTER_MS / 60000)} minutos y el servidor dejo de
-                                    reportar, normalmente porque se reinicio a mitad del trabajo. Puedes volver a lanzarla.
+                                    Empezó hace más de {Math.round(STALLED_AFTER_MS / 60000)} minutos y el servidor dejó de
+                                    reportar, normalmente porque se reinició a mitad del trabajo. Puedes volver a lanzarla.
                                 </p>
                                 <button
                                     type="button"
@@ -162,7 +162,7 @@ export default function StatusPanel({ video, onUpdated, onDuplicated }: StatusPa
                                     disabled={busy}
                                     className="btn btn-warning mt-3"
                                 >
-                                    {actionLoading === 'render' ? 'Reintentando...' : 'Reintentar generacion'}
+                                    {actionLoading === 'render' ? 'Reintentando...' : 'Reintentar generación'}
                                 </button>
                             </div>
                         ) : rendering ? (
@@ -210,15 +210,23 @@ export default function StatusPanel({ video, onUpdated, onDuplicated }: StatusPa
                                     <a href={video.video_url} download className="btn btn-secondary">
                                         Descargar MP4
                                     </a>
-                                    <button
-                                        type="button"
-                                        onClick={() => runAction('publish')}
-                                        disabled={busy}
-                                        className="btn btn-primary"
-                                    >
-                                        {actionLoading === 'publish' && <span className="spinner" aria-hidden="true" />}
-                                        {actionLoading === 'publish' ? 'Publicando...' : 'Publicar'}
-                                    </button>
+                                    {/* Hidden while a new render runs: the file on
+                                        screen is the previous one and is about to be
+                                        replaced, so publishing now would publish a
+                                        video nobody approved in its final form. */}
+                                    {rendering ? (
+                                        <span className="text-xs text-slate-400">Podrás publicarlo cuando termine de generarse.</span>
+                                    ) : (
+                                        <button
+                                            type="button"
+                                            onClick={() => runAction('publish')}
+                                            disabled={busy}
+                                            className="btn btn-primary"
+                                        >
+                                            {actionLoading === 'publish' && <span className="spinner" aria-hidden="true" />}
+                                            {actionLoading === 'publish' ? 'Publicando...' : 'Publicar'}
+                                        </button>
+                                    )}
                                 </div>
                             </div>
                         )}

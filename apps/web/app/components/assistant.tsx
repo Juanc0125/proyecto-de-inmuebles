@@ -1,7 +1,7 @@
 'use client';
 
 import { useEffect, useRef, useState } from 'react';
-import type { VideoRecord } from './api';
+import { parseJsonSafe, type VideoRecord } from './api';
 import AssistantEntity, { type EntityMood } from './assistant-entity';
 import { watchForBargeIn } from './barge-in';
 import { LogoMark } from './logo';
@@ -11,6 +11,8 @@ import { bestVoice, primeVoices, toChunks, toSpeech } from './speech-voice';
 interface AssistantProps {
     videos: VideoRecord[];
     loading: boolean;
+    // The list failed to load: the greeting must not claim there are no videos.
+    loadError: string;
     selected: VideoRecord | null;
     onCreated: (video: VideoRecord) => void;
     onUpdated: (video: VideoRecord) => void;
@@ -99,7 +101,7 @@ function getRecognition(): Recognition | null {
 
 const VOICE_KEY = 'stickman:voz';
 
-export default function Assistant({ videos, loading, selected, onCreated, onUpdated, onSelect, onDeleted }: AssistantProps) {
+export default function Assistant({ videos, loading, loadError, selected, onCreated, onUpdated, onSelect, onDeleted }: AssistantProps) {
     const [listening, setListening] = useState(false);
     // Hands-free is never restored from storage: an open microphone is not a
     // display preference like mute/unmute, it is a live sensor in what can be
@@ -141,7 +143,9 @@ export default function Assistant({ videos, loading, selected, onCreated, onUpda
     const onVoiceActivity = () => setPulse((current) => current + 1);
     const [input, setInput] = useState('');
     const [turns, setTurns] = useState<Turn[]>([]);
-    const greeted = useRef(false);
+    // 'error' when the greeting was the "could not load" one, so a later
+    // successful retry still gets the real greeting.
+    const greeted = useRef<'no' | 'error' | 'ok'>('no');
     const recognitionRef = useRef<Recognition | null>(null);
     // Bumped on every speak() call so an utterance that gets cancelled by the
     // next one (say() can fire twice per turn: the reply, then a silent
@@ -193,9 +197,28 @@ export default function Assistant({ videos, loading, selected, onCreated, onUpda
     useEffect(() => {
         primeVoices();
         const bargeIn = bargeInStopRef;
+        const recognitionSlot = recognitionRef;
+        const handsFreeSlot = handsFreeRef;
         return () => {
             bargeIn.current?.();
             window.speechSynthesis?.cancel();
+            // An open microphone must not outlive the panel. Handlers are
+            // detached first: stopping fires onend, which would otherwise send
+            // the half-heard phrase from a component that no longer exists,
+            // and hands-free off keeps a pending resume from reopening it.
+            handsFreeSlot.current = false;
+            const recognition = recognitionSlot.current;
+            recognitionSlot.current = null;
+            if (recognition) {
+                recognition.onresult = null;
+                recognition.onerror = null;
+                recognition.onend = null;
+                try {
+                    recognition.stop();
+                } catch {
+                    // already stopped
+                }
+            }
         };
     }, []);
 
@@ -225,8 +248,21 @@ export default function Assistant({ videos, loading, selected, onCreated, onUpda
     // interacted with the page, so speaking here would be silently dropped. The
     // assistant finds its voice from the first reply onwards.
     useEffect(() => {
-        if (greeted.current || loading) return;
-        greeted.current = true;
+        if (greeted.current === 'ok' || loading) return;
+        if (loadError) {
+            if (greeted.current === 'error') return;
+            greeted.current = 'error';
+            // Local: it describes this browser's failed request, not the
+            // conversation, so it is never sent back to the model.
+            setTurns([{
+                who: 'stickman',
+                text: 'Hola. No pude cargar tus videos. Pulsa «Reintentar» en la lista; mientras tanto puedes escribirme igual.',
+                local: true,
+            }]);
+            return;
+        }
+        const afterError = greeted.current === 'error';
+        greeted.current = 'ok';
 
         const pendientes = videos.filter((v) => v.status === 'pendiente_aprobacion').length;
         const generando = videos.filter((v) => v.render_status === 'procesando').length;
@@ -235,14 +271,14 @@ export default function Assistant({ videos, loading, selected, onCreated, onUpda
         if (videos.length === 0) {
             text = 'Hola. Soy tu asistente. Dime un tema y te armo el primer video: por ejemplo, "crea un video sobre tasas fijas para TikTok".';
         } else if (pendientes > 0) {
-            text = `Hola. Tienes ${pendientes} video${pendientes === 1 ? '' : 's'} esperando tu aprobacion. Nadie mas puede aprobarlos, tienen que pasar por ti. Dime si quieres revisarlos o empezar uno nuevo.`;
+            text = `Hola. Tienes ${pendientes} video${pendientes === 1 ? '' : 's'} esperando tu aprobación. Nadie más puede aprobarlos, tienen que pasar por ti. Dime si quieres revisarlos o empezar uno nuevo.`;
         } else if (generando > 0) {
-            text = `Hola. Hay ${generando} video${generando === 1 ? '' : 's'} generandose ahora mismo. Mientras tanto puedo empezar otro si me dices el tema.`;
+            text = `Hola. Hay ${generando} video${generando === 1 ? '' : 's'} generándose ahora mismo. Mientras tanto puedo empezar otro si me dices el tema.`;
         } else {
-            text = `Hola. Tienes ${videos.length} videos guardados. Dime que quieres hacer, o abre uno de la lista para revisarlo.`;
+            text = `Hola. Tienes ${videos.length} videos guardados. Dime qué quieres hacer, o abre uno de la lista para revisarlo.`;
         }
-        setTurns([{ who: 'stickman', text }]);
-    }, [loading, videos]);
+        setTurns((current) => (afterError ? [...current, { who: 'stickman', text }] : [{ who: 'stickman', text }]));
+    }, [loading, loadError, videos]);
 
     // Speaks text and reports back through onDone once it is truly finished
     // (or was never spoken at all - unsupported browser, empty string). This
@@ -506,17 +542,31 @@ export default function Assistant({ videos, loading, selected, onCreated, onUpda
             // The copilot runs the tools itself, against the same persistence
             // the panels use, and hands back the record it touched. The browser
             // only does what a server cannot: move the selection and open a file.
-            const response = await fetch('/api/copilot', {
-                method: 'POST',
-                headers: { 'Content-Type': 'application/json' },
-                body: JSON.stringify({ videoId: selectedRef.current?.id ?? null, messages: history }),
-            });
-            const data = await response.json() as {
+            let response: Response;
+            try {
+                response = await fetch('/api/copilot', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ videoId: selectedRef.current?.id ?? null, messages: history }),
+                });
+            } catch {
+                throw new Error('No se pudo conectar con el servidor.');
+            }
+            // Not always JSON: a Vercel timeout (504) or a proxy error answers
+            // with an HTML or plain-text page, and response.json() would throw
+            // a browser message in English that then got shown and spoken.
+            const parsed = await parseJsonSafe(response);
+            if (parsed === null || typeof parsed !== 'object') {
+                throw new Error(response.status === 504
+                    ? 'El asistente tardó demasiado en responder. Prueba de nuevo o pide algo más corto.'
+                    : 'El asistente no respondió bien. Prueba de nuevo en un momento.');
+            }
+            const data = parsed as {
                 reply?: string; error?: string;
                 video?: VideoRecord | null; created?: boolean; deletedId?: string | null;
                 selectId?: string | null; descargarUrl?: string | null; provider?: string | null;
             };
-            if (!response.ok) throw new Error(data.error ?? 'El asistente no respondio.');
+            if (!response.ok) throw new Error(data.error ?? 'El asistente no respondió.');
             setModelo(Boolean(data.provider));
 
             if (data.deletedId) onDeleted(data.deletedId);
@@ -543,7 +593,7 @@ export default function Assistant({ videos, loading, selected, onCreated, onUpda
             clearTimeout(filler);
             setBusy(false);
             busyRef.current = false;
-            say(error instanceof Error ? error.message : 'Algo fallo al ejecutar eso.', true, true);
+            say(error instanceof Error ? error.message : 'Algo falló al ejecutar eso.', true, true);
         }
     }
 
@@ -558,7 +608,7 @@ export default function Assistant({ videos, loading, selected, onCreated, onUpda
             // native engine and the recorded fallback are missing). Said out
             // loud rather than hidden: a control that silently does nothing
             // reads as a bug. Hands-free falls back to the text field.
-            say('Este navegador no permite usar el microfono. Escribeme y te ayudo igual.', false);
+            say('Este navegador no permite usar el micrófono. Escríbeme y te ayudo igual.', false);
             if (handsFreeRef.current) {
                 handsFreeRef.current = false;
                 setHandsFree(false);
@@ -626,13 +676,13 @@ export default function Assistant({ videos, loading, selected, onCreated, onUpda
             if (error === 'not-allowed' || error === 'service-not-allowed' || error === 'audio-capture') {
                 handsFreeRef.current = false;
                 setHandsFree(false);
-                say('No puedo usar el microfono: revisa el permiso del navegador o que haya uno conectado. Sigo disponible por escrito.', false);
+                say('No puedo usar el micrófono: revisa el permiso del navegador o que haya uno conectado. Sigo disponible por escrito.', false);
                 return;
             }
             if (error === 'network') {
                 handsFreeRef.current = false;
                 setHandsFree(false);
-                say('Se perdio la conexion del reconocimiento de voz. Sigo disponible por escrito.', false);
+                say('Se perdió la conexión del reconocimiento de voz. Sigo disponible por escrito.', false);
                 return;
             }
 
@@ -698,18 +748,18 @@ export default function Assistant({ videos, loading, selected, onCreated, onUpda
         : busy
         ? 'Pensando...'
         : modelo === false
-        ? 'Modo basico: sin modelo de lenguaje conectado'
+        ? 'Modo básico: sin modelo de lenguaje conectado'
         : voiceOn
-        ? 'Hablame o escribeme'
+        ? 'Háblame o escríbeme'
         : 'Voz apagada: te respondo por escrito';
 
     const mood: EntityMood = speaking ? 'speaking' : busy ? 'thinking' : listening ? 'listening' : 'idle';
 
     const micPlaceholder = speaking
-        ? (handsFree ? 'Hablando... interrumpeme cuando quieras' : 'Hablando... pulsa el microfono para interrumpir')
+        ? (handsFree ? 'Hablando... interrúmpeme cuando quieras' : 'Hablando... pulsa el micrófono para interrumpir')
         : listening
-        ? (handsFree ? 'Escuchando... haz una pausa para enviar' : 'Escuchando... pausa o pulsa el microfono para enviar')
-        : 'Escribe o pulsa el microfono';
+        ? (handsFree ? 'Escuchando... haz una pausa para enviar' : 'Escuchando... pausa o pulsa el micrófono para enviar')
+        : 'Escribe o pulsa el micrófono';
 
     return (
         <section className="panel flex max-h-[44rem] min-h-[30rem] flex-col overflow-hidden" aria-label="Asistente de voz">
@@ -729,8 +779,8 @@ export default function Assistant({ videos, loading, selected, onCreated, onUpda
                     onClick={toggleHandsFree}
                     aria-pressed={handsFree}
                     aria-label={handsFree
-                        ? 'Modo manos libres activado: escucha, envia y vuelve a escuchar sola. Pulsa para apagarlo'
-                        : 'Activar el modo manos libres: escucha de forma continua sin pulsar el microfono cada vez'}
+                        ? 'Modo manos libres activado: escucha, envía y vuelve a escuchar sola. Pulsa para apagarlo'
+                        : 'Activar el modo manos libres: escucha de forma continua sin pulsar el micrófono cada vez'}
                     title={handsFree ? 'Manos libres activado' : 'Activar manos libres'}
                     className={`btn btn-sm rounded-full ${
                         handsFree
@@ -757,7 +807,7 @@ export default function Assistant({ videos, loading, selected, onCreated, onUpda
                     onClick={toggleVoice}
                     aria-pressed={!voiceOn}
                     aria-label={voiceOn ? 'Apagar la voz del asistente' : 'Encender la voz del asistente'}
-                    title={voiceOn ? 'Apagar la voz: seguira respondiendo por escrito' : 'Encender la voz'}
+                    title={voiceOn ? 'Apagar la voz: seguirá respondiendo por escrito' : 'Encender la voz'}
                     className={`btn-icon rounded-full ${
                         voiceOn ? 'border border-white/10 bg-white/[0.04] text-slate-200' : 'bg-red-500/15 text-red-300 hover:bg-red-500/25 hover:text-red-200'
                     }`}
@@ -784,7 +834,13 @@ export default function Assistant({ videos, loading, selected, onCreated, onUpda
                 <span className="chip -mt-1" aria-live="polite">{statusText}</span>
             </div>
 
-            <div ref={transcriptRef} className="thin-scroll flex-1 space-y-3 overflow-y-auto p-4">
+            <div
+                ref={transcriptRef}
+                role="log"
+                aria-live="polite"
+                aria-label="Conversación con el asistente"
+                className="thin-scroll flex-1 space-y-3 overflow-y-auto p-4"
+            >
                 {turns.length === 0 && (
                     // Until the list loads there is no greeting yet: a quiet
                     // placeholder instead of an empty box.
@@ -839,9 +895,9 @@ export default function Assistant({ videos, loading, selected, onCreated, onUpda
                     aria-label={speaking
                         ? 'Interrumpir al asistente y hablar'
                         : handsFree
-                        ? 'Microfono en uso por el modo manos libres'
+                        ? 'Micrófono en uso por el modo manos libres'
                         : listening ? 'Escuchando: pulsa para detener' : 'Hablar: pulsa y di lo que necesitas'}
-                    title={speaking ? 'Interrumpir y hablar' : handsFree ? 'El modo manos libres ya tiene el microfono abierto' : undefined}
+                    title={speaking ? 'Interrumpir y hablar' : handsFree ? 'El modo manos libres ya tiene el micrófono abierto' : undefined}
                     className={`btn rounded-full px-3 text-xs ${
                         listening && !handsFree ? 'listening-ring bg-red-600 font-semibold text-white hover:bg-red-700' : 'btn-secondary'
                     }`}

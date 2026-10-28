@@ -16,7 +16,7 @@ import type {
 
 export type VideoRecord = Video & { scenes: Scene[] };
 
-async function parseJsonSafe(response: Response): Promise<unknown> {
+export async function parseJsonSafe(response: Response): Promise<unknown> {
     try {
         return await response.json();
     } catch {
@@ -24,15 +24,31 @@ async function parseJsonSafe(response: Response): Promise<unknown> {
     }
 }
 
+// Fired on `window` whenever the server answers 401. The studio listens for it
+// and offers an "Entrar" link in the header: a guarded action failing is the
+// one moment the operator needs to know there is a way in.
+export const SIGN_IN_REQUIRED_EVENT = 'stickman:sign-in-required';
+
 // The studio is open to anyone; only the guarded actions (render, approve,
 // delete, upload - see proxy.ts) answer 401 without a session. That 401 is
 // not "you were thrown out", it is "this one needs you to sign in", so it is
 // shown like any other error instead of bouncing the browser to /login and
-// losing whatever was on screen. The header's "Entrar" button is the way in.
+// losing whatever was on screen. The header then shows an "Entrar" link,
+// announced through SIGN_IN_REQUIRED_EVENT.
 async function request<T>(input: string, init?: RequestInit): Promise<T> {
-    const response = await fetch(input, init);
+    let response: Response;
+    try {
+        response = await fetch(input, init);
+    } catch {
+        // Offline, DNS, a dropped connection: fetch rejects with a browser
+        // message in English ("Failed to fetch") that must not reach the screen.
+        throw new Error('No se pudo conectar con el servidor.');
+    }
     const data = await parseJsonSafe(response);
     if (!response.ok) {
+        if (response.status === 401 && typeof window !== 'undefined') {
+            window.dispatchEvent(new Event(SIGN_IN_REQUIRED_EVENT));
+        }
         const record = data && typeof data === 'object' ? (data as Record<string, unknown>) : null;
         const message = record && typeof record.error === 'string' ? record.error : 'Ocurrió un error inesperado.';
         throw new Error(message);
