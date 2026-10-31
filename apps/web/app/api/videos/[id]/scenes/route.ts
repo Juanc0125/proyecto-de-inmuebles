@@ -83,7 +83,10 @@ function buildScenesFromAiJson(raw: unknown): SceneInput[] | null {
     }
     if (!Array.isArray(list) || list.length === 0) return null;
 
-    return list.map((item, index) => {
+    // The prompt asks for at most MAX_SCENES, but like the duration that is a
+    // suggestion to the model: a longer list is cut here, since every extra
+    // scene is another narration, another render pass and another subtitle.
+    return list.slice(0, MAX_SCENES).map((item, index) => {
         const record = item && typeof item === 'object' ? (item as Record<string, unknown>) : {};
         return {
             order: index + 1,
@@ -98,12 +101,28 @@ function buildScenesFromAiJson(raw: unknown): SceneInput[] | null {
     });
 }
 
+// A long script without the model would otherwise become one scene per
+// sentence. Neighbouring sentences are joined instead of dropped, so the
+// narration still says the whole script, just in fewer, longer scenes.
+function mergeIntoAtMost(sentences: string[], max: number): string[] {
+    if (sentences.length <= max) return sentences;
+    const merged: string[] = [];
+    let start = 0;
+    for (let group = 0; group < max; group += 1) {
+        // Spread the remainder over the first groups so sizes differ by one at most.
+        const size = Math.floor(sentences.length / max) + (group < sentences.length % max ? 1 : 0);
+        merged.push(sentences.slice(start, start + size).join('. '));
+        start += size;
+    }
+    return merged;
+}
+
 function buildSentenceFallback(script: string, targetDurationSeconds: number, template: VideoTemplate): SceneInput[] {
     const sentences = script
         .split(/[.!?]+/)
         .map((sentence) => sentence.trim())
         .filter(Boolean);
-    const lines = sentences.length ? sentences : [script.trim() || 'Contenido del video.'];
+    const lines = mergeIntoAtMost(sentences.length ? sentences : [script.trim() || 'Contenido del video.'], MAX_SCENES);
     const safeTarget = Number.isFinite(targetDurationSeconds) && targetDurationSeconds > 0 ? targetDurationSeconds : 30;
     const rawDuration = safeTarget / lines.length;
     const clampedDuration = Math.min(MAX_SCENE_SECONDS, Math.max(MIN_SCENE_SECONDS, Number.isFinite(rawDuration) ? rawDuration : 4));

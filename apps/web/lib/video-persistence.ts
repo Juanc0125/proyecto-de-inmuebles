@@ -6,6 +6,7 @@ import { EDIT_REVERTS_TO_DRAFT_FROM, canTransition, revertsToDraftOnEdit, transi
 import { getSupabaseClient } from './supabaseClient';
 import { generateWithFallback } from './ai-provider';
 import { SOUNDS_MIGRATION_MISSING_ERROR, isMissingSchemaError, resolveSoundUrls } from './sounds';
+import { MAX_JOB_PAYLOAD_CHARS, encodeJobPayload, readCloudRunJobConfig, runCloudRunJob, type CloudRunJobConfig } from './cloud-run-job';
 
 type VideoRecord = Video & { scenes: Scene[] };
 type SceneInput = Omit<Scene, 'id' | 'video_id'>;
@@ -873,21 +874,41 @@ export async function renderVideo(id: string): Promise<VideoRecord> {
     if (!video) throw new VideoError(VIDEO_NOT_FOUND, 404);
     if (video.status !== 'aprobado') throw new VideoError('Solo se pueden generar videos aprobados.', 409);
 
-    const configuredWorkerUrl = process.env.RENDER_WORKER_URL?.trim();
-    if (!configuredWorkerUrl && process.env.NODE_ENV === 'production') {
-        throw new VideoError('RENDER_WORKER_URL es obligatoria en producción.', 500);
-    }
-    const workerUrl = (configuredWorkerUrl || 'http://localhost:8080').replace(/\/+$/, '');
+    // Where the render runs. 'http' is the always-on worker reached at
+    // RENDER_WORKER_URL; 'cloud-run-job' starts one Cloud Run Jobs execution
+    // per video. Anything unrecognised falls back to the HTTP worker, the
+    // behaviour every deployment had before this switch existed.
+    const backend = process.env.RENDER_BACKEND?.trim().toLowerCase() === 'cloud-run-job' ? 'cloud-run-job' : 'http';
 
-    // The worker now sits open to the internet at RENDER_WORKER_URL, so a
-    // shared secret is the only thing stopping anyone who finds that URL from
-    // queuing renders directly. Required in production for the same reason
-    // RENDER_WORKER_URL is: a render silently sent unauthenticated would just
-    // be rejected by the worker's own check, so fail here with a clear reason
-    // instead of a confusing 401 from that fetch.
-    const workerToken = process.env.RENDER_WORKER_TOKEN?.trim();
-    if (!workerToken && process.env.NODE_ENV === 'production') {
-        throw new VideoError('RENDER_WORKER_TOKEN es obligatoria en producción.', 500);
+    let workerUrl = '';
+    let workerToken: string | undefined;
+    let jobConfig: CloudRunJobConfig | null = null;
+    if (backend === 'cloud-run-job') {
+        const config = readCloudRunJobConfig();
+        if ('missing' in config) {
+            // Same reasoning as RENDER_WORKER_URL below: fail with the name of
+            // what is missing, before claiming anything. Outside production
+            // there is no local stand-in for a Cloud Run job, so it fails too.
+            throw new VideoError(`Faltan variables para generar en Cloud Run: ${config.missing.join(', ')}.`, 500);
+        }
+        jobConfig = config;
+    } else {
+        const configuredWorkerUrl = process.env.RENDER_WORKER_URL?.trim();
+        if (!configuredWorkerUrl && process.env.NODE_ENV === 'production') {
+            throw new VideoError('RENDER_WORKER_URL es obligatoria en producción.', 500);
+        }
+        workerUrl = (configuredWorkerUrl || 'http://localhost:8080').replace(/\/+$/, '');
+
+        // The worker now sits open to the internet at RENDER_WORKER_URL, so a
+        // shared secret is the only thing stopping anyone who finds that URL from
+        // queuing renders directly. Required in production for the same reason
+        // RENDER_WORKER_URL is: a render silently sent unauthenticated would just
+        // be rejected by the worker's own check, so fail here with a clear reason
+        // instead of a confusing 401 from that fetch.
+        workerToken = process.env.RENDER_WORKER_TOKEN?.trim();
+        if (!workerToken && process.env.NODE_ENV === 'production') {
+            throw new VideoError('RENDER_WORKER_TOKEN es obligatoria en producción.', 500);
+        }
     }
     const sortedScenes = [...video.scenes].sort((a, b) => a.order - b.order);
 
@@ -896,6 +917,32 @@ export async function renderVideo(id: string): Promise<VideoRecord> {
     // video renders without it.
     const soundUrls = await resolveSoundUrls([video.music_id, ...sortedScenes.map((scene) => scene.sound_effect_id)]);
     const urlFor = (soundId: string | null) => (soundId ? soundUrls.get(soundId) ?? null : null);
+
+    // One job description for both backends, so the HTTP worker and the Cloud
+    // Run job cannot drift apart on what a render needs.
+    const job = {
+        id,
+        platform: video.platform,
+        branding: video.branding,
+        music_url: urlFor(video.music_id),
+        scenes: sortedScenes.map((scene) => ({
+            order: scene.order,
+            character: scene.character,
+            action: scene.action,
+            prop: scene.prop,
+            description: scene.description,
+            duration_seconds: scene.duration_seconds,
+            audio_url: scene.audio_url,
+            sound_effect_url: urlFor(scene.sound_effect_id),
+        })),
+    };
+
+    // Checked before the claim: a job too big for an env override would be
+    // refused by Google anyway, and there is nothing to give back yet.
+    const encodedJob = jobConfig ? encodeJobPayload(job) : '';
+    if (jobConfig && encodedJob.length > MAX_JOB_PAYLOAD_CHARS) {
+        throw new VideoError('El video tiene demasiado contenido para enviarlo al generador. Acorta las escenas o reduce su número.', 413);
+    }
 
     const client = getSupabaseClient({ serviceRole: true }) ?? getSupabaseClient();
     const previous: RenderState = {
@@ -915,6 +962,20 @@ export async function renderVideo(id: string): Promise<VideoRecord> {
     // progress, and a late write from this side would overwrite that.
     const claimed = await claimRender(client, video, claim);
 
+    if (jobConfig) {
+        // A 2xx only means Google created the execution; the job itself writes
+        // progress, 'listo' or 'error' to the row, exactly like the HTTP
+        // worker does after its 202. If the container never starts, the stall
+        // threshold gives the row up as it would for a dead worker.
+        const result = await runCloudRunJob(jobConfig, encodedJob);
+        if (!result.ok) {
+            console.error('Cloud Run rechazó la ejecución del render.', { status: result.status, detail: result.detail });
+            await releaseRender(client, id, claim, previous);
+            throw new VideoError('No se pudo iniciar el generador de video.', 502);
+        }
+        return claimed;
+    }
+
     // The worker answers 202 as soon as it has accepted the job and then
     // reports progress on the video row, so this only has to confirm the job
     // was queued. A render can run for minutes once scenes come from an AI
@@ -927,22 +988,7 @@ export async function renderVideo(id: string): Promise<VideoRecord> {
                 'Content-Type': 'application/json',
                 ...(workerToken ? { Authorization: `Bearer ${workerToken}` } : {}),
             },
-            body: JSON.stringify({
-                id,
-                platform: video.platform,
-                branding: video.branding,
-                music_url: urlFor(video.music_id),
-                scenes: sortedScenes.map((scene) => ({
-                    order: scene.order,
-                    character: scene.character,
-                    action: scene.action,
-                    prop: scene.prop,
-                    description: scene.description,
-                    duration_seconds: scene.duration_seconds,
-                    audio_url: scene.audio_url,
-                    sound_effect_url: urlFor(scene.sound_effect_id),
-                })),
-            }),
+            body: JSON.stringify(job),
         });
     } catch (error) {
         console.error('No fue posible contactar al generador de video.', error);
