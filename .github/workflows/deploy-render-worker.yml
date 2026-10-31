@@ -1,0 +1,152 @@
+name: Deploy render worker
+
+# Builds apps/render-worker into a container image, pushes it to Artifact
+# Registry and points the Cloud Run job `stickman-render` at it.
+#
+# The job itself (runtime service account, env vars, Secret Manager refs,
+# CPU/memory, timeout) is created and configured once by scripts/gcp-setup.sh.
+# This workflow only swaps the image, so a deploy never touches the env or the
+# secrets: `gcloud run jobs deploy` on an existing job changes only the flags
+# it is given.
+#
+# Authentication is Workload Identity Federation: GitHub's OIDC token is traded
+# for short-lived credentials of the deploy service account. No key lives in
+# GitHub. Repository variables (Settings > Secrets and variables > Actions >
+# Variables), printed by scripts/gcp-setup.sh:
+#   GCP_PROJECT_ID    project id
+#   GCP_WIF_PROVIDER  projects/<NUMBER>/locations/global/workloadIdentityPools/github/providers/github-oidc
+#   GCP_DEPLOY_SA     stickman-deployer@<PROJECT>.iam.gserviceaccount.com
+#
+# Fallback if WIF cannot be used: create a JSON key for the deploy service
+# account, store it as the repository SECRET `GCP_DEPLOY_SA_KEY`, and replace
+# the two `with:` lines of the auth step by
+#   credentials_json: ${{ secrets.GCP_DEPLOY_SA_KEY }}
+# A long-lived key is worse than WIF: rotate it and delete it when done.
+#
+# The repository is public: nothing here may print an env value or a secret.
+# Do not add `gcloud run jobs describe` without a --format that excludes env.
+
+on:
+  push:
+    branches: [master]
+    paths:
+      - "apps/render-worker/**"
+      - ".github/workflows/deploy-render-worker.yml"
+  workflow_dispatch:
+
+# One deploy at a time; a newer push waits instead of racing the older one.
+concurrency:
+  group: deploy-render-worker
+  cancel-in-progress: false
+
+permissions:
+  contents: read
+  id-token: write # required to mint the OIDC token for Workload Identity Federation
+
+env:
+  REGION: us-central1
+  JOB: stickman-render
+  AR_REPO: stickman
+  IMAGE_NAME: render-worker
+
+jobs:
+  deploy:
+    # Skipped until scripts/gcp-setup.sh has run and its `gh variable set`
+    # lines are applied, so pushes before the Google setup stay green.
+    if: ${{ vars.GCP_PROJECT_ID != '' }}
+    runs-on: ubuntu-latest
+    timeout-minutes: 30
+    steps:
+      - name: Check repository variables
+        env:
+          GCP_PROJECT_ID: ${{ vars.GCP_PROJECT_ID }}
+          GCP_WIF_PROVIDER: ${{ vars.GCP_WIF_PROVIDER }}
+          GCP_DEPLOY_SA: ${{ vars.GCP_DEPLOY_SA }}
+        run: |
+          missing=""
+          [ -n "$GCP_PROJECT_ID" ] || missing="$missing GCP_PROJECT_ID"
+          [ -n "$GCP_WIF_PROVIDER" ] || missing="$missing GCP_WIF_PROVIDER"
+          [ -n "$GCP_DEPLOY_SA" ] || missing="$missing GCP_DEPLOY_SA"
+          if [ -n "$missing" ]; then
+            echo "::error::Missing repository variables:$missing. Run scripts/gcp-setup.sh in Cloud Shell and the gh variable set commands it prints."
+            exit 1
+          fi
+
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+
+      - name: Authenticate to Google Cloud (Workload Identity Federation)
+        uses: google-github-actions/auth@7c6bc770dae815cd3e89ee6cdf493a5fab2cc093 # v3.0.0
+        with:
+          workload_identity_provider: ${{ vars.GCP_WIF_PROVIDER }}
+          service_account: ${{ vars.GCP_DEPLOY_SA }}
+
+      - name: Set up gcloud
+        uses: google-github-actions/setup-gcloud@aa5489c8933f4cc7a4f7d45035b3b1440c9c10db # v3.0.1
+        with:
+          project_id: ${{ vars.GCP_PROJECT_ID }}
+
+      - name: Check that the job exists
+        # The job is created by scripts/gcp-setup.sh with its runtime service
+        # account, env and secrets. Letting `deploy` create it here would make
+        # a job with none of those, which renders nothing.
+        run: |
+          if ! gcloud run jobs describe "$JOB" --region "$REGION" --format="value(metadata.name)" >/dev/null 2>&1; then
+            echo "::error::Cloud Run job $JOB not found in $REGION (or the deploy SA cannot read it). Run scripts/gcp-setup.sh first."
+            exit 1
+          fi
+
+      - name: Configure Docker for Artifact Registry
+        run: gcloud auth configure-docker "${REGION}-docker.pkg.dev" --quiet
+
+      - uses: docker/setup-buildx-action@f87e5991a6d7451dcb8d9637bfbc97413f497069 # v4.4.1
+
+      - name: Build and push image
+        id: build
+        uses: docker/build-push-action@c3c9e263c25d99ce0380d002d59b67737d91b0dc # v7.4.0
+        with:
+          context: apps/render-worker
+          file: apps/render-worker/Dockerfile
+          platforms: linux/amd64
+          push: true
+          # A plain image, no attestation manifests: fewer objects stored in
+          # Artifact Registry, whose free tier is 0.5 GB.
+          provenance: false
+          sbom: false
+          tags: |
+            ${{ env.REGION }}-docker.pkg.dev/${{ vars.GCP_PROJECT_ID }}/${{ env.AR_REPO }}/${{ env.IMAGE_NAME }}:${{ github.sha }}
+            ${{ env.REGION }}-docker.pkg.dev/${{ vars.GCP_PROJECT_ID }}/${{ env.AR_REPO }}/${{ env.IMAGE_NAME }}:latest
+          cache-from: type=gha
+          cache-to: type=gha,mode=max
+
+      - name: Deploy the job with the new image
+        env:
+          IMAGE: ${{ env.REGION }}-docker.pkg.dev/${{ vars.GCP_PROJECT_ID }}/${{ env.AR_REPO }}/${{ env.IMAGE_NAME }}@${{ steps.build.outputs.digest }}
+          SHA: ${{ github.sha }}
+        # Pinned by digest, so the job runs exactly what was just built. Only
+        # the image, the contract's resources and a commit label are passed;
+        # env vars and secrets on the job are left as gcp-setup.sh set them.
+        run: |
+          gcloud run jobs deploy "$JOB" \
+            --image "$IMAGE" \
+            --region "$REGION" \
+            --cpu 2 \
+            --memory 4Gi \
+            --task-timeout 1800s \
+            --max-retries 0 \
+            --tasks 1 \
+            --update-labels "commit-sha=${SHA}" \
+            --update-env-vars "GIT_COMMIT_SHA=${SHA}" \
+            --quiet
+
+      - name: Summary
+        env:
+          SHA: ${{ github.sha }}
+          DIGEST: ${{ steps.build.outputs.digest }}
+        run: |
+          {
+            echo "### Render worker deployed"
+            echo ""
+            echo "- Job: \`$JOB\` ($REGION)"
+            echo "- Commit: \`$SHA\`"
+            echo "- Image digest: \`$DIGEST\`"
+          } >> "$GITHUB_STEP_SUMMARY"

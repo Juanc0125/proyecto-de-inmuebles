@@ -15,7 +15,7 @@ persona lo revise.
 | Carpeta | Que es |
 |---|---|
 | `apps/web` | Frontend Next.js y rutas de API. Se despliega en Vercel. |
-| `apps/render-worker` | Servicio Node separado que genera los MP4. Se despliega en Railway. |
+| `apps/render-worker` | Node separado que genera los MP4. En produccion corre como Cloud Run Job (una ejecucion por video). |
 | `packages/shared-types` | Tipos compartidos por el frontend y las rutas de API. |
 | `supabase/migrations` | Esquema de la base de datos. |
 
@@ -129,19 +129,33 @@ npm run verify   # lint + typecheck + build de los dos workspaces
 
 Corre tambien en CI (`.github/workflows/verify.yml`) en cada push a `master`.
 
-Ademas:
+Ademas, tras desplegar: crea un video corto (motor canvas, no cuesta), apruebalo, generalo y
+confirma que el MP4 se reproduce y que aparece la ejecucion:
 
-1. `GET <RENDER_WORKER_URL>/health` devuelve `{ "ok": true }`.
-2. `RENDER_WORKER_URL` en Vercel apunta al worker desplegado, no a `localhost`.
-3. Crea un video, apruebalo, generalo y confirma que el MP4 se reproduce.
+```bash
+gcloud run jobs executions list --job stickman-render --region us-central1 --limit 5
+```
 
 ## Despliegue
 
 **Vercel** — importa el repositorio con la **raiz** como Root Directory. El `vercel.json` de la
-raiz instala el workspace y compila `apps/web` incluyendo `packages/shared-types`.
+raiz instala el workspace y compila `apps/web` incluyendo `packages/shared-types`. Para lanzar
+renders necesita `RENDER_BACKEND=cloud-run-job`, `GCP_PROJECT_ID`, `GCP_REGION`,
+`CLOUD_RUN_JOB` y `GCP_SA_KEY_B64` (la llave JSON del despachador, en base64).
 
-**Railway** — despliega `apps/render-worker` como servicio aparte. Necesita `SUPABASE_URL` y la
-clave de servidor para persistir los MP4.
+**Render worker: Google Cloud Run Job** (Railway ya no se usa). Cada video es una ejecucion del
+job `stickman-render` (`us-central1`, 2 vCPU, 4 GiB, 30 min, sin reintentos), que lee el pedido
+de `RENDER_JOB_B64`, renderiza, sube el MP4 a Supabase y termina. Sin ejecuciones no cuesta.
+
+1. Una vez, en [Google Cloud Shell](https://shell.cloud.google.com): `bash scripts/gcp-setup.sh <PROJECT_ID>`.
+   Es idempotente. Crea el repositorio de imagenes, las cuentas de servicio con permisos minimos,
+   Workload Identity Federation para GitHub, los secretos (se escriben ocultos), el job y una
+   alerta de presupuesto, e imprime los comandos `gh variable set` y `vercel env add` exactos.
+2. Cada push a `master` que toque `apps/render-worker/**` corre
+   `.github/workflows/deploy-render-worker.yml`: construye `apps/render-worker/Dockerfile`, lo
+   sube a Artifact Registry y cambia solo la imagen del job. Las variables y secretos del job
+   los gestiona el script, no el workflow. GitHub autentica sin llave (WIF); variables del
+   repositorio: `GCP_PROJECT_ID`, `GCP_WIF_PROVIDER`, `GCP_DEPLOY_SA`.
 
 **Supabase** — aplica el esquema con:
 
