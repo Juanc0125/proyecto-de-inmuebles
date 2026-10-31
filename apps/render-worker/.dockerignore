@@ -1,0 +1,11 @@
+# Installed and built inside the image, for Linux.
+node_modules
+dist
+# Local output and the dev machine's voice cache (the image bakes its own).
+renders
+.voice-cache
+# Secrets never go into an image; runtime config comes from the job's env.
+.env
+.env.*
+Dockerfile
+.dockerignore

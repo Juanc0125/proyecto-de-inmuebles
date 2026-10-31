@@ -11,6 +11,7 @@
     },
     "include": [
         "index.ts",
+        "run-job.ts",
         "types.d.ts"
     ]
 }

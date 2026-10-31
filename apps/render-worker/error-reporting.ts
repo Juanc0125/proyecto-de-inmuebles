@@ -15,7 +15,9 @@ type Dsn = { url: string; key: string; raw: string };
 
 const dsn = parseDsn(process.env.SENTRY_DSN?.trim());
 const environment = process.env.RAILWAY_ENVIRONMENT_NAME ?? process.env.NODE_ENV ?? 'development';
-const release = process.env.RAILWAY_GIT_COMMIT_SHA;
+// GIT_COMMIT_SHA is injected by the Cloud Run deploy workflow; the Railway
+// variable is kept as a fallback for the old deploy.
+const release = process.env.GIT_COMMIT_SHA?.trim() || process.env.RAILWAY_GIT_COMMIT_SHA;
 
 function parseDsn(value: string | undefined): Dsn | null {
 	if (!value) return null;
@@ -56,9 +58,37 @@ function stackFrames(stack: string | undefined) {
 	return frames.reverse();
 }
 
+// Reports still in flight. Callers fire-and-forget (`void reportError(...)`),
+// which is fine for the long-lived server but not for a one-shot job: the
+// process would exit with the report still on the wire, and the one error
+// that explains a failed execution would never reach Sentry. run-job.ts
+// awaits flushErrorReports() before exiting.
+const pendingReports = new Set<Promise<void>>();
+
 // Never throws and never delays the caller beyond a short timeout: a reporting
 // failure must not turn into a second failure of the render it is reporting.
-export async function reportError(error: unknown, context: Record<string, unknown> = {}): Promise<void> {
+export function reportError(error: unknown, context: Record<string, unknown> = {}): Promise<void> {
+	const report = sendReport(error, context).catch((reportFailure: unknown) => {
+		console.error('No se pudo reportar el error a Sentry:', reportFailure);
+	});
+	pendingReports.add(report);
+	void report.finally(() => pendingReports.delete(report));
+	return report;
+}
+
+// Bounded by the per-report fetch timeout below, plus a ceiling of its own so
+// a wedged report can never keep an execution from exiting.
+export async function flushErrorReports(timeoutMs = 6000): Promise<void> {
+	if (pendingReports.size === 0) return;
+	let timer: NodeJS.Timeout | undefined;
+	const ceiling = new Promise<void>((resolve) => {
+		timer = setTimeout(resolve, timeoutMs);
+	});
+	await Promise.race([Promise.allSettled([...pendingReports]), ceiling]);
+	clearTimeout(timer);
+}
+
+async function sendReport(error: unknown, context: Record<string, unknown>): Promise<void> {
 	if (!dsn) return;
 	const err = error instanceof Error ? error : new Error(String(error));
 	const eventId = randomUUID().replace(/-/g, '');
