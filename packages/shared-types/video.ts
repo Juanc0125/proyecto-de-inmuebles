@@ -80,7 +80,13 @@ export interface Video {
     render_error: string | null;
     render_started_at: string | null; // lets the UI spot a job whose worker died
     template: VideoTemplate; // RF-019: narrative shape the scenes follow
-    music_id: string | null; // RF-010: 'biblioteca:<slug>' | 'subido:<uuid>', one background track per video
+    /**
+     * @deprecated Background music was removed from the product. The column
+     * still exists in `videos` (no destructive migration) but the server never
+     * reads or writes it, so this is always undefined. Kept optional only so
+     * code that still mentions it compiles until it is cleaned up.
+     */
+    music_id?: string | null;
 }
 
 export interface Scene {

@@ -208,7 +208,7 @@ export async function PATCH(request: Request, context: RouteContext) {
                 return NextResponse.json({ error: 'El efecto de sonido elegido no existe.' }, { status: 400 });
             }
             if (sound.kind !== 'efecto') {
-                return NextResponse.json({ error: 'El sonido elegido es una musica de fondo, no un efecto.' }, { status: 400 });
+                return NextResponse.json({ error: 'El sonido elegido no es un efecto de sonido.' }, { status: 400 });
             }
         }
         patch.sound_effect_id = value;

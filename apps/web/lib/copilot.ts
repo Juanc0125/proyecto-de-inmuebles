@@ -10,7 +10,6 @@ import { POST as applyBrandTemplateRoute } from '../app/api/videos/[id]/brand-te
 import { PATCH as patchSceneRoute } from '../app/api/videos/[id]/scenes/[sceneId]/route';
 import { POST as planScenesRoute } from '../app/api/videos/[id]/scenes/route';
 import { POST as duplicateRoute } from '../app/api/videos/[id]/duplicate/route';
-import { PATCH as musicRoute } from '../app/api/videos/[id]/music/route';
 import { POST as ttsRoute } from '../app/api/videos/[id]/tts/route';
 import { POST as batchRoute } from '../app/api/videos/batch/route';
 import type { VideoRecord } from '../app/api/videos/store';
@@ -257,18 +256,6 @@ const TOOLS: ToolSchema[] = [
             type: 'object',
             properties: {
                 nombre_o_id_plantilla: { type: 'string' },
-            },
-            additionalProperties: false,
-        },
-    },
-    {
-        name: 'poner_musica',
-        description: 'Pone la musica de fondo por nombre aproximado, o la quita. Sin nombre, lista las opciones.',
-        parameters: {
-            type: 'object',
-            properties: {
-                nombre: { type: 'string' },
-                quitar: { type: 'boolean' },
             },
             additionalProperties: false,
         },
@@ -788,38 +775,11 @@ async function aplicarBranding(args: ToolArgs, state: CopilotState): Promise<str
     return `Marca "${match.name}" aplicada al video: ${describeBranding(updated)}.`;
 }
 
-// RF-010. The choice lands in the same routes the sound panel calls, which
-// check that the id exists and is of the right kind; listing by kind here only
-// keeps a music name from being offered as an effect.
-async function soundOptions(kind: 'musica' | 'efecto') {
-    return (await listSounds()).filter((sound) => sound.kind === kind);
-}
-
-async function ponerMusica(args: ToolArgs, state: CopilotState): Promise<string> {
-    const open = await requireVideo(state);
-    if (!open.ok) return open.message;
-
-    if (args.quitar === true) {
-        const updated = await callRoute(musicRoute, { id: open.value.id }, jsonInit('PATCH', { music_id: null }));
-        state.touched = updated;
-        state.acciones.push('Musica quitada');
-        return 'Quite la musica de fondo del video.';
-    }
-
-    const options = await soundOptions('musica');
-    if (!options.length) return 'No hay musicas de fondo disponibles todavia; se suben desde el panel de sonido.';
-    const catalog = options.map((sound) => sound.name).join(', ');
-    const current = options.find((sound) => sound.id === open.value.music_id)?.name ?? 'ninguna';
-
-    const nombre = readText(args.nombre);
-    if (!nombre) return `Musicas disponibles: ${catalog}. Ahora tiene: ${current}.`;
-    const match = findByName(options, nombre);
-    if (!match) return `No encontre la musica "${nombre}". Disponibles: ${catalog}.`;
-
-    const updated = await callRoute(musicRoute, { id: open.value.id }, jsonInit('PATCH', { music_id: match.id }));
-    state.touched = updated;
-    state.acciones.push(`Musica "${match.name}" elegida`);
-    return `Musica de fondo: ${match.name}.`;
+// RF-010. The choice lands in the same route the sound panel calls, which
+// checks that the id exists and is an effect. Only effects are listed:
+// background music was removed from the product.
+async function effectOptions() {
+    return (await listSounds()).filter((sound) => sound.kind === 'efecto');
 }
 
 async function ponerEfecto(args: ToolArgs, state: CopilotState): Promise<string> {
@@ -837,7 +797,7 @@ async function ponerEfecto(args: ToolArgs, state: CopilotState): Promise<string>
         return `Quite el efecto de sonido de la escena ${found.value.order}.`;
     }
 
-    const options = await soundOptions('efecto');
+    const options = await effectOptions();
     if (!options.length) return 'No hay efectos de sonido disponibles todavia; se suben desde el panel de sonido.';
     const catalog = options.map((sound) => sound.name).join(', ');
 
@@ -956,7 +916,6 @@ const EXECUTORS: Record<string, ToolExecutor> = {
     sugerir_plantilla: sugerirPlantilla,
     sugerir_personaje: sugerirPersonaje,
     aplicar_branding: aplicarBranding,
-    poner_musica: ponerMusica,
     poner_efecto: ponerEfecto,
     borrar_video: (_args, state) => borrarVideo(state),
     estado_proyecto: estadoProyecto,
@@ -1100,8 +1059,8 @@ function clip(text: string, max: number): string {
 /**
  * The facts the model needs to act without asking: the library in one line
  * per recent video, so "el de TikTok" resolves, and the open video in full -
- * script, scenes, sound, brand and status - so "la tercera escena" or "cambiale
- * la musica" can be acted on at once. It is appended to the system prompt and
+ * script, scenes, sound effects, brand and status - so "la tercera escena" or
+ * "quitale el efecto" can be acted on at once. It is appended to the system prompt and
  * rebuilt every turn from the database, never from what the browser says.
  */
 async function buildPromptContext(videoId: string | null): Promise<string> {
@@ -1125,7 +1084,7 @@ async function buildPromptContext(videoId: string | null): Promise<string> {
     const scenes = orderedScenes(open);
     // Only resolved when something is actually chosen: listing the uploads is
     // a query, and most videos have no sound yet.
-    const soundIds = [open.music_id, ...scenes.map((scene) => scene.sound_effect_id)].filter(Boolean);
+    const soundIds = scenes.map((scene) => scene.sound_effect_id).filter(Boolean);
     const soundNames = new Map((soundIds.length ? await listSounds().catch(() => []) : []).map((sound) => [sound.id, sound.name]));
     const soundName = (id: string | null) => (id ? soundNames.get(id) ?? 'desconocido' : null);
 
@@ -1137,7 +1096,6 @@ async function buildPromptContext(videoId: string | null): Promise<string> {
         `objetivo ${open.target_duration_seconds}s`,
         `estado ${STATUS_LABELS[open.status].toLowerCase()}`,
         `render ${open.render_status}${open.video_url ? ' (MP4 listo)' : ''}`,
-        `musica ${soundName(open.music_id) ?? 'ninguna'}`,
     ].join(' | ') + '.');
     const scriptChars = scenes.length ? CONTEXT_SCRIPT_CHARS_WITH_SCENES : CONTEXT_SCRIPT_CHARS;
     lines.push(open.script.trim() ? `Guion: ${clip(open.script, scriptChars)}` : 'Sin guion.');

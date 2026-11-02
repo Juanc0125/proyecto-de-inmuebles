@@ -135,11 +135,9 @@ async function markStalledRenders(client: SupabaseClient, rows: DatabaseRow[]): 
 
 // RF-010 columns are written only when they carry a value, so inserts keep
 // working against a database the sounds migration has not reached yet (null
-// is the column default anyway).
-function musicColumn(musicId: string | null | undefined): { music_id?: string } {
-    return musicId ? { music_id: musicId } : {};
-}
-
+// is the column default anyway). Background music was removed from the
+// product: `videos.music_id` stays in the schema (no destructive migration)
+// but is neither read nor written any more.
 function soundEffectColumn(soundEffectId: string | null | undefined): { sound_effect_id?: string } {
     return soundEffectId ? { sound_effect_id: soundEffectId } : {};
 }
@@ -162,7 +160,6 @@ function toVideoRecord(video: DatabaseRow, scenes: DatabaseRow[] = []): VideoRec
         render_error: nullableString(video.render_error),
         render_started_at: nullableString(video.render_started_at),
         template: getTemplate(video.template).id,
-        music_id: nullableString(video.music_id),
         scenes: (scenes ?? []).map(toScene).sort((a, b) => a.order - b.order),
     });
 }
@@ -355,7 +352,6 @@ function buildLocalVideoRecord(topic: string, platform: Platform, targetDuration
         render_progress: 0,
         render_error: null,
         render_started_at: null,
-        music_id: null,
         created_at: new Date().toISOString(),
     };
     return { ...video, scenes: [] };
@@ -638,33 +634,6 @@ export async function updateBranding(id: string, branding: Partial<Branding>): P
     return updated;
 }
 
-// RF-010: the soundtrack is part of the ad, so changing it reverts approval
-// like any other edit (RF-012). Validating the id (exists, is music) is the
-// route's job; this only stores it.
-export async function setVideoMusic(id: string, musicId: string | null): Promise<VideoRecord> {
-    const client = getSupabaseClient({ serviceRole: true }) ?? getSupabaseClient();
-    if (client) {
-        try {
-            await revertApprovalInSupabase(client, id);
-            const { data: updated, error } = await client.from('videos').update({ music_id: musicId }).eq('id', id).select('*').maybeSingle();
-            if (error && isMissingSchemaError(error)) throw new Error(SOUNDS_MIGRATION_MISSING_ERROR);
-            if (error) throw error;
-            if (!updated) throw new VideoError(VIDEO_NOT_FOUND, 404);
-            const { data: scenesData } = await client.from('scenes').select('*').eq('video_id', id);
-            return toVideoRecord(updated, scenesData ?? []);
-        } catch (error) {
-            if (error instanceof Error && error.message === SOUNDS_MIGRATION_MISSING_ERROR) throw error;
-            fallBackOrThrow(error, 'Fallo al actualizar la música en Supabase');
-        }
-    }
-
-    const video = mockVideos.get(id);
-    if (!video) throw new VideoError(VIDEO_NOT_FOUND, 404);
-    const updated = revertApprovalInMemory({ ...video, music_id: musicId });
-    mockVideos.set(id, updated);
-    return updated;
-}
-
 export async function duplicateForPlatform(id: string, platform: Platform): Promise<VideoRecord> {
     const original = await findVideoRecord(id);
     if (!original) throw new VideoError(VIDEO_NOT_FOUND, 404);
@@ -693,7 +662,6 @@ export async function duplicateForPlatform(id: string, platform: Platform): Prom
                 status: 'borrador',
                 branding: original.branding,
                 source_video_id: original.id,
-                ...musicColumn(original.music_id),
             }).select().single();
             if (videoError || !videoData) throw videoError ?? new Error('No se pudo duplicar el video.');
 
@@ -732,7 +700,6 @@ export async function duplicateForPlatform(id: string, platform: Platform): Prom
         render_error: null,
         render_started_at: null,
         template: original.template,
-        music_id: original.music_id,
         created_at: new Date().toISOString(),
     };
     const record: VideoRecord = {
@@ -915,7 +882,7 @@ export async function renderVideo(id: string): Promise<VideoRecord> {
     // The worker gets playable URLs, never ids: it has no access to the sound
     // catalog. A sound deleted since it was chosen resolves to null and the
     // video renders without it.
-    const soundUrls = await resolveSoundUrls([video.music_id, ...sortedScenes.map((scene) => scene.sound_effect_id)]);
+    const soundUrls = await resolveSoundUrls(sortedScenes.map((scene) => scene.sound_effect_id));
     const urlFor = (soundId: string | null) => (soundId ? soundUrls.get(soundId) ?? null : null);
 
     // One job description for both backends, so the HTTP worker and the Cloud
@@ -924,7 +891,6 @@ export async function renderVideo(id: string): Promise<VideoRecord> {
         id,
         platform: video.platform,
         branding: video.branding,
-        music_url: urlFor(video.music_id),
         scenes: sortedScenes.map((scene) => ({
             order: scene.order,
             character: scene.character,

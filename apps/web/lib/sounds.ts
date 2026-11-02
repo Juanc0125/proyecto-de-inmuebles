@@ -1,4 +1,4 @@
-// RF-010: background music and sound effects.
+// RF-010: per-scene sound effects (background music was removed).
 //
 // Two sources behind one id scheme (see packages/shared-types/sounds.ts): the
 // library the project generates itself, which lives only in code plus the
@@ -18,7 +18,9 @@ import { getSupabaseClient } from './supabaseClient';
 type DatabaseRow = Record<string, unknown>;
 type SupabaseClient = NonNullable<ReturnType<typeof getSupabaseClient>>;
 
-export const SOUND_KINDS: SoundKind[] = ['musica', 'efecto'];
+// Only effects can be registered now. Old 'musica' rows are left in place (no
+// destructive migration) and simply never listed.
+export const SOUND_KINDS: SoundKind[] = ['efecto'];
 export const MAX_SOUND_BYTES = 20 * 1024 * 1024;
 
 // Browsers disagree on what they call the same file (an .mp3 arrives as
@@ -165,7 +167,8 @@ async function findUploadedRecord(client: SupabaseClient | null, uuid: string): 
 export async function listSounds(): Promise<SoundAsset[]> {
     const client = anyClient();
     const uploaded = await listUploadedRecords(client);
-    return [...libraryAssets(client), ...uploaded.map((record) => toUploadedAsset(client, record))];
+    return [...libraryAssets(client), ...uploaded.map((record) => toUploadedAsset(client, record))]
+        .filter((asset) => asset.kind === 'efecto');
 }
 
 // A library id resolves without touching the database: the catalog is code. It
@@ -311,25 +314,20 @@ export async function deleteUploadedSound(id: string): Promise<DeleteSoundResult
 
         // Clear the references so a later render does not look the id up. A
         // database without the RF-010 columns has nothing to clear.
-        const sound = `subido:${parsed.uuid}`;
-        for (const [table, column] of [['videos', 'music_id'], ['scenes', 'sound_effect_id']] as const) {
-            try {
-                const { error } = await client.from(table).update({ [column]: null }).eq(column, sound);
-                if (error && !isMissingSchemaError(error)) throw error;
-            } catch (error) {
-                console.warn(`Fallo al limpiar ${column} tras eliminar el sonido.`, error);
-            }
+        try {
+            const { error } = await client.from('scenes').update({ sound_effect_id: null }).eq('sound_effect_id', `subido:${parsed.uuid}`);
+            if (error && !isMissingSchemaError(error)) throw error;
+        } catch (error) {
+            console.warn('Fallo al limpiar sound_effect_id tras eliminar el sonido.', error);
         }
     }
 
     mockUploads.delete(parsed.uuid);
     const sound = `subido:${parsed.uuid}`;
     for (const [videoId, video] of mockVideos) {
-        const usesSound = video.music_id === sound || video.scenes.some((scene) => scene.sound_effect_id === sound);
-        if (!usesSound) continue;
+        if (!video.scenes.some((scene) => scene.sound_effect_id === sound)) continue;
         mockVideos.set(videoId, {
             ...video,
-            music_id: video.music_id === sound ? null : video.music_id,
             scenes: video.scenes.map((scene) => (scene.sound_effect_id === sound ? { ...scene, sound_effect_id: null } : scene)),
         });
     }

@@ -1,10 +1,15 @@
-// RF-010: background music and basic sound effects.
+// RF-010: basic per-scene sound effects. Background music was removed from the
+// product; see SoundKind for the leftover 'musica' value.
 //
 // A sound is referenced everywhere by one string so a video row only stores
 // text: `biblioteca:<slug>` for the project's own generated library and
 // `subido:<uuid>` for a file the business uploaded (the uuid is the row in
 // `sound_assets` and also the storage file name).
 
+// Only 'efecto' is offered or accepted. 'musica' stays in the union because
+// rows uploaded before music was removed still carry it in `sound_assets`; the
+// server filters them out of every listing and rejects new ones.
+// @deprecated value: 'musica'.
 export type SoundKind = 'musica' | 'efecto';
 export type SoundOrigin = 'biblioteca' | 'subido';
 
@@ -35,9 +40,6 @@ const OWN_LICENSE = 'Propia del proyecto (CC0)';
 // track can be added here later, but only with a license and a source URL that
 // a person has actually checked.
 export const SOUND_LIBRARY: SoundLibraryEntry[] = [
-    { slug: 'calma', kind: 'musica', name: 'Calma (pad suave)', license: OWN_LICENSE, source: null },
-    { slug: 'confianza', kind: 'musica', name: 'Confianza (acordes cálidos)', license: OWN_LICENSE, source: null },
-    { slug: 'impulso', kind: 'musica', name: 'Impulso (pulso ligero)', license: OWN_LICENSE, source: null },
     { slug: 'transicion', kind: 'efecto', name: 'Transición (barrido)', license: OWN_LICENSE, source: null },
     { slug: 'campana', kind: 'efecto', name: 'Campana', license: OWN_LICENSE, source: null },
     { slug: 'pop', kind: 'efecto', name: 'Pop', license: OWN_LICENSE, source: null },

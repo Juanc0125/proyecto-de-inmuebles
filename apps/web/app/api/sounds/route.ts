@@ -41,8 +41,14 @@ export async function POST(request: Request) {
         return NextResponse.json({ error: `El nombre no puede superar los ${MAX_NAME_LENGTH} caracteres.` }, { status: 400 });
     }
 
-    if (typeof body.kind !== 'string' || !SOUND_KINDS.includes(body.kind as SoundKind)) {
-        return NextResponse.json({ error: 'El tipo debe ser "musica" o "efecto".' }, { status: 400 });
+    // Only effects exist now; a missing kind means one, so the upload form
+    // does not need a selector with a single option.
+    const kind = body.kind === undefined ? 'efecto' : body.kind;
+    if (kind === 'musica') {
+        return NextResponse.json({ error: 'La música de fondo ya no está disponible; solo se pueden subir efectos de sonido.' }, { status: 400 });
+    }
+    if (typeof kind !== 'string' || !SOUND_KINDS.includes(kind as SoundKind)) {
+        return NextResponse.json({ error: 'El tipo debe ser "efecto".' }, { status: 400 });
     }
 
     const licencia = typeof body.licencia === 'string' ? body.licencia.trim() : '';
@@ -60,7 +66,7 @@ export async function POST(request: Request) {
 
     try {
         const userId = await ensureDemoUser();
-        const result = await registerSound({ name, kind: body.kind as SoundKind, path, license: licencia }, userId);
+        const result = await registerSound({ name, kind: kind as SoundKind, path, license: licencia }, userId);
         if (!result.ok) {
             return NextResponse.json({ error: result.error }, { status: result.status });
         }
