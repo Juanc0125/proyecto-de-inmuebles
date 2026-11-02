@@ -1,17 +1,22 @@
 import { NextResponse } from 'next/server';
+import { readElevenlabsConfig, synthesizeWithElevenlabs } from '../../../lib/elevenlabs-tts';
 import { readGoogleTtsConfig, synthesizeWithGoogle } from '../../../lib/google-tts';
 
 // The assistant's voice, first choice to last:
-// 1. Google Cloud Text-to-Speech when GOOGLE_TTS_VOICE is set and the service
+// 1. ElevenLabs when ELEVENLABS_API_KEY is set (voice ELEVENLABS_ASSISTANT_VOICE_ID,
+//    model ELEVENLABS_ASSISTANT_MODEL, both with defaults): the voice chosen
+//    for the assistant, with per-character timings for the word pulses.
+// 2. Google Cloud Text-to-Speech when GOOGLE_TTS_VOICE is set and the service
 //    account (GCP_SA_KEY_B64) is readable: a studio-quality voice on the GCP
 //    account the render job already uses.
-// 2. HeyGen when HEYGEN_API_KEY + HEYGEN_VOICE_ID are set: the same voice the
+// 3. HeyGen when HEYGEN_API_KEY + HEYGEN_VOICE_ID are set: the same voice the
 //    videos use, billed per request against HeyGen's API wallet.
-// 3. 204, and the browser speaks the reply with its own built-in voice.
-// Both paid voices are why proxy.ts keeps this route behind a session.
+// 4. 204, and the browser speaks the reply with its own built-in voice.
+// The paid voices are why proxy.ts keeps this route behind a session.
 //
 // It never fails the conversation: anything short of playable audio - no key,
-// no balance, a timeout - falls through to the next option and finally 204.
+// no balance, a rate limit, a timeout - falls through to the next option and
+// finally 204.
 //
 // Response: { audio_url, word_starts }. Google returns no word timings, so its
 // word_starts is [] and the client animates without per-word pulses.
@@ -29,6 +34,12 @@ export async function POST(request: Request) {
     const body = await request.json().catch(() => null) as { text?: unknown } | null;
     const text = typeof body?.text === 'string' ? body.text.trim().slice(0, MAX_CHARS) : '';
     if (!text) return silent();
+
+    const eleven = readElevenlabsConfig();
+    if (eleven) {
+        const speech = await synthesizeWithElevenlabs(text, eleven, TIMEOUT_MS);
+        if (speech) return NextResponse.json({ audio_url: `data:audio/mpeg;base64,${speech.audio}`, word_starts: speech.wordStarts });
+    }
 
     const google = readGoogleTtsConfig();
     if (google) {
