@@ -138,13 +138,91 @@
       "source_location": "L106"
     },
     {
+      "id": "apps_web_app_api_videos_batch_route_batchfailure",
+      "label": "BatchFailure",
+      "_callable": true,
+      "_callable_class": true,
+      "_origin": "ast",
+      "community": 17,
+      "community_name": "batch/route.ts",
+      "file_type": "code",
+      "norm_label": "batchfailure",
+      "source_file": "apps/web/app/api/videos/batch/route.ts",
+      "source_location": "L18"
+    },
+    {
+      "id": "apps_web_app_api_videos_batch_route_batchwarning",
+      "label": "BatchWarning",
+      "_callable": true,
+      "_callable_class": true,
+      "_origin": "ast",
+      "community": 17,
+      "community_name": "batch/route.ts",
+      "file_type": "code",
+      "norm_label": "batchwarning",
+      "source_file": "apps/web/app/api/videos/batch/route.ts",
+      "source_location": "L32"
+    },
+    {
+      "id": "apps_web_app_api_videos_batch_route_batchwarningcause",
+      "label": "BatchWarningCause",
+      "_callable": true,
+      "_callable_class": true,
+      "_origin": "ast",
+      "community": 17,
+      "community_name": "batch/route.ts",
+      "file_type": "code",
+      "norm_label": "batchwarningcause",
+      "source_file": "apps/web/app/api/videos/batch/route.ts",
+      "source_location": "L30"
+    },
+    {
+      "id": "apps_web_app_api_videos_store_videorecord",
+      "label": "VideoRecord",
+      "_callable": true,
+      "_callable_class": true,
+      "_origin": "ast",
+      "community": 17,
+      "community_name": "batch/route.ts",
+      "file_type": "code",
+      "norm_label": "videorecord",
+      "source_file": "apps/web/app/api/videos/store.ts",
+      "source_location": "L3"
+    },
+    {
+      "id": "packages_shared_types_video_scene",
+      "label": "Scene",
+      "_callable": true,
+      "_callable_class": true,
+      "_origin": "ast",
+      "community": 17,
+      "community_name": "batch/route.ts",
+      "file_type": "code",
+      "norm_label": "scene",
+      "source_file": "packages/shared-types/video.ts",
+      "source_location": "L74"
+    },
+    {
+      "id": "packages_shared_types_video_video",
+      "label": "Video",
+      "_callable": true,
+      "_callable_class": true,
+      "_origin": "ast",
+      "community": 17,
+      "community_name": "batch/route.ts",
+      "file_type": "code",
+      "norm_label": "video",
+      "source_file": "packages/shared-types/video.ts",
+      "source_location": "L55"
+    },
+    {
       "id": "apps_web_app_api_brand_templates_id_route_routecontext",
       "label": "RouteContext",
       "_callable": true,
       "_callable_class": true,
       "_origin": "ast",
-      "community": 17,
-      "community_name": "brand-templates.ts",
+      "community": 18,
+      "community_name": "video-persistence.ts",
       "file_type": "code",
       "norm_label": "routecontext",
       "source_file": "apps/web/app/api/brand-templates/[id]/route.ts",
@@ -156,25 +234,77 @@
       "_callable": true,
       "_callable_class": true,
       "_origin": "ast",
-      "community": 17,
-      "community_name": "brand-templates.ts",
+      "community": 18,
+      "community_name": "video-persistence.ts",
       "file_type": "code",
       "norm_label": "createbody",
       "source_file": "apps/web/app/api/brand-templates/route.ts",
       "source_location": "L11"
     },
     {
-      "id": "apps_web_lib_brand_templates_databaserow",
-      "label": "DatabaseRow",
+      "id": "apps_web_app_api_videos_id_brand_template_route_routecontext",
+      "label": "RouteContext",
       "_callable": true,
       "_callable_class": true,
       "_origin": "ast",
-      "community": 17,
-      "community_name": "brand-templates.ts",
+      "community": 18,
+      "community_name": "video-persistence.ts",
       "file_type": "code",
-      "norm_label": "databaserow",
-      "source_file": "apps/web/lib/brand-templates.ts",
-      "source_location": "L14"
+      "norm_label": "routecontext",
+      "source_file": "apps/web/app/api/videos/[id]/brand-template/route.ts",
+      "source_location": "L5"
+    },
+    {
+      "id": "apps_web_app_api_videos_id_branding_route_brandingpatchbody",
+      "label": "BrandingPatchBody",
+      "_callable": true,
+      "_callable_class": true,
+      "_origin": "ast",
+      "community": 18,
+      "community_name": "video-persistence.ts",
+      "file_type": "code",
+      "norm_label": "brandingpatchbody",
+      "source_file": "apps/web/app/api/videos/[id]/branding/route.ts",
+      "source_location": "L7"
+    },
+    {
+      "id": "apps_web_app_api_videos_id_branding_route_routecontext",
+      "label": "RouteContext",
+      "_callable": true,
+      "_callable_class": true,
+      "_origin": "ast",
+      "community": 18,
+      "community_name": "video-persistence.ts",
+      "file_type": "code",
+      "norm_label": "routecontext",
+      "source_file": "apps/web/app/api/videos/[id]/branding/route.ts",
+      "source_location": "L5"
+    },
+    {
+      "id": "apps_web_app_api_videos_id_duplicate_route_routecontext",
+      "label": "RouteContext",
+      "_callable": true,
+      "_callable_class": true,
+      "_origin": "ast",
+      "community": 18,
+      "community_name": "video-persistence.ts",
+      "file_type": "code",
+      "norm_label": "routecontext",
+      "source_file": "apps/web/app/api/videos/[id]/duplicate/route.ts",
+      "source_location": "L5"
+    },
+    {
+      "id": "apps_web_app_api_videos_id_logo_route_routecontext",
+      "label": "RouteContext",
+      "_callable": true,
+      "_callable_class": true,
+      "_origin": "ast",
+      "community": 18,
+      "community_name": "video-persistence.ts",
+      "file_type": "code",
+      "norm_label": "routecontext",
+      "source_file": "apps/web/app/api/videos/[id]/logo/route.ts",
+      "source_location": "L5"
     },
     {
       "id": "apps_web_app_api_videos_id_route_routecontext",
@@ -188,6 +318,32 @@
       "norm_label": "routecontext",
       "source_file": "apps/web/app/api/videos/[id]/route.ts",
       "source_location": "L5"
+    },
+    {
+      "id": "apps_web_app_api_videos_id_tts_route_routecontext",
+      "label": "RouteContext",
+      "_callable": true,
+      "_callable_class": true,
+      "_origin": "ast",
+      "community": 18,
+      "community_name": "video-persistence.ts",
+      "file_type": "code",
+      "norm_label": "routecontext",
+      "source_file": "apps/web/app/api/videos/[id]/tts/route.ts",
+      "source_location": "L5"
+    },
+    {
+      "id": "apps_web_lib_brand_templates_databaserow",
+      "label": "DatabaseRow",
+      "_callable": true,
+      "_callable_class": true,
+      "_origin": "ast",
+      "community": 18,
+      "community_name": "video-persistence.ts",
+      "file_type": "code",
+      "norm_label": "databaserow",
+      "source_file": "apps/web/lib/brand-templates.ts",
+      "source_location": "L14"
     },
     {
       "id": "apps_web_lib_video_persistence_databaserow",
@@ -242,56 +398,17 @@
       "source_location": "L8"
     },
     {
-      "id": "apps_web_app_api_videos_batch_route_batchfailure",
-      "label": "BatchFailure",
+      "id": "packages_shared_types_video_branding",
+      "label": "Branding",
       "_callable": true,
       "_callable_class": true,
       "_origin": "ast",
-      "community": 2,
-      "community_name": "copilot.ts",
+      "community": 18,
+      "community_name": "video-persistence.ts",
       "file_type": "code",
-      "norm_label": "batchfailure",
-      "source_file": "apps/web/app/api/videos/batch/route.ts",
-      "source_location": "L18"
-    },
-    {
-      "id": "apps_web_app_api_videos_batch_route_batchwarning",
-      "label": "BatchWarning",
-      "_callable": true,
-      "_callable_class": true,
-      "_origin": "ast",
-      "community": 2,
-      "community_name": "copilot.ts",
-      "file_type": "code",
-      "norm_label": "batchwarning",
-      "source_file": "apps/web/app/api/videos/batch/route.ts",
-      "source_location": "L32"
-    },
-    {
-      "id": "apps_web_app_api_videos_batch_route_batchwarningcause",
-      "label": "BatchWarningCause",
-      "_callable": true,
-      "_callable_class": true,
-      "_origin": "ast",
-      "community": 2,
-      "community_name": "copilot.ts",
-      "file_type": "code",
-      "norm_label": "batchwarningcause",
-      "source_file": "apps/web/app/api/videos/batch/route.ts",
-      "source_location": "L30"
-    },
-    {
-      "id": "apps_web_app_api_videos_store_videorecord",
-      "label": "VideoRecord",
-      "_callable": true,
-      "_callable_class": true,
-      "_origin": "ast",
-      "community": 2,
-      "community_name": "copilot.ts",
-      "file_type": "code",
-      "norm_label": "videorecord",
-      "source_file": "apps/web/app/api/videos/store.ts",
-      "source_location": "L3"
+      "norm_label": "branding",
+      "source_file": "packages/shared-types/video.ts",
+      "source_location": "L11"
     },
     {
       "id": "apps_web_lib_copilot_batchwarning",
@@ -723,19 +840,6 @@
       "source_location": "L41"
     },
     {
-      "id": "apps_web_app_api_videos_id_duplicate_route_routecontext",
-      "label": "RouteContext",
-      "_callable": true,
-      "_callable_class": true,
-      "_origin": "ast",
-      "community": 40,
-      "community_name": "next",
-      "file_type": "code",
-      "norm_label": "routecontext",
-      "source_file": "apps/web/app/api/videos/[id]/duplicate/route.ts",
-      "source_location": "L5"
-    },
-    {
       "id": "apps_render_worker_drawing_cameraprofile",
       "label": "CameraProfile",
       "_callable": true,
@@ -944,6 +1048,32 @@
       "source_location": "L33"
     },
     {
+      "id": "packages_shared_types_templates_brandtemplate",
+      "label": "BrandTemplate",
+      "_callable": true,
+      "_callable_class": true,
+      "_origin": "ast",
+      "community": 59,
+      "community_name": "video-list.tsx",
+      "file_type": "code",
+      "norm_label": "brandtemplate",
+      "source_file": "packages/shared-types/templates.ts",
+      "source_location": "L113"
+    },
+    {
+      "id": "packages_shared_types_templates_templatedefinition",
+      "label": "TemplateDefinition",
+      "_callable": true,
+      "_callable_class": true,
+      "_origin": "ast",
+      "community": 59,
+      "community_name": "video-list.tsx",
+      "file_type": "code",
+      "norm_label": "templatedefinition",
+      "source_file": "packages/shared-types/templates.ts",
+      "source_location": "L12"
+    },
+    {
       "id": "packages_shared_types_templates_videotemplate",
       "label": "VideoTemplate",
       "_callable": true,
@@ -994,58 +1124,6 @@
       "norm_label": "platform",
       "source_file": "apps/render-worker/render.ts",
       "source_location": "L92"
-    },
-    {
-      "id": "apps_web_app_api_videos_id_brand_template_route_routecontext",
-      "label": "RouteContext",
-      "_callable": true,
-      "_callable_class": true,
-      "_origin": "ast",
-      "community": 60,
-      "community_name": "getVideo",
-      "file_type": "code",
-      "norm_label": "routecontext",
-      "source_file": "apps/web/app/api/videos/[id]/brand-template/route.ts",
-      "source_location": "L5"
-    },
-    {
-      "id": "apps_web_app_api_videos_id_branding_route_brandingpatchbody",
-      "label": "BrandingPatchBody",
-      "_callable": true,
-      "_callable_class": true,
-      "_origin": "ast",
-      "community": 60,
-      "community_name": "getVideo",
-      "file_type": "code",
-      "norm_label": "brandingpatchbody",
-      "source_file": "apps/web/app/api/videos/[id]/branding/route.ts",
-      "source_location": "L7"
-    },
-    {
-      "id": "apps_web_app_api_videos_id_branding_route_routecontext",
-      "label": "RouteContext",
-      "_callable": true,
-      "_callable_class": true,
-      "_origin": "ast",
-      "community": 60,
-      "community_name": "getVideo",
-      "file_type": "code",
-      "norm_label": "routecontext",
-      "source_file": "apps/web/app/api/videos/[id]/branding/route.ts",
-      "source_location": "L5"
-    },
-    {
-      "id": "apps_web_app_api_videos_id_logo_route_routecontext",
-      "label": "RouteContext",
-      "_callable": true,
-      "_callable_class": true,
-      "_origin": "ast",
-      "community": 60,
-      "community_name": "getVideo",
-      "file_type": "code",
-      "norm_label": "routecontext",
-      "source_file": "apps/web/app/api/videos/[id]/logo/route.ts",
-      "source_location": "L5"
     },
     {
       "id": "apps_web_app_components_api_scenepatch",
@@ -1386,6 +1464,19 @@
       "source_location": "L421"
     },
     {
+      "id": "apps_render_worker_error_reporting_dsn",
+      "label": "Dsn",
+      "_callable": true,
+      "_callable_class": true,
+      "_origin": "ast",
+      "community": 68,
+      "community_name": "run-job.ts",
+      "file_type": "code",
+      "norm_label": "dsn",
+      "source_file": "apps/render-worker/error-reporting.ts",
+      "source_location": "L14"
+    },
+    {
       "id": "apps_render_worker_render_renderjob",
       "label": "RenderJob",
       "_callable": true,
@@ -1410,19 +1501,6 @@
       "norm_label": "decodedjob",
       "source_file": "apps/render-worker/run-job.ts",
       "source_location": "L58"
-    },
-    {
-      "id": "apps_web_app_api_videos_id_tts_route_routecontext",
-      "label": "RouteContext",
-      "_callable": true,
-      "_callable_class": true,
-      "_origin": "ast",
-      "community": 72,
-      "community_name": "getSupabaseClient",
-      "file_type": "code",
-      "norm_label": "routecontext",
-      "source_file": "apps/web/app/api/videos/[id]/tts/route.ts",
-      "source_location": "L5"
     },
     {
       "id": "apps_web_lib_assistant_assistantaction",
@@ -1475,19 +1553,6 @@
       "norm_label": "brandpatch",
       "source_file": "apps/web/lib/assistant.ts",
       "source_location": "L26"
-    },
-    {
-      "id": "apps_render_worker_error_reporting_dsn",
-      "label": "Dsn",
-      "_callable": true,
-      "_callable_class": true,
-      "_origin": "ast",
-      "community": 88,
-      "community_name": "error-reporting.ts",
-      "file_type": "code",
-      "norm_label": "dsn",
-      "source_file": "apps/render-worker/error-reporting.ts",
-      "source_location": "L14"
     },
     {
       "id": "apps_render_worker_checks_type_parity_exact",
@@ -1555,19 +1620,6 @@
       "source_location": "L156"
     },
     {
-      "id": "packages_shared_types_templates_brandtemplate",
-      "label": "BrandTemplate",
-      "_callable": true,
-      "_callable_class": true,
-      "_origin": "ast",
-      "community": 90,
-      "community_name": "video.ts",
-      "file_type": "code",
-      "norm_label": "brandtemplate",
-      "source_file": "packages/shared-types/templates.ts",
-      "source_location": "L113"
-    },
-    {
       "id": "packages_shared_types_templates_templatebeat",
       "label": "TemplateBeat",
       "_callable": true,
@@ -1579,32 +1631,6 @@
       "norm_label": "templatebeat",
       "source_file": "packages/shared-types/templates.ts",
       "source_location": "L6"
-    },
-    {
-      "id": "packages_shared_types_templates_templatedefinition",
-      "label": "TemplateDefinition",
-      "_callable": true,
-      "_callable_class": true,
-      "_origin": "ast",
-      "community": 90,
-      "community_name": "video.ts",
-      "file_type": "code",
-      "norm_label": "templatedefinition",
-      "source_file": "packages/shared-types/templates.ts",
-      "source_location": "L12"
-    },
-    {
-      "id": "packages_shared_types_video_branding",
-      "label": "Branding",
-      "_callable": true,
-      "_callable_class": true,
-      "_origin": "ast",
-      "community": 90,
-      "community_name": "video.ts",
-      "file_type": "code",
-      "norm_label": "branding",
-      "source_file": "packages/shared-types/video.ts",
-      "source_location": "L11"
     },
     {
       "id": "packages_shared_types_video_charactertype",
@@ -1659,19 +1685,6 @@
       "source_location": "L30"
     },
     {
-      "id": "packages_shared_types_video_scene",
-      "label": "Scene",
-      "_callable": true,
-      "_callable_class": true,
-      "_origin": "ast",
-      "community": 90,
-      "community_name": "video.ts",
-      "file_type": "code",
-      "norm_label": "scene",
-      "source_file": "packages/shared-types/video.ts",
-      "source_location": "L74"
-    },
-    {
       "id": "packages_shared_types_video_sceneaction",
       "label": "SceneAction",
       "_callable": true,
@@ -1696,19 +1709,6 @@
       "norm_label": "sceneproptype",
       "source_file": "packages/shared-types/video.ts",
       "source_location": "L8"
-    },
-    {
-      "id": "packages_shared_types_video_video",
-      "label": "Video",
-      "_callable": true,
-      "_callable_class": true,
-      "_origin": "ast",
-      "community": 90,
-      "community_name": "video.ts",
-      "file_type": "code",
-      "norm_label": "video",
-      "source_file": "packages/shared-types/video.ts",
-      "source_location": "L55"
     },
     {
       "id": "packages_shared_types_video_videostatus",
@@ -1904,18 +1904,6 @@
       "source_location": "L323"
     },
     {
-      "id": "apps_web_app_components_api_fetchsession",
-      "label": "fetchSession()",
-      "_callable": true,
-      "_origin": "ast",
-      "community": 1,
-      "community_name": "api.ts",
-      "file_type": "code",
-      "norm_label": "fetchsession()",
-      "source_file": "apps/web/app/components/api.ts",
-      "source_location": "L75"
-    },
-    {
       "id": "apps_web_app_components_api_fetchvideos",
       "label": "fetchVideos()",
       "_callable": true,
@@ -1938,18 +1926,6 @@
       "norm_label": "registersound()",
       "source_file": "apps/web/app/components/api.ts",
       "source_location": "L314"
-    },
-    {
-      "id": "apps_web_app_components_api_request",
-      "label": "request()",
-      "_callable": true,
-      "_origin": "ast",
-      "community": 1,
-      "community_name": "api.ts",
-      "file_type": "code",
-      "norm_label": "request()",
-      "source_file": "apps/web/app/components/api.ts",
-      "source_location": "L38"
     },
     {
       "id": "apps_web_app_components_api_requestsoundupload",
@@ -2156,6 +2132,18 @@
       "source_location": "L77"
     },
     {
+      "id": "apps_web_app_components_api_fetchsession",
+      "label": "fetchSession()",
+      "_callable": true,
+      "_origin": "ast",
+      "community": 12,
+      "community_name": "video-studio.tsx",
+      "file_type": "code",
+      "norm_label": "fetchsession()",
+      "source_file": "apps/web/app/components/api.ts",
+      "source_location": "L75"
+    },
+    {
       "id": "apps_web_app_components_api_logout",
       "label": "logout()",
       "_callable": true,
@@ -2166,6 +2154,18 @@
       "norm_label": "logout()",
       "source_file": "apps/web/app/components/api.ts",
       "source_location": "L71"
+    },
+    {
+      "id": "apps_web_app_components_api_request",
+      "label": "request()",
+      "_callable": true,
+      "_origin": "ast",
+      "community": 12,
+      "community_name": "video-studio.tsx",
+      "file_type": "code",
+      "norm_label": "request()",
+      "source_file": "apps/web/app/components/api.ts",
+      "source_location": "L38"
     },
     {
       "id": "apps_web_app_components_video_studio_videostudio",
@@ -2432,12 +2432,72 @@
       "source_location": "L277"
     },
     {
+      "id": "apps_web_app_api_videos_batch_route_buildwarning",
+      "label": "buildWarning()",
+      "_callable": true,
+      "_origin": "ast",
+      "community": 17,
+      "community_name": "batch/route.ts",
+      "file_type": "code",
+      "norm_label": "buildwarning()",
+      "source_file": "apps/web/app/api/videos/batch/route.ts",
+      "source_location": "L58"
+    },
+    {
+      "id": "apps_web_app_api_videos_batch_route_planscenes",
+      "label": "planScenes()",
+      "_callable": true,
+      "_origin": "ast",
+      "community": 17,
+      "community_name": "batch/route.ts",
+      "file_type": "code",
+      "norm_label": "planscenes()",
+      "source_file": "apps/web/app/api/videos/batch/route.ts",
+      "source_location": "L41"
+    },
+    {
+      "id": "apps_web_app_api_videos_batch_route_post",
+      "label": "POST()",
+      "_callable": true,
+      "_origin": "ast",
+      "community": 17,
+      "community_name": "batch/route.ts",
+      "file_type": "code",
+      "norm_label": "post()",
+      "source_file": "apps/web/app/api/videos/batch/route.ts",
+      "source_location": "L81"
+    },
+    {
+      "id": "apps_web_lib_video_persistence_buildfallbackscript",
+      "label": "buildFallbackScript()",
+      "_callable": true,
+      "_origin": "ast",
+      "community": 17,
+      "community_name": "batch/route.ts",
+      "file_type": "code",
+      "norm_label": "buildfallbackscript()",
+      "source_file": "apps/web/lib/video-persistence.ts",
+      "source_location": "L189"
+    },
+    {
+      "id": "apps_web_lib_video_persistence_generatescript",
+      "label": "generateScript()",
+      "_callable": true,
+      "_origin": "ast",
+      "community": 17,
+      "community_name": "batch/route.ts",
+      "file_type": "code",
+      "norm_label": "generatescript()",
+      "source_file": "apps/web/lib/video-persistence.ts",
+      "source_location": "L216"
+    },
+    {
       "id": "apps_web_app_api_brand_templates_id_route_delete",
       "label": "DELETE()",
       "_callable": true,
       "_origin": "ast",
-      "community": 17,
-      "community_name": "brand-templates.ts",
+      "community": 18,
+      "community_name": "video-persistence.ts",
       "file_type": "code",
       "norm_label": "delete()",
       "source_file": "apps/web/app/api/brand-templates/[id]/route.ts",
@@ -2448,8 +2508,8 @@
       "label": "coerceBranding()",
       "_callable": true,
       "_origin": "ast",
-      "community": 17,
-      "community_name": "brand-templates.ts",
+      "community": 18,
+      "community_name": "video-persistence.ts",
       "file_type": "code",
       "norm_label": "coercebranding()",
       "source_file": "apps/web/app/api/brand-templates/route.ts",
@@ -2460,8 +2520,8 @@
       "label": "GET()",
       "_callable": true,
       "_origin": "ast",
-      "community": 17,
-      "community_name": "brand-templates.ts",
+      "community": 18,
+      "community_name": "video-persistence.ts",
       "file_type": "code",
       "norm_label": "get()",
       "source_file": "apps/web/app/api/brand-templates/route.ts",
@@ -2472,96 +2532,72 @@
       "label": "POST()",
       "_callable": true,
       "_origin": "ast",
-      "community": 17,
-      "community_name": "brand-templates.ts",
+      "community": 18,
+      "community_name": "video-persistence.ts",
       "file_type": "code",
       "norm_label": "post()",
       "source_file": "apps/web/app/api/brand-templates/route.ts",
       "source_location": "L63"
     },
     {
-      "id": "apps_web_lib_brand_templates_createbrandtemplate",
-      "label": "createBrandTemplate()",
+      "id": "apps_web_app_api_transcribe_route_post",
+      "label": "POST()",
       "_callable": true,
       "_origin": "ast",
-      "community": 17,
-      "community_name": "brand-templates.ts",
+      "community": 18,
+      "community_name": "video-persistence.ts",
       "file_type": "code",
-      "norm_label": "createbrandtemplate()",
-      "source_file": "apps/web/lib/brand-templates.ts",
-      "source_location": "L71"
+      "norm_label": "post()",
+      "source_file": "apps/web/app/api/transcribe/route.ts",
+      "source_location": "L23"
     },
     {
-      "id": "apps_web_lib_brand_templates_deletebrandtemplate",
-      "label": "deleteBrandTemplate()",
+      "id": "apps_web_app_api_videos_id_brand_template_route_post",
+      "label": "POST()",
       "_callable": true,
       "_origin": "ast",
-      "community": 17,
-      "community_name": "brand-templates.ts",
+      "community": 18,
+      "community_name": "video-persistence.ts",
       "file_type": "code",
-      "norm_label": "deletebrandtemplate()",
-      "source_file": "apps/web/lib/brand-templates.ts",
-      "source_location": "L99"
+      "norm_label": "post()",
+      "source_file": "apps/web/app/api/videos/[id]/brand-template/route.ts",
+      "source_location": "L11"
     },
     {
-      "id": "apps_web_lib_brand_templates_listbrandtemplates",
-      "label": "listBrandTemplates()",
+      "id": "apps_web_app_api_videos_id_branding_route_patch",
+      "label": "PATCH()",
       "_callable": true,
       "_origin": "ast",
-      "community": 17,
-      "community_name": "brand-templates.ts",
+      "community": 18,
+      "community_name": "video-persistence.ts",
       "file_type": "code",
-      "norm_label": "listbrandtemplates()",
-      "source_file": "apps/web/lib/brand-templates.ts",
-      "source_location": "L43"
-    },
-    {
-      "id": "apps_web_lib_brand_templates_sortnewestfirst",
-      "label": "sortNewestFirst()",
-      "_callable": true,
-      "_origin": "ast",
-      "community": 17,
-      "community_name": "brand-templates.ts",
-      "file_type": "code",
-      "norm_label": "sortnewestfirst()",
-      "source_file": "apps/web/lib/brand-templates.ts",
-      "source_location": "L39"
-    },
-    {
-      "id": "apps_web_lib_brand_templates_tobranding",
-      "label": "toBranding()",
-      "_callable": true,
-      "_origin": "ast",
-      "community": 17,
-      "community_name": "brand-templates.ts",
-      "file_type": "code",
-      "norm_label": "tobranding()",
-      "source_file": "apps/web/lib/brand-templates.ts",
+      "norm_label": "patch()",
+      "source_file": "apps/web/app/api/videos/[id]/branding/route.ts",
       "source_location": "L18"
     },
     {
-      "id": "apps_web_lib_brand_templates_tobrandtemplate",
-      "label": "toBrandTemplate()",
+      "id": "apps_web_app_api_videos_id_duplicate_route_post",
+      "label": "POST()",
       "_callable": true,
       "_origin": "ast",
-      "community": 17,
-      "community_name": "brand-templates.ts",
+      "community": 18,
+      "community_name": "video-persistence.ts",
       "file_type": "code",
-      "norm_label": "tobrandtemplate()",
-      "source_file": "apps/web/lib/brand-templates.ts",
-      "source_location": "L30"
+      "norm_label": "post()",
+      "source_file": "apps/web/app/api/videos/[id]/duplicate/route.ts",
+      "source_location": "L9"
     },
     {
-      "id": "apps_web_lib_video_persistence_ensuredemouser",
-      "label": "ensureDemoUser()",
+      "id": "apps_web_app_api_videos_id_logo_route_post",
+      "label": "POST()",
       "_callable": true,
       "_origin": "ast",
-      "community": 17,
-      "community_name": "brand-templates.ts",
+      "community": 18,
+      "community_name": "video-persistence.ts",
       "file_type": "code",
-      "norm_label": "ensuredemouser()",
-      "source_file": "apps/web/lib/video-persistence.ts",
-      "source_location": "L102"
+      "norm_label": "post()",
+      "source_file": "apps/web/app/api/videos/[id]/logo/route.ts",
+      "source_location": "L27"
     },
     {
       "id": "apps_web_app_api_videos_id_route_delete",
@@ -2588,6 +2624,18 @@
       "source_location": "L7"
     },
     {
+      "id": "apps_web_app_api_videos_id_tts_route_post",
+      "label": "POST()",
+      "_callable": true,
+      "_origin": "ast",
+      "community": 18,
+      "community_name": "video-persistence.ts",
+      "file_type": "code",
+      "norm_label": "post()",
+      "source_file": "apps/web/app/api/videos/[id]/tts/route.ts",
+      "source_location": "L7"
+    },
+    {
       "id": "apps_web_app_api_videos_store_cantransition",
       "label": "canTransition()",
       "_callable": true,
@@ -2598,6 +2646,126 @@
       "norm_label": "cantransition()",
       "source_file": "apps/web/app/api/videos/store.ts",
       "source_location": "L18"
+    },
+    {
+      "id": "apps_web_app_manifest_manifest",
+      "label": "manifest()",
+      "_callable": true,
+      "_origin": "ast",
+      "community": 18,
+      "community_name": "video-persistence.ts",
+      "file_type": "code",
+      "norm_label": "manifest()",
+      "source_file": "apps/web/app/manifest.ts",
+      "source_location": "L6"
+    },
+    {
+      "id": "apps_web_lib_brand_templates_createbrandtemplate",
+      "label": "createBrandTemplate()",
+      "_callable": true,
+      "_origin": "ast",
+      "community": 18,
+      "community_name": "video-persistence.ts",
+      "file_type": "code",
+      "norm_label": "createbrandtemplate()",
+      "source_file": "apps/web/lib/brand-templates.ts",
+      "source_location": "L71"
+    },
+    {
+      "id": "apps_web_lib_brand_templates_deletebrandtemplate",
+      "label": "deleteBrandTemplate()",
+      "_callable": true,
+      "_origin": "ast",
+      "community": 18,
+      "community_name": "video-persistence.ts",
+      "file_type": "code",
+      "norm_label": "deletebrandtemplate()",
+      "source_file": "apps/web/lib/brand-templates.ts",
+      "source_location": "L99"
+    },
+    {
+      "id": "apps_web_lib_brand_templates_getbrandtemplate",
+      "label": "getBrandTemplate()",
+      "_callable": true,
+      "_origin": "ast",
+      "community": 18,
+      "community_name": "video-persistence.ts",
+      "file_type": "code",
+      "norm_label": "getbrandtemplate()",
+      "source_file": "apps/web/lib/brand-templates.ts",
+      "source_location": "L57"
+    },
+    {
+      "id": "apps_web_lib_brand_templates_listbrandtemplates",
+      "label": "listBrandTemplates()",
+      "_callable": true,
+      "_origin": "ast",
+      "community": 18,
+      "community_name": "video-persistence.ts",
+      "file_type": "code",
+      "norm_label": "listbrandtemplates()",
+      "source_file": "apps/web/lib/brand-templates.ts",
+      "source_location": "L43"
+    },
+    {
+      "id": "apps_web_lib_brand_templates_sortnewestfirst",
+      "label": "sortNewestFirst()",
+      "_callable": true,
+      "_origin": "ast",
+      "community": 18,
+      "community_name": "video-persistence.ts",
+      "file_type": "code",
+      "norm_label": "sortnewestfirst()",
+      "source_file": "apps/web/lib/brand-templates.ts",
+      "source_location": "L39"
+    },
+    {
+      "id": "apps_web_lib_brand_templates_tobranding",
+      "label": "toBranding()",
+      "_callable": true,
+      "_origin": "ast",
+      "community": 18,
+      "community_name": "video-persistence.ts",
+      "file_type": "code",
+      "norm_label": "tobranding()",
+      "source_file": "apps/web/lib/brand-templates.ts",
+      "source_location": "L18"
+    },
+    {
+      "id": "apps_web_lib_brand_templates_tobrandtemplate",
+      "label": "toBrandTemplate()",
+      "_callable": true,
+      "_origin": "ast",
+      "community": 18,
+      "community_name": "video-persistence.ts",
+      "file_type": "code",
+      "norm_label": "tobrandtemplate()",
+      "source_file": "apps/web/lib/brand-templates.ts",
+      "source_location": "L30"
+    },
+    {
+      "id": "apps_web_lib_supabaseclient_getsupabaseclient",
+      "label": "getSupabaseClient()",
+      "_callable": true,
+      "_origin": "ast",
+      "community": 18,
+      "community_name": "video-persistence.ts",
+      "file_type": "code",
+      "norm_label": "getsupabaseclient()",
+      "source_file": "apps/web/lib/supabaseClient.ts",
+      "source_location": "L8"
+    },
+    {
+      "id": "apps_web_lib_tts_synthesizespeech",
+      "label": "synthesizeSpeech()",
+      "_callable": true,
+      "_origin": "ast",
+      "community": 18,
+      "community_name": "video-persistence.ts",
+      "file_type": "code",
+      "norm_label": "synthesizespeech()",
+      "source_file": "apps/web/lib/tts.ts",
+      "source_location": "L11"
     },
     {
       "id": "apps_web_lib_video_persistence_createinsupabase",
@@ -2612,6 +2780,18 @@
       "source_location": "L240"
     },
     {
+      "id": "apps_web_lib_video_persistence_deletescene",
+      "label": "deleteScene()",
+      "_callable": true,
+      "_origin": "ast",
+      "community": 18,
+      "community_name": "video-persistence.ts",
+      "file_type": "code",
+      "norm_label": "deletescene()",
+      "source_file": "apps/web/lib/video-persistence.ts",
+      "source_location": "L403"
+    },
+    {
       "id": "apps_web_lib_video_persistence_deletevideo",
       "label": "deleteVideo()",
       "_callable": true,
@@ -2622,6 +2802,54 @@
       "norm_label": "deletevideo()",
       "source_file": "apps/web/lib/video-persistence.ts",
       "source_location": "L599"
+    },
+    {
+      "id": "apps_web_lib_video_persistence_duplicateforplatform",
+      "label": "duplicateForPlatform()",
+      "_callable": true,
+      "_origin": "ast",
+      "community": 18,
+      "community_name": "video-persistence.ts",
+      "file_type": "code",
+      "norm_label": "duplicateforplatform()",
+      "source_file": "apps/web/lib/video-persistence.ts",
+      "source_location": "L465"
+    },
+    {
+      "id": "apps_web_lib_video_persistence_ensuredemouser",
+      "label": "ensureDemoUser()",
+      "_callable": true,
+      "_origin": "ast",
+      "community": 18,
+      "community_name": "video-persistence.ts",
+      "file_type": "code",
+      "norm_label": "ensuredemouser()",
+      "source_file": "apps/web/lib/video-persistence.ts",
+      "source_location": "L102"
+    },
+    {
+      "id": "apps_web_lib_video_persistence_findvideorecord",
+      "label": "findVideoRecord()",
+      "_callable": true,
+      "_origin": "ast",
+      "community": 18,
+      "community_name": "video-persistence.ts",
+      "file_type": "code",
+      "norm_label": "findvideorecord()",
+      "source_file": "apps/web/lib/video-persistence.ts",
+      "source_location": "L165"
+    },
+    {
+      "id": "apps_web_lib_video_persistence_getvideo",
+      "label": "getVideo()",
+      "_callable": true,
+      "_origin": "ast",
+      "community": 18,
+      "community_name": "video-persistence.ts",
+      "file_type": "code",
+      "norm_label": "getvideo()",
+      "source_file": "apps/web/lib/video-persistence.ts",
+      "source_location": "L296"
     },
     {
       "id": "apps_web_lib_video_persistence_markstalledrenders",
@@ -2684,6 +2912,18 @@
       "source_location": "L620"
     },
     {
+      "id": "apps_web_lib_video_persistence_replacescenes",
+      "label": "replaceScenes()",
+      "_callable": true,
+      "_origin": "ast",
+      "community": 18,
+      "community_name": "video-persistence.ts",
+      "file_type": "code",
+      "norm_label": "replacescenes()",
+      "source_file": "apps/web/lib/video-persistence.ts",
+      "source_location": "L337"
+    },
+    {
       "id": "apps_web_lib_video_persistence_tobranding",
       "label": "toBranding()",
       "_callable": true,
@@ -2718,6 +2958,42 @@
       "norm_label": "tovideorecord()",
       "source_file": "apps/web/lib/video-persistence.ts",
       "source_location": "L80"
+    },
+    {
+      "id": "apps_web_lib_video_persistence_updatebranding",
+      "label": "updateBranding()",
+      "_callable": true,
+      "_origin": "ast",
+      "community": 18,
+      "community_name": "video-persistence.ts",
+      "file_type": "code",
+      "norm_label": "updatebranding()",
+      "source_file": "apps/web/lib/video-persistence.ts",
+      "source_location": "L441"
+    },
+    {
+      "id": "apps_web_lib_video_persistence_updatescene",
+      "label": "updateScene()",
+      "_callable": true,
+      "_origin": "ast",
+      "community": 18,
+      "community_name": "video-persistence.ts",
+      "file_type": "code",
+      "norm_label": "updatescene()",
+      "source_file": "apps/web/lib/video-persistence.ts",
+      "source_location": "L378"
+    },
+    {
+      "id": "apps_web_lib_video_persistence_updatescript",
+      "label": "updateScript()",
+      "_callable": true,
+      "_origin": "ast",
+      "community": 18,
+      "community_name": "video-persistence.ts",
+      "file_type": "code",
+      "norm_label": "updatescript()",
+      "source_file": "apps/web/lib/video-persistence.ts",
+      "source_location": "L317"
     },
     {
       "id": "apps_web_lib_video_persistence_updatevideostatus",
@@ -2780,40 +3056,16 @@
       "source_location": "L8"
     },
     {
-      "id": "apps_web_app_api_videos_batch_route_buildwarning",
-      "label": "buildWarning()",
+      "id": "apps_web_app_api_videos_route_get",
+      "label": "GET()",
       "_callable": true,
       "_origin": "ast",
       "community": 2,
       "community_name": "copilot.ts",
       "file_type": "code",
-      "norm_label": "buildwarning()",
-      "source_file": "apps/web/app/api/videos/batch/route.ts",
-      "source_location": "L58"
-    },
-    {
-      "id": "apps_web_app_api_videos_batch_route_planscenes",
-      "label": "planScenes()",
-      "_callable": true,
-      "_origin": "ast",
-      "community": 2,
-      "community_name": "copilot.ts",
-      "file_type": "code",
-      "norm_label": "planscenes()",
-      "source_file": "apps/web/app/api/videos/batch/route.ts",
-      "source_location": "L41"
-    },
-    {
-      "id": "apps_web_app_api_videos_batch_route_post",
-      "label": "POST()",
-      "_callable": true,
-      "_origin": "ast",
-      "community": 2,
-      "community_name": "copilot.ts",
-      "file_type": "code",
-      "norm_label": "post()",
-      "source_file": "apps/web/app/api/videos/batch/route.ts",
-      "source_location": "L81"
+      "norm_label": "get()",
+      "source_file": "apps/web/app/api/videos/route.ts",
+      "source_location": "L8"
     },
     {
       "id": "apps_web_app_api_videos_route_post",
@@ -3464,18 +3716,6 @@
       "source_location": "L25"
     },
     {
-      "id": "apps_web_lib_video_persistence_buildfallbackscript",
-      "label": "buildFallbackScript()",
-      "_callable": true,
-      "_origin": "ast",
-      "community": 2,
-      "community_name": "copilot.ts",
-      "file_type": "code",
-      "norm_label": "buildfallbackscript()",
-      "source_file": "apps/web/lib/video-persistence.ts",
-      "source_location": "L189"
-    },
-    {
       "id": "apps_web_lib_video_persistence_buildlocalvideorecord",
       "label": "buildLocalVideoRecord()",
       "_callable": true,
@@ -3500,18 +3740,6 @@
       "source_location": "L304"
     },
     {
-      "id": "apps_web_lib_video_persistence_generatescript",
-      "label": "generateScript()",
-      "_callable": true,
-      "_origin": "ast",
-      "community": 2,
-      "community_name": "copilot.ts",
-      "file_type": "code",
-      "norm_label": "generatescript()",
-      "source_file": "apps/web/lib/video-persistence.ts",
-      "source_location": "L216"
-    },
-    {
       "id": "apps_web_lib_video_persistence_listvideos",
       "label": "listVideos()",
       "_callable": true,
@@ -3522,18 +3750,6 @@
       "norm_label": "listvideos()",
       "source_file": "apps/web/lib/video-persistence.ts",
       "source_location": "L292"
-    },
-    {
-      "id": "apps_web_lib_video_persistence_updatescript",
-      "label": "updateScript()",
-      "_callable": true,
-      "_origin": "ast",
-      "community": 2,
-      "community_name": "copilot.ts",
-      "file_type": "code",
-      "norm_label": "updatescript()",
-      "source_file": "apps/web/lib/video-persistence.ts",
-      "source_location": "L317"
     },
     {
       "id": "packages_shared_types_templates_gettemplate",
@@ -4064,18 +4280,6 @@
       "source_location": "L70"
     },
     {
-      "id": "apps_web_lib_video_persistence_deletescene",
-      "label": "deleteScene()",
-      "_callable": true,
-      "_origin": "ast",
-      "community": 27,
-      "community_name": "[sceneId]/route.ts",
-      "file_type": "code",
-      "norm_label": "deletescene()",
-      "source_file": "apps/web/lib/video-persistence.ts",
-      "source_location": "L403"
-    },
-    {
       "id": "scripts_dev_shutdown",
       "label": "shutdown()",
       "_callable": true,
@@ -4424,18 +4628,6 @@
       "source_location": "L16"
     },
     {
-      "id": "apps_web_lib_video_persistence_replacescenes",
-      "label": "replaceScenes()",
-      "_callable": true,
-      "_origin": "ast",
-      "community": 33,
-      "community_name": "scenes/route.ts",
-      "file_type": "code",
-      "norm_label": "replacescenes()",
-      "source_file": "apps/web/lib/video-persistence.ts",
-      "source_location": "L337"
-    },
-    {
       "id": "apps_web_proxy_needssession",
       "label": "needsSession()",
       "_callable": true,
@@ -4549,7 +4741,7 @@
       "_callable": true,
       "_origin": "ast",
       "community": 40,
-      "community_name": "next",
+      "community_name": "speak/route.ts",
       "file_type": "code",
       "norm_label": "post()",
       "source_file": "apps/web/app/api/speak/route.ts",
@@ -4561,59 +4753,11 @@
       "_callable": true,
       "_origin": "ast",
       "community": 40,
-      "community_name": "next",
+      "community_name": "speak/route.ts",
       "file_type": "code",
       "norm_label": "silent()",
       "source_file": "apps/web/app/api/speak/route.ts",
       "source_location": "L17"
-    },
-    {
-      "id": "apps_web_app_api_transcribe_route_post",
-      "label": "POST()",
-      "_callable": true,
-      "_origin": "ast",
-      "community": 40,
-      "community_name": "next",
-      "file_type": "code",
-      "norm_label": "post()",
-      "source_file": "apps/web/app/api/transcribe/route.ts",
-      "source_location": "L23"
-    },
-    {
-      "id": "apps_web_app_api_videos_id_duplicate_route_post",
-      "label": "POST()",
-      "_callable": true,
-      "_origin": "ast",
-      "community": 40,
-      "community_name": "next",
-      "file_type": "code",
-      "norm_label": "post()",
-      "source_file": "apps/web/app/api/videos/[id]/duplicate/route.ts",
-      "source_location": "L9"
-    },
-    {
-      "id": "apps_web_app_manifest_manifest",
-      "label": "manifest()",
-      "_callable": true,
-      "_origin": "ast",
-      "community": 40,
-      "community_name": "next",
-      "file_type": "code",
-      "norm_label": "manifest()",
-      "source_file": "apps/web/app/manifest.ts",
-      "source_location": "L6"
-    },
-    {
-      "id": "apps_web_lib_video_persistence_duplicateforplatform",
-      "label": "duplicateForPlatform()",
-      "_callable": true,
-      "_origin": "ast",
-      "community": 40,
-      "community_name": "next",
-      "file_type": "code",
-      "norm_label": "duplicateforplatform()",
-      "source_file": "apps/web/lib/video-persistence.ts",
-      "source_location": "L465"
     },
     {
       "id": "apps_render_worker_drawing_camerafor",
@@ -5300,90 +5444,6 @@
       "source_location": "L1207"
     },
     {
-      "id": "apps_web_app_api_videos_id_brand_template_route_post",
-      "label": "POST()",
-      "_callable": true,
-      "_origin": "ast",
-      "community": 60,
-      "community_name": "getVideo",
-      "file_type": "code",
-      "norm_label": "post()",
-      "source_file": "apps/web/app/api/videos/[id]/brand-template/route.ts",
-      "source_location": "L11"
-    },
-    {
-      "id": "apps_web_app_api_videos_id_branding_route_patch",
-      "label": "PATCH()",
-      "_callable": true,
-      "_origin": "ast",
-      "community": 60,
-      "community_name": "getVideo",
-      "file_type": "code",
-      "norm_label": "patch()",
-      "source_file": "apps/web/app/api/videos/[id]/branding/route.ts",
-      "source_location": "L18"
-    },
-    {
-      "id": "apps_web_app_api_videos_id_logo_route_post",
-      "label": "POST()",
-      "_callable": true,
-      "_origin": "ast",
-      "community": 60,
-      "community_name": "getVideo",
-      "file_type": "code",
-      "norm_label": "post()",
-      "source_file": "apps/web/app/api/videos/[id]/logo/route.ts",
-      "source_location": "L27"
-    },
-    {
-      "id": "apps_web_lib_brand_templates_getbrandtemplate",
-      "label": "getBrandTemplate()",
-      "_callable": true,
-      "_origin": "ast",
-      "community": 60,
-      "community_name": "getVideo",
-      "file_type": "code",
-      "norm_label": "getbrandtemplate()",
-      "source_file": "apps/web/lib/brand-templates.ts",
-      "source_location": "L57"
-    },
-    {
-      "id": "apps_web_lib_video_persistence_findvideorecord",
-      "label": "findVideoRecord()",
-      "_callable": true,
-      "_origin": "ast",
-      "community": 60,
-      "community_name": "getVideo",
-      "file_type": "code",
-      "norm_label": "findvideorecord()",
-      "source_file": "apps/web/lib/video-persistence.ts",
-      "source_location": "L165"
-    },
-    {
-      "id": "apps_web_lib_video_persistence_getvideo",
-      "label": "getVideo()",
-      "_callable": true,
-      "_origin": "ast",
-      "community": 60,
-      "community_name": "getVideo",
-      "file_type": "code",
-      "norm_label": "getvideo()",
-      "source_file": "apps/web/lib/video-persistence.ts",
-      "source_location": "L296"
-    },
-    {
-      "id": "apps_web_lib_video_persistence_updatebranding",
-      "label": "updateBranding()",
-      "_callable": true,
-      "_origin": "ast",
-      "community": 60,
-      "community_name": "getVideo",
-      "file_type": "code",
-      "norm_label": "updatebranding()",
-      "source_file": "apps/web/lib/video-persistence.ts",
-      "source_location": "L441"
-    },
-    {
       "id": "apps_web_app_components_api_fetchbrandtemplates",
       "label": "fetchBrandTemplates()",
       "_callable": true,
@@ -6068,6 +6128,18 @@
       "source_location": "L601"
     },
     {
+      "id": "apps_render_worker_render_sleep",
+      "label": "sleep()",
+      "_callable": true,
+      "_origin": "ast",
+      "community": 67,
+      "community_name": "render.ts",
+      "file_type": "code",
+      "norm_label": "sleep()",
+      "source_file": "apps/render-worker/render.ts",
+      "source_location": "L196"
+    },
+    {
       "id": "apps_render_worker_render_tocsshexcolor",
       "label": "toCssHexColor()",
       "_callable": true,
@@ -6092,6 +6164,18 @@
       "source_location": "L314"
     },
     {
+      "id": "apps_render_worker_render_uploadtosupabase",
+      "label": "uploadToSupabase()",
+      "_callable": true,
+      "_origin": "ast",
+      "community": 67,
+      "community_name": "render.ts",
+      "file_type": "code",
+      "norm_label": "uploadtosupabase()",
+      "source_file": "apps/render-worker/render.ts",
+      "source_location": "L230"
+    },
+    {
       "id": "apps_render_worker_render_writewavfile",
       "label": "writeWavFile()",
       "_callable": true,
@@ -6102,6 +6186,18 @@
       "norm_label": "writewavfile()",
       "source_file": "apps/render-worker/render.ts",
       "source_location": "L671"
+    },
+    {
+      "id": "apps_render_worker_error_reporting_errorreportingstatus",
+      "label": "errorReportingStatus()",
+      "_callable": true,
+      "_origin": "ast",
+      "community": 68,
+      "community_name": "run-job.ts",
+      "file_type": "code",
+      "norm_label": "errorreportingstatus()",
+      "source_file": "apps/render-worker/error-reporting.ts",
+      "source_location": "L38"
     },
     {
       "id": "apps_render_worker_error_reporting_flusherrorreports",
@@ -6116,6 +6212,18 @@
       "source_location": "L81"
     },
     {
+      "id": "apps_render_worker_error_reporting_parsedsn",
+      "label": "parseDsn()",
+      "_callable": true,
+      "_origin": "ast",
+      "community": 68,
+      "community_name": "run-job.ts",
+      "file_type": "code",
+      "norm_label": "parsedsn()",
+      "source_file": "apps/render-worker/error-reporting.ts",
+      "source_location": "L22"
+    },
+    {
       "id": "apps_render_worker_error_reporting_reporterror",
       "label": "reportError()",
       "_callable": true,
@@ -6126,6 +6234,30 @@
       "norm_label": "reporterror()",
       "source_file": "apps/render-worker/error-reporting.ts",
       "source_location": "L70"
+    },
+    {
+      "id": "apps_render_worker_error_reporting_sendreport",
+      "label": "sendReport()",
+      "_callable": true,
+      "_origin": "ast",
+      "community": 68,
+      "community_name": "run-job.ts",
+      "file_type": "code",
+      "norm_label": "sendreport()",
+      "source_file": "apps/render-worker/error-reporting.ts",
+      "source_location": "L91"
+    },
+    {
+      "id": "apps_render_worker_error_reporting_stackframes",
+      "label": "stackFrames()",
+      "_callable": true,
+      "_origin": "ast",
+      "community": 68,
+      "community_name": "run-job.ts",
+      "file_type": "code",
+      "norm_label": "stackframes()",
+      "source_file": "apps/render-worker/error-reporting.ts",
+      "source_location": "L44"
     },
     {
       "id": "apps_render_worker_render_isuuid",
@@ -6224,18 +6356,6 @@
       "source_location": "L1137"
     },
     {
-      "id": "apps_render_worker_render_sleep",
-      "label": "sleep()",
-      "_callable": true,
-      "_origin": "ast",
-      "community": 68,
-      "community_name": "run-job.ts",
-      "file_type": "code",
-      "norm_label": "sleep()",
-      "source_file": "apps/render-worker/render.ts",
-      "source_location": "L196"
-    },
-    {
       "id": "apps_render_worker_render_toerror",
       "label": "toError()",
       "_callable": true,
@@ -6246,18 +6366,6 @@
       "norm_label": "toerror()",
       "source_file": "apps/render-worker/render.ts",
       "source_location": "L202"
-    },
-    {
-      "id": "apps_render_worker_render_uploadtosupabase",
-      "label": "uploadToSupabase()",
-      "_callable": true,
-      "_origin": "ast",
-      "community": 68,
-      "community_name": "run-job.ts",
-      "file_type": "code",
-      "norm_label": "uploadtosupabase()",
-      "source_file": "apps/render-worker/render.ts",
-      "source_location": "L230"
     },
     {
       "id": "apps_render_worker_run_job_decodejob",
@@ -6452,54 +6560,6 @@
       "source_location": "L211"
     },
     {
-      "id": "apps_web_app_api_videos_id_tts_route_post",
-      "label": "POST()",
-      "_callable": true,
-      "_origin": "ast",
-      "community": 72,
-      "community_name": "getSupabaseClient",
-      "file_type": "code",
-      "norm_label": "post()",
-      "source_file": "apps/web/app/api/videos/[id]/tts/route.ts",
-      "source_location": "L7"
-    },
-    {
-      "id": "apps_web_lib_supabaseclient_getsupabaseclient",
-      "label": "getSupabaseClient()",
-      "_callable": true,
-      "_origin": "ast",
-      "community": 72,
-      "community_name": "getSupabaseClient",
-      "file_type": "code",
-      "norm_label": "getsupabaseclient()",
-      "source_file": "apps/web/lib/supabaseClient.ts",
-      "source_location": "L8"
-    },
-    {
-      "id": "apps_web_lib_tts_synthesizespeech",
-      "label": "synthesizeSpeech()",
-      "_callable": true,
-      "_origin": "ast",
-      "community": 72,
-      "community_name": "getSupabaseClient",
-      "file_type": "code",
-      "norm_label": "synthesizespeech()",
-      "source_file": "apps/web/lib/tts.ts",
-      "source_location": "L11"
-    },
-    {
-      "id": "apps_web_lib_video_persistence_updatescene",
-      "label": "updateScene()",
-      "_callable": true,
-      "_origin": "ast",
-      "community": 72,
-      "community_name": "getSupabaseClient",
-      "file_type": "code",
-      "norm_label": "updatescene()",
-      "source_file": "apps/web/lib/video-persistence.ts",
-      "source_location": "L378"
-    },
-    {
       "id": "apps_web_app_api_assistant_route_post",
       "label": "POST()",
       "_callable": true,
@@ -6608,54 +6668,6 @@
       "source_location": "L321"
     },
     {
-      "id": "apps_render_worker_error_reporting_errorreportingstatus",
-      "label": "errorReportingStatus()",
-      "_callable": true,
-      "_origin": "ast",
-      "community": 88,
-      "community_name": "error-reporting.ts",
-      "file_type": "code",
-      "norm_label": "errorreportingstatus()",
-      "source_file": "apps/render-worker/error-reporting.ts",
-      "source_location": "L38"
-    },
-    {
-      "id": "apps_render_worker_error_reporting_parsedsn",
-      "label": "parseDsn()",
-      "_callable": true,
-      "_origin": "ast",
-      "community": 88,
-      "community_name": "error-reporting.ts",
-      "file_type": "code",
-      "norm_label": "parsedsn()",
-      "source_file": "apps/render-worker/error-reporting.ts",
-      "source_location": "L22"
-    },
-    {
-      "id": "apps_render_worker_error_reporting_sendreport",
-      "label": "sendReport()",
-      "_callable": true,
-      "_origin": "ast",
-      "community": 88,
-      "community_name": "error-reporting.ts",
-      "file_type": "code",
-      "norm_label": "sendreport()",
-      "source_file": "apps/render-worker/error-reporting.ts",
-      "source_location": "L91"
-    },
-    {
-      "id": "apps_render_worker_error_reporting_stackframes",
-      "label": "stackFrames()",
-      "_callable": true,
-      "_origin": "ast",
-      "community": 88,
-      "community_name": "error-reporting.ts",
-      "file_type": "code",
-      "norm_label": "stackframes()",
-      "source_file": "apps/render-worker/error-reporting.ts",
-      "source_location": "L44"
-    },
-    {
       "id": "apps_web_app_components_api_duplicatevideo",
       "label": "duplicateVideo()",
       "_callable": true,
@@ -6714,18 +6726,6 @@
       "norm_label": "runaction()",
       "source_file": "apps/web/app/components/status-panel.tsx",
       "source_location": "L48"
-    },
-    {
-      "id": "apps_web_app_api_videos_route_get",
-      "label": "GET()",
-      "_callable": true,
-      "_origin": "ast",
-      "community": 90,
-      "community_name": "video.ts",
-      "file_type": "code",
-      "norm_label": "get()",
-      "source_file": "apps/web/app/api/videos/route.ts",
-      "source_location": "L8"
     },
     {
       "id": "apps_web_app_components_status_badge_statusbadge",
@@ -7059,11 +7059,77 @@
       "source_location": "L41"
     },
     {
+      "id": "apps_web_app_api_videos_batch_route",
+      "label": "batch/route.ts",
+      "_origin": "ast",
+      "community": 17,
+      "community_name": "batch/route.ts",
+      "file_type": "code",
+      "norm_label": "batch/route.ts",
+      "source_file": "apps/web/app/api/videos/batch/route.ts",
+      "source_location": "L1"
+    },
+    {
+      "id": "apps_web_app_api_videos_batch_route_platforms",
+      "label": "PLATFORMS",
+      "_origin": "ast",
+      "community": 17,
+      "community_name": "batch/route.ts",
+      "file_type": "code",
+      "norm_label": "platforms",
+      "source_file": "apps/web/app/api/videos/batch/route.ts",
+      "source_location": "L8"
+    },
+    {
+      "id": "apps_web_app_api_videos_store",
+      "label": "store.ts",
+      "_origin": "ast",
+      "community": 17,
+      "community_name": "batch/route.ts",
+      "file_type": "code",
+      "norm_label": "store.ts",
+      "source_file": "apps/web/app/api/videos/store.ts",
+      "source_location": "L1"
+    },
+    {
+      "id": "apps_web_app_api_videos_store_globalstore",
+      "label": "globalStore",
+      "_origin": "ast",
+      "community": 17,
+      "community_name": "batch/route.ts",
+      "file_type": "code",
+      "norm_label": "globalstore",
+      "source_file": "apps/web/app/api/videos/store.ts",
+      "source_location": "L5"
+    },
+    {
+      "id": "apps_web_app_api_videos_store_transitions",
+      "label": "transitions",
+      "_origin": "ast",
+      "community": 17,
+      "community_name": "batch/route.ts",
+      "file_type": "code",
+      "norm_label": "transitions",
+      "source_file": "apps/web/app/api/videos/store.ts",
+      "source_location": "L11"
+    },
+    {
+      "id": "apps_web_app_api_videos_store_videos",
+      "label": "videos",
+      "_origin": "ast",
+      "community": 17,
+      "community_name": "batch/route.ts",
+      "file_type": "code",
+      "norm_label": "videos",
+      "source_file": "apps/web/app/api/videos/store.ts",
+      "source_location": "L9"
+    },
+    {
       "id": "apps_web_app_api_brand_templates_id_route",
       "label": "brand-templates/[id]/route.ts",
       "_origin": "ast",
-      "community": 17,
-      "community_name": "brand-templates.ts",
+      "community": 18,
+      "community_name": "video-persistence.ts",
       "file_type": "code",
       "norm_label": "brand-templates/[id]/route.ts",
       "source_file": "apps/web/app/api/brand-templates/[id]/route.ts",
@@ -7073,8 +7139,8 @@
       "id": "apps_web_app_api_brand_templates_route",
       "label": "brand-templates/route.ts",
       "_origin": "ast",
-      "community": 17,
-      "community_name": "brand-templates.ts",
+      "community": 18,
+      "community_name": "video-persistence.ts",
       "file_type": "code",
       "norm_label": "brand-templates/route.ts",
       "source_file": "apps/web/app/api/brand-templates/route.ts",
@@ -7084,45 +7150,122 @@
       "id": "apps_web_app_api_brand_templates_route_logo_positions",
       "label": "LOGO_POSITIONS",
       "_origin": "ast",
-      "community": 17,
-      "community_name": "brand-templates.ts",
+      "community": 18,
+      "community_name": "video-persistence.ts",
       "file_type": "code",
       "norm_label": "logo_positions",
       "source_file": "apps/web/app/api/brand-templates/route.ts",
       "source_location": "L7"
     },
     {
-      "id": "apps_web_lib_brand_templates",
-      "label": "brand-templates.ts",
+      "id": "apps_web_app_api_transcribe_route",
+      "label": "transcribe/route.ts",
       "_origin": "ast",
-      "community": 17,
-      "community_name": "brand-templates.ts",
+      "community": 18,
+      "community_name": "video-persistence.ts",
       "file_type": "code",
-      "norm_label": "brand-templates.ts",
-      "source_file": "apps/web/lib/brand-templates.ts",
+      "norm_label": "transcribe/route.ts",
+      "source_file": "apps/web/app/api/transcribe/route.ts",
       "source_location": "L1"
     },
     {
-      "id": "apps_web_lib_brand_templates_mocktemplates",
-      "label": "mockTemplates",
+      "id": "apps_web_app_api_transcribe_route_extensions",
+      "label": "EXTENSIONS",
       "_origin": "ast",
-      "community": 17,
-      "community_name": "brand-templates.ts",
+      "community": 18,
+      "community_name": "video-persistence.ts",
       "file_type": "code",
-      "norm_label": "mocktemplates",
-      "source_file": "apps/web/lib/brand-templates.ts",
-      "source_location": "L16"
+      "norm_label": "extensions",
+      "source_file": "apps/web/app/api/transcribe/route.ts",
+      "source_location": "L15"
     },
     {
-      "id": "packages_shared_types_video_default_branding",
-      "label": "DEFAULT_BRANDING",
+      "id": "apps_web_app_api_videos_id_brand_template_route",
+      "label": "brand-template/route.ts",
       "_origin": "ast",
-      "community": 17,
-      "community_name": "brand-templates.ts",
+      "community": 18,
+      "community_name": "video-persistence.ts",
       "file_type": "code",
-      "norm_label": "default_branding",
-      "source_file": "packages/shared-types/video.ts",
+      "norm_label": "brand-template/route.ts",
+      "source_file": "apps/web/app/api/videos/[id]/brand-template/route.ts",
+      "source_location": "L1"
+    },
+    {
+      "id": "apps_web_app_api_videos_id_branding_route",
+      "label": "branding/route.ts",
+      "_origin": "ast",
+      "community": 18,
+      "community_name": "video-persistence.ts",
+      "file_type": "code",
+      "norm_label": "branding/route.ts",
+      "source_file": "apps/web/app/api/videos/[id]/branding/route.ts",
+      "source_location": "L1"
+    },
+    {
+      "id": "apps_web_app_api_videos_id_branding_route_logo_positions",
+      "label": "LOGO_POSITIONS",
+      "_origin": "ast",
+      "community": 18,
+      "community_name": "video-persistence.ts",
+      "file_type": "code",
+      "norm_label": "logo_positions",
+      "source_file": "apps/web/app/api/videos/[id]/branding/route.ts",
+      "source_location": "L15"
+    },
+    {
+      "id": "apps_web_app_api_videos_id_duplicate_route",
+      "label": "duplicate/route.ts",
+      "_origin": "ast",
+      "community": 18,
+      "community_name": "video-persistence.ts",
+      "file_type": "code",
+      "norm_label": "duplicate/route.ts",
+      "source_file": "apps/web/app/api/videos/[id]/duplicate/route.ts",
+      "source_location": "L1"
+    },
+    {
+      "id": "apps_web_app_api_videos_id_duplicate_route_platforms",
+      "label": "PLATFORMS",
+      "_origin": "ast",
+      "community": 18,
+      "community_name": "video-persistence.ts",
+      "file_type": "code",
+      "norm_label": "platforms",
+      "source_file": "apps/web/app/api/videos/[id]/duplicate/route.ts",
+      "source_location": "L7"
+    },
+    {
+      "id": "apps_web_app_api_videos_id_logo_route",
+      "label": "logo/route.ts",
+      "_origin": "ast",
+      "community": 18,
+      "community_name": "video-persistence.ts",
+      "file_type": "code",
+      "norm_label": "logo/route.ts",
+      "source_file": "apps/web/app/api/videos/[id]/logo/route.ts",
+      "source_location": "L1"
+    },
+    {
+      "id": "apps_web_app_api_videos_id_logo_route_mime_content_types",
+      "label": "MIME_CONTENT_TYPES",
+      "_origin": "ast",
+      "community": 18,
+      "community_name": "video-persistence.ts",
+      "file_type": "code",
+      "norm_label": "mime_content_types",
+      "source_file": "apps/web/app/api/videos/[id]/logo/route.ts",
       "source_location": "L19"
+    },
+    {
+      "id": "apps_web_app_api_videos_id_logo_route_mime_extensions",
+      "label": "MIME_EXTENSIONS",
+      "_origin": "ast",
+      "community": 18,
+      "community_name": "video-persistence.ts",
+      "file_type": "code",
+      "norm_label": "mime_extensions",
+      "source_file": "apps/web/app/api/videos/[id]/logo/route.ts",
+      "source_location": "L11"
     },
     {
       "id": "apps_web_app_api_videos_id_route",
@@ -7136,6 +7279,83 @@
       "source_location": "L1"
     },
     {
+      "id": "apps_web_app_api_videos_id_tts_route",
+      "label": "tts/route.ts",
+      "_origin": "ast",
+      "community": 18,
+      "community_name": "video-persistence.ts",
+      "file_type": "code",
+      "norm_label": "tts/route.ts",
+      "source_file": "apps/web/app/api/videos/[id]/tts/route.ts",
+      "source_location": "L1"
+    },
+    {
+      "id": "apps_web_app_manifest",
+      "label": "manifest.ts",
+      "_origin": "ast",
+      "community": 18,
+      "community_name": "video-persistence.ts",
+      "file_type": "code",
+      "norm_label": "manifest.ts",
+      "source_file": "apps/web/app/manifest.ts",
+      "source_location": "L1"
+    },
+    {
+      "id": "apps_web_lib_brand_templates",
+      "label": "brand-templates.ts",
+      "_origin": "ast",
+      "community": 18,
+      "community_name": "video-persistence.ts",
+      "file_type": "code",
+      "norm_label": "brand-templates.ts",
+      "source_file": "apps/web/lib/brand-templates.ts",
+      "source_location": "L1"
+    },
+    {
+      "id": "apps_web_lib_brand_templates_mocktemplates",
+      "label": "mockTemplates",
+      "_origin": "ast",
+      "community": 18,
+      "community_name": "video-persistence.ts",
+      "file_type": "code",
+      "norm_label": "mocktemplates",
+      "source_file": "apps/web/lib/brand-templates.ts",
+      "source_location": "L16"
+    },
+    {
+      "id": "apps_web_lib_supabaseclient",
+      "label": "supabaseClient.ts",
+      "_origin": "ast",
+      "community": 18,
+      "community_name": "video-persistence.ts",
+      "file_type": "code",
+      "norm_label": "supabaseclient.ts",
+      "source_file": "apps/web/lib/supabaseClient.ts",
+      "source_location": "L1"
+    },
+    {
+      "id": "apps_web_lib_supabaseclient_supabase",
+      "label": "supabase",
+      "_origin": "ast",
+      "community": 18,
+      "community_name": "video-persistence.ts",
+      "file_type": "code",
+      "norm_label": "supabase",
+      "source_file": "apps/web/lib/supabaseClient.ts",
+      "source_location": "L25"
+    },
+    {
+      "id": "apps_web_lib_tts",
+      "label": "tts.ts",
+      "_origin": "ast",
+      "community": 18,
+      "community_name": "video-persistence.ts",
+      "file_type": "code",
+      "norm_label": "tts.ts",
+      "source_file": "apps/web/lib/tts.ts",
+      "source_location": "L1"
+    },
+    {
       "id": "apps_web_lib_video_persistence",
       "label": "video-persistence.ts",
       "_origin": "ast",
@@ -7145,6 +7365,28 @@
       "norm_label": "video-persistence.ts",
       "source_file": "apps/web/lib/video-persistence.ts",
       "source_location": "L1"
+    },
+    {
+      "id": "packages_shared_types_video_default_branding",
+      "label": "DEFAULT_BRANDING",
+      "_origin": "ast",
+      "community": 18,
+      "community_name": "video-persistence.ts",
+      "file_type": "code",
+      "norm_label": "default_branding",
+      "source_file": "packages/shared-types/video.ts",
+      "source_location": "L19"
+    },
+    {
+      "id": "ref_next",
+      "label": "next",
+      "_origin": "ast",
+      "community": 18,
+      "community_name": "video-persistence.ts",
+      "file_type": "concept",
+      "norm_label": "next",
+      "source_file": "package.json",
+      "source_location": "L27"
     },
     {
       "id": "scripts_make_backdrop",
@@ -7279,26 +7521,26 @@
       "source_location": "L1"
     },
     {
-      "id": "apps_web_app_api_videos_batch_route",
-      "label": "batch/route.ts",
+      "id": "apps_web_app_api_videos_route",
+      "label": "videos/route.ts",
       "_origin": "ast",
       "community": 2,
       "community_name": "copilot.ts",
       "file_type": "code",
-      "norm_label": "batch/route.ts",
-      "source_file": "apps/web/app/api/videos/batch/route.ts",
+      "norm_label": "videos/route.ts",
+      "source_file": "apps/web/app/api/videos/route.ts",
       "source_location": "L1"
     },
     {
-      "id": "apps_web_app_api_videos_batch_route_platforms",
+      "id": "apps_web_app_api_videos_route_platforms",
       "label": "PLATFORMS",
       "_origin": "ast",
       "community": 2,
       "community_name": "copilot.ts",
       "file_type": "code",
       "norm_label": "platforms",
-      "source_file": "apps/web/app/api/videos/batch/route.ts",
-      "source_location": "L8"
+      "source_file": "apps/web/app/api/videos/route.ts",
+      "source_location": "L6"
     },
     {
       "id": "apps_web_lib_copilot",
@@ -7595,7 +7837,7 @@
       "file_type": "code",
       "norm_label": "fail",
       "source_file": "scripts/e2e.mjs",
-      "source_location": "L478"
+      "source_location": "L520"
     },
     {
       "id": "scripts_e2e_mp4path",
@@ -9238,7 +9480,7 @@
       "label": "speak/route.ts",
       "_origin": "ast",
       "community": 40,
-      "community_name": "next",
+      "community_name": "speak/route.ts",
       "file_type": "code",
       "norm_label": "speak/route.ts",
       "source_file": "apps/web/app/api/speak/route.ts",
@@ -9249,7 +9491,7 @@
       "label": "API_KEY",
       "_origin": "ast",
       "community": 40,
-      "community_name": "next",
+      "community_name": "speak/route.ts",
       "file_type": "code",
       "norm_label": "api_key",
       "source_file": "apps/web/app/api/speak/route.ts",
@@ -9260,77 +9502,11 @@
       "label": "VOICE_ID",
       "_origin": "ast",
       "community": 40,
-      "community_name": "next",
+      "community_name": "speak/route.ts",
       "file_type": "code",
       "norm_label": "voice_id",
       "source_file": "apps/web/app/api/speak/route.ts",
       "source_location": "L12"
-    },
-    {
-      "id": "apps_web_app_api_transcribe_route",
-      "label": "transcribe/route.ts",
-      "_origin": "ast",
-      "community": 40,
-      "community_name": "next",
-      "file_type": "code",
-      "norm_label": "transcribe/route.ts",
-      "source_file": "apps/web/app/api/transcribe/route.ts",
-      "source_location": "L1"
-    },
-    {
-      "id": "apps_web_app_api_transcribe_route_extensions",
-      "label": "EXTENSIONS",
-      "_origin": "ast",
-      "community": 40,
-      "community_name": "next",
-      "file_type": "code",
-      "norm_label": "extensions",
-      "source_file": "apps/web/app/api/transcribe/route.ts",
-      "source_location": "L15"
-    },
-    {
-      "id": "apps_web_app_api_videos_id_duplicate_route",
-      "label": "duplicate/route.ts",
-      "_origin": "ast",
-      "community": 40,
-      "community_name": "next",
-      "file_type": "code",
-      "norm_label": "duplicate/route.ts",
-      "source_file": "apps/web/app/api/videos/[id]/duplicate/route.ts",
-      "source_location": "L1"
-    },
-    {
-      "id": "apps_web_app_api_videos_id_duplicate_route_platforms",
-      "label": "PLATFORMS",
-      "_origin": "ast",
-      "community": 40,
-      "community_name": "next",
-      "file_type": "code",
-      "norm_label": "platforms",
-      "source_file": "apps/web/app/api/videos/[id]/duplicate/route.ts",
-      "source_location": "L7"
-    },
-    {
-      "id": "apps_web_app_manifest",
-      "label": "manifest.ts",
-      "_origin": "ast",
-      "community": 40,
-      "community_name": "next",
-      "file_type": "code",
-      "norm_label": "manifest.ts",
-      "source_file": "apps/web/app/manifest.ts",
-      "source_location": "L1"
-    },
-    {
-      "id": "ref_next",
-      "label": "next",
-      "_origin": "ast",
-      "community": 40,
-      "community_name": "next",
-      "file_type": "concept",
-      "norm_label": "next",
-      "source_file": "package.json",
-      "source_location": "L27"
     },
     {
       "id": "apps_web_postcss_config",
@@ -10023,6 +10199,17 @@
       "source_location": "L26"
     },
     {
+      "id": "ref_supabase_supabase_js",
+      "label": "@supabase/supabase-js",
+      "_origin": "ast",
+      "community": 57,
+      "community_name": "render-worker/package.json",
+      "file_type": "concept",
+      "norm_label": "@supabase/supabase-js",
+      "source_file": "apps/render-worker/package.json",
+      "source_location": "L23"
+    },
+    {
       "id": "ref_tsx",
       "label": "tsx",
       "_origin": "ast",
@@ -10155,6 +10342,17 @@
       "source_location": "L39"
     },
     {
+      "id": "packages_shared_types_templates",
+      "label": "templates.ts",
+      "_origin": "ast",
+      "community": 59,
+      "community_name": "video-list.tsx",
+      "file_type": "code",
+      "norm_label": "templates.ts",
+      "source_file": "packages/shared-types/templates.ts",
+      "source_location": "L1"
+    },
+    {
       "id": "packages_shared_types_templates_video_templates",
       "label": "VIDEO_TEMPLATES",
       "_origin": "ast",
@@ -10232,70 +10430,169 @@
       "source_location": "L223"
     },
     {
-      "id": "apps_web_app_api_videos_id_brand_template_route",
-      "label": "brand-template/route.ts",
+      "id": "scripts_gcp_setup",
+      "label": "gcp-setup.sh",
       "_origin": "ast",
       "community": 60,
-      "community_name": "getVideo",
+      "community_name": "gcp-setup.sh",
       "file_type": "code",
-      "norm_label": "brand-template/route.ts",
-      "source_file": "apps/web/app/api/videos/[id]/brand-template/route.ts",
+      "metadata": {
+        "language": "bash",
+        "kind": "file"
+      },
+      "norm_label": "gcp-setup.sh",
+      "source_file": "scripts/gcp-setup.sh",
       "source_location": "L1"
     },
     {
-      "id": "apps_web_app_api_videos_id_branding_route",
-      "label": "branding/route.ts",
+      "id": "scripts_gcp_setup_ask_yn",
+      "label": "ask_yn()",
       "_origin": "ast",
       "community": 60,
-      "community_name": "getVideo",
+      "community_name": "gcp-setup.sh",
       "file_type": "code",
-      "norm_label": "branding/route.ts",
-      "source_file": "apps/web/app/api/videos/[id]/branding/route.ts",
+      "metadata": {
+        "language": "bash",
+        "kind": "bash_function"
+      },
+      "norm_label": "ask_yn()",
+      "source_file": "scripts/gcp-setup.sh",
+      "source_location": "L67"
+    },
+    {
+      "id": "scripts_gcp_setup_die",
+      "label": "die()",
+      "_origin": "ast",
+      "community": 60,
+      "community_name": "gcp-setup.sh",
+      "file_type": "code",
+      "metadata": {
+        "language": "bash",
+        "kind": "bash_function"
+      },
+      "norm_label": "die()",
+      "source_file": "scripts/gcp-setup.sh",
+      "source_location": "L64"
+    },
+    {
+      "id": "scripts_gcp_setup_ensure_sa",
+      "label": "ensure_sa()",
+      "_origin": "ast",
+      "community": 60,
+      "community_name": "gcp-setup.sh",
+      "file_type": "code",
+      "metadata": {
+        "language": "bash",
+        "kind": "bash_function"
+      },
+      "norm_label": "ensure_sa()",
+      "source_file": "scripts/gcp-setup.sh",
+      "source_location": "L95"
+    },
+    {
+      "id": "scripts_gcp_setup_ok",
+      "label": "ok()",
+      "_origin": "ast",
+      "community": 60,
+      "community_name": "gcp-setup.sh",
+      "file_type": "code",
+      "metadata": {
+        "language": "bash",
+        "kind": "bash_function"
+      },
+      "norm_label": "ok()",
+      "source_file": "scripts/gcp-setup.sh",
+      "source_location": "L62"
+    },
+    {
+      "id": "scripts_gcp_setup_put_secret",
+      "label": "put_secret()",
+      "_origin": "ast",
+      "community": 60,
+      "community_name": "gcp-setup.sh",
+      "file_type": "code",
+      "metadata": {
+        "language": "bash",
+        "kind": "bash_function"
+      },
+      "norm_label": "put_secret()",
+      "source_file": "scripts/gcp-setup.sh",
+      "source_location": "L76"
+    },
+    {
+      "id": "scripts_gcp_setup_say",
+      "label": "say()",
+      "_origin": "ast",
+      "community": 60,
+      "community_name": "gcp-setup.sh",
+      "file_type": "code",
+      "metadata": {
+        "language": "bash",
+        "kind": "bash_function"
+      },
+      "norm_label": "say()",
+      "source_file": "scripts/gcp-setup.sh",
+      "source_location": "L61"
+    },
+    {
+      "id": "scripts_gcp_setup_secret_exists",
+      "label": "secret_exists()",
+      "_origin": "ast",
+      "community": 60,
+      "community_name": "gcp-setup.sh",
+      "file_type": "code",
+      "metadata": {
+        "language": "bash",
+        "kind": "bash_function"
+      },
+      "norm_label": "secret_exists()",
+      "source_file": "scripts/gcp-setup.sh",
+      "source_location": "L93"
+    },
+    {
+      "id": "scripts_gcp_setup_secret_set",
+      "label": "SECRET_SET",
+      "_origin": "ast",
+      "community": 60,
+      "community_name": "gcp-setup.sh",
+      "file_type": "code",
+      "metadata": {
+        "language": "bash",
+        "kind": "code"
+      },
+      "norm_label": "secret_set",
+      "source_file": "scripts/gcp-setup.sh",
+      "source_location": "L177"
+    },
+    {
+      "id": "scripts_gcp_setup_sh__entry",
+      "label": "gcp-setup.sh script",
+      "_origin": "ast",
+      "community": 60,
+      "community_name": "gcp-setup.sh",
+      "file_type": "code",
+      "metadata": {
+        "language": "bash",
+        "kind": "bash_entrypoint"
+      },
+      "norm_label": "gcp-setup.sh script",
+      "source_file": "scripts/gcp-setup.sh",
       "source_location": "L1"
     },
     {
-      "id": "apps_web_app_api_videos_id_branding_route_logo_positions",
-      "label": "LOGO_POSITIONS",
+      "id": "scripts_gcp_setup_warn",
+      "label": "warn()",
       "_origin": "ast",
       "community": 60,
-      "community_name": "getVideo",
+      "community_name": "gcp-setup.sh",
       "file_type": "code",
-      "norm_label": "logo_positions",
-      "source_file": "apps/web/app/api/videos/[id]/branding/route.ts",
-      "source_location": "L15"
-    },
-    {
-      "id": "apps_web_app_api_videos_id_logo_route",
-      "label": "logo/route.ts",
-      "_origin": "ast",
-      "community": 60,
-      "community_name": "getVideo",
-      "file_type": "code",
-      "norm_label": "logo/route.ts",
-      "source_file": "apps/web/app/api/videos/[id]/logo/route.ts",
-      "source_location": "L1"
-    },
-    {
-      "id": "apps_web_app_api_videos_id_logo_route_mime_content_types",
-      "label": "MIME_CONTENT_TYPES",
-      "_origin": "ast",
-      "community": 60,
-      "community_name": "getVideo",
-      "file_type": "code",
-      "norm_label": "mime_content_types",
-      "source_file": "apps/web/app/api/videos/[id]/logo/route.ts",
-      "source_location": "L19"
-    },
-    {
-      "id": "apps_web_app_api_videos_id_logo_route_mime_extensions",
-      "label": "MIME_EXTENSIONS",
-      "_origin": "ast",
-      "community": 60,
-      "community_name": "getVideo",
-      "file_type": "code",
-      "norm_label": "mime_extensions",
-      "source_file": "apps/web/app/api/videos/[id]/logo/route.ts",
-      "source_location": "L11"
+      "metadata": {
+        "language": "bash",
+        "kind": "bash_function"
+      },
+      "norm_label": "warn()",
+      "source_file": "scripts/gcp-setup.sh",
+      "source_location": "L63"
     },
     {
       "id": "apps_web_app_components_constants_action_options",
@@ -10905,6 +11202,28 @@
       "source_location": "L211"
     },
     {
+      "id": "apps_render_worker_error_reporting",
+      "label": "error-reporting.ts",
+      "_origin": "ast",
+      "community": 68,
+      "community_name": "run-job.ts",
+      "file_type": "code",
+      "norm_label": "error-reporting.ts",
+      "source_file": "apps/render-worker/error-reporting.ts",
+      "source_location": "L1"
+    },
+    {
+      "id": "apps_render_worker_error_reporting_pendingreports",
+      "label": "pendingReports",
+      "_origin": "ast",
+      "community": 68,
+      "community_name": "run-job.ts",
+      "file_type": "code",
+      "norm_label": "pendingreports",
+      "source_file": "apps/render-worker/error-reporting.ts",
+      "source_location": "L66"
+    },
+    {
       "id": "apps_render_worker_run_job",
       "label": "run-job.ts",
       "_origin": "ast",
@@ -11406,61 +11725,6 @@
       "source_location": "L10"
     },
     {
-      "id": "apps_web_app_api_videos_id_tts_route",
-      "label": "tts/route.ts",
-      "_origin": "ast",
-      "community": 72,
-      "community_name": "getSupabaseClient",
-      "file_type": "code",
-      "norm_label": "tts/route.ts",
-      "source_file": "apps/web/app/api/videos/[id]/tts/route.ts",
-      "source_location": "L1"
-    },
-    {
-      "id": "apps_web_lib_supabaseclient",
-      "label": "supabaseClient.ts",
-      "_origin": "ast",
-      "community": 72,
-      "community_name": "getSupabaseClient",
-      "file_type": "code",
-      "norm_label": "supabaseclient.ts",
-      "source_file": "apps/web/lib/supabaseClient.ts",
-      "source_location": "L1"
-    },
-    {
-      "id": "apps_web_lib_supabaseclient_supabase",
-      "label": "supabase",
-      "_origin": "ast",
-      "community": 72,
-      "community_name": "getSupabaseClient",
-      "file_type": "code",
-      "norm_label": "supabase",
-      "source_file": "apps/web/lib/supabaseClient.ts",
-      "source_location": "L25"
-    },
-    {
-      "id": "apps_web_lib_tts",
-      "label": "tts.ts",
-      "_origin": "ast",
-      "community": 72,
-      "community_name": "getSupabaseClient",
-      "file_type": "code",
-      "norm_label": "tts.ts",
-      "source_file": "apps/web/lib/tts.ts",
-      "source_location": "L1"
-    },
-    {
-      "id": "ref_supabase_supabase_js",
-      "label": "@supabase/supabase-js",
-      "_origin": "ast",
-      "community": 72,
-      "community_name": "getSupabaseClient",
-      "file_type": "concept",
-      "norm_label": "@supabase/supabase-js",
-      "source_file": "apps/render-worker/package.json",
-      "source_location": "L23"
-    },
-    {
       "id": "plugin_agents_devops_agent",
       "label": "devops-agent.md",
       "_origin": "ast",
@@ -11804,28 +12068,6 @@
       "source_location": "L1"
     },
     {
-      "id": "apps_render_worker_error_reporting",
-      "label": "error-reporting.ts",
-      "_origin": "ast",
-      "community": 88,
-      "community_name": "error-reporting.ts",
-      "file_type": "code",
-      "norm_label": "error-reporting.ts",
-      "source_file": "apps/render-worker/error-reporting.ts",
-      "source_location": "L1"
-    },
-    {
-      "id": "apps_render_worker_error_reporting_pendingreports",
-      "label": "pendingReports",
-      "_origin": "ast",
-      "community": 88,
-      "community_name": "error-reporting.ts",
-      "file_type": "code",
-      "norm_label": "pendingreports",
-      "source_file": "apps/render-worker/error-reporting.ts",
-      "source_location": "L66"
-    },
-    {
       "id": "apps_web_tsconfig",
       "label": "web/tsconfig.json",
       "_origin": "ast",
@@ -12057,72 +12299,6 @@
       "source_location": "L1"
     },
     {
-      "id": "apps_web_app_api_videos_route",
-      "label": "videos/route.ts",
-      "_origin": "ast",
-      "community": 90,
-      "community_name": "video.ts",
-      "file_type": "code",
-      "norm_label": "videos/route.ts",
-      "source_file": "apps/web/app/api/videos/route.ts",
-      "source_location": "L1"
-    },
-    {
-      "id": "apps_web_app_api_videos_route_platforms",
-      "label": "PLATFORMS",
-      "_origin": "ast",
-      "community": 90,
-      "community_name": "video.ts",
-      "file_type": "code",
-      "norm_label": "platforms",
-      "source_file": "apps/web/app/api/videos/route.ts",
-      "source_location": "L6"
-    },
-    {
-      "id": "apps_web_app_api_videos_store",
-      "label": "store.ts",
-      "_origin": "ast",
-      "community": 90,
-      "community_name": "video.ts",
-      "file_type": "code",
-      "norm_label": "store.ts",
-      "source_file": "apps/web/app/api/videos/store.ts",
-      "source_location": "L1"
-    },
-    {
-      "id": "apps_web_app_api_videos_store_globalstore",
-      "label": "globalStore",
-      "_origin": "ast",
-      "community": 90,
-      "community_name": "video.ts",
-      "file_type": "code",
-      "norm_label": "globalstore",
-      "source_file": "apps/web/app/api/videos/store.ts",
-      "source_location": "L5"
-    },
-    {
-      "id": "apps_web_app_api_videos_store_transitions",
-      "label": "transitions",
-      "_origin": "ast",
-      "community": 90,
-      "community_name": "video.ts",
-      "file_type": "code",
-      "norm_label": "transitions",
-      "source_file": "apps/web/app/api/videos/store.ts",
-      "source_location": "L11"
-    },
-    {
-      "id": "apps_web_app_api_videos_store_videos",
-      "label": "videos",
-      "_origin": "ast",
-      "community": 90,
-      "community_name": "video.ts",
-      "file_type": "code",
-      "norm_label": "videos",
-      "source_file": "apps/web/app/api/videos/store.ts",
-      "source_location": "L9"
-    },
-    {
       "id": "apps_web_app_components_constants",
       "label": "constants.ts",
       "_origin": "ast",
@@ -12208,17 +12384,6 @@
       "file_type": "code",
       "norm_label": "status-panel.tsx",
       "source_file": "apps/web/app/components/status-panel.tsx",
-      "source_location": "L1"
-    },
-    {
-      "id": "packages_shared_types_templates",
-      "label": "templates.ts",
-      "_origin": "ast",
-      "community": 90,
-      "community_name": "video.ts",
-      "file_type": "code",
-      "norm_label": "templates.ts",
-      "source_file": "packages/shared-types/templates.ts",
       "source_location": "L1"
     },
     {
@@ -13380,8 +13545,8 @@
       "id": "ref_node_crypto",
       "label": "ref_node_crypto",
       "_origin": "semantic",
-      "community": 88,
-      "community_name": "error-reporting.ts",
+      "community": 68,
+      "community_name": "run-job.ts",
       "external": true,
       "file_type": "concept",
       "norm_label": "ref_node_crypto",
@@ -13391,6 +13556,7 @@
     {
       "id": "apps_render_worker_dist_voice",
       "label": "apps_render_worker_dist_voice",
+      "_origin": "semantic",
       "community": 75,
       "community_name": "bake-voice.mjs",
       "external": true,
@@ -13402,6 +13568,7 @@
     {
       "id": "c_dev_stickman_video_app_apps_render_worker_dist_voice_ensurevoicemodel",
       "label": "c_dev_stickman_video_app_apps_render_worker_dist_voice_ensurevoicemodel",
+      "_origin": "semantic",
       "community": 75,
       "community_name": "bake-voice.mjs",
       "external": true,
@@ -13413,6 +13580,7 @@
     {
       "id": "c_dev_stickman_video_app_apps_render_worker_dist_voice_speak",
       "label": "c_dev_stickman_video_app_apps_render_worker_dist_voice_speak",
+      "_origin": "semantic",
       "community": 75,
       "community_name": "bake-voice.mjs",
       "external": true,
@@ -13424,6 +13592,7 @@
     {
       "id": "c_dev_stickman_video_app_apps_render_worker_dist_voice_voicemodelname",
       "label": "c_dev_stickman_video_app_apps_render_worker_dist_voice_voicemodelname",
+      "_origin": "semantic",
       "community": 75,
       "community_name": "bake-voice.mjs",
       "external": true,
@@ -13435,6 +13604,7 @@
     {
       "id": "ref_node_module",
       "label": "ref_node_module",
+      "_origin": "semantic",
       "community": 75,
       "community_name": "bake-voice.mjs",
       "external": true,
@@ -19971,6 +20141,114 @@
       "context": "call",
       "source_file": "scripts/e2e.mjs",
       "source_location": "L89",
+      "weight": 1.0
+    },
+    {
+      "source": "scripts_gcp_setup_ensure_sa",
+      "target": "scripts_gcp_setup_ok",
+      "relation": "calls",
+      "_origin": "ast",
+      "confidence": "EXTRACTED",
+      "confidence_score": 1.0,
+      "context": "call",
+      "source_file": "scripts/gcp-setup.sh",
+      "source_location": "L98",
+      "weight": 1.0
+    },
+    {
+      "source": "scripts_gcp_setup_sh__entry",
+      "target": "scripts_gcp_setup_die",
+      "relation": "calls",
+      "_origin": "ast",
+      "confidence": "EXTRACTED",
+      "confidence_score": 1.0,
+      "context": "call",
+      "source_file": "scripts/gcp-setup.sh",
+      "source_location": "L106",
+      "weight": 1.0
+    },
+    {
+      "source": "scripts_gcp_setup_sh__entry",
+      "target": "scripts_gcp_setup_say",
+      "relation": "calls",
+      "_origin": "ast",
+      "confidence": "EXTRACTED",
+      "confidence_score": 1.0,
+      "context": "call",
+      "source_file": "scripts/gcp-setup.sh",
+      "source_location": "L119",
+      "weight": 1.0
+    },
+    {
+      "source": "scripts_gcp_setup_sh__entry",
+      "target": "scripts_gcp_setup_ok",
+      "relation": "calls",
+      "_origin": "ast",
+      "confidence": "EXTRACTED",
+      "confidence_score": 1.0,
+      "context": "call",
+      "source_file": "scripts/gcp-setup.sh",
+      "source_location": "L126",
+      "weight": 1.0
+    },
+    {
+      "source": "scripts_gcp_setup_sh__entry",
+      "target": "scripts_gcp_setup_ensure_sa",
+      "relation": "calls",
+      "_origin": "ast",
+      "confidence": "EXTRACTED",
+      "confidence_score": 1.0,
+      "context": "call",
+      "source_file": "scripts/gcp-setup.sh",
+      "source_location": "L168",
+      "weight": 1.0
+    },
+    {
+      "source": "scripts_gcp_setup_sh__entry",
+      "target": "scripts_gcp_setup_secret_exists",
+      "relation": "calls",
+      "_origin": "ast",
+      "confidence": "EXTRACTED",
+      "confidence_score": 1.0,
+      "context": "call",
+      "source_file": "scripts/gcp-setup.sh",
+      "source_location": "L179",
+      "weight": 1.0
+    },
+    {
+      "source": "scripts_gcp_setup_sh__entry",
+      "target": "scripts_gcp_setup_warn",
+      "relation": "calls",
+      "_origin": "ast",
+      "confidence": "EXTRACTED",
+      "confidence_score": 1.0,
+      "context": "call",
+      "source_file": "scripts/gcp-setup.sh",
+      "source_location": "L182",
+      "weight": 1.0
+    },
+    {
+      "source": "scripts_gcp_setup_sh__entry",
+      "target": "scripts_gcp_setup_put_secret",
+      "relation": "calls",
+      "_origin": "ast",
+      "confidence": "EXTRACTED",
+      "confidence_score": 1.0,
+      "context": "call",
+      "source_file": "scripts/gcp-setup.sh",
+      "source_location": "L192",
+      "weight": 1.0
+    },
+    {
+      "source": "scripts_gcp_setup_sh__entry",
+      "target": "scripts_gcp_setup_ask_yn",
+      "relation": "calls",
+      "_origin": "ast",
+      "confidence": "EXTRACTED",
+      "confidence_score": 1.0,
+      "context": "call",
+      "source_file": "scripts/gcp-setup.sh",
+      "source_location": "L384",
       "weight": 1.0
     },
     {
@@ -36635,7 +36913,7 @@
       "confidence": "EXTRACTED",
       "confidence_score": 1.0,
       "source_file": "scripts/e2e.mjs",
-      "source_location": "L478",
+      "source_location": "L520",
       "weight": 1.0
     },
     {
@@ -36724,6 +37002,17 @@
       "confidence_score": 1.0,
       "source_file": "scripts/e2e.mjs",
       "source_location": "L95",
+      "weight": 1.0
+    },
+    {
+      "source": "scripts_gcp_setup",
+      "target": "scripts_gcp_setup_sh__entry",
+      "relation": "contains",
+      "_origin": "ast",
+      "confidence": "EXTRACTED",
+      "confidence_score": 1.0,
+      "source_file": "scripts/gcp-setup.sh",
+      "source_location": "L1",
       "weight": 1.0
     },
     {
@@ -37219,6 +37508,105 @@
       "confidence_score": 1.0,
       "source_file": "vercel.json",
       "source_location": "L5",
+      "weight": 1.0
+    },
+    {
+      "source": "scripts_gcp_setup",
+      "target": "scripts_gcp_setup_secret_set",
+      "relation": "defines",
+      "_origin": "ast",
+      "confidence": "EXTRACTED",
+      "confidence_score": 1.0,
+      "source_file": "scripts/gcp-setup.sh",
+      "source_location": "L177",
+      "weight": 1.0
+    },
+    {
+      "source": "scripts_gcp_setup",
+      "target": "scripts_gcp_setup_say",
+      "relation": "defines",
+      "_origin": "ast",
+      "confidence": "EXTRACTED",
+      "confidence_score": 1.0,
+      "source_file": "scripts/gcp-setup.sh",
+      "source_location": "L61",
+      "weight": 1.0
+    },
+    {
+      "source": "scripts_gcp_setup",
+      "target": "scripts_gcp_setup_ok",
+      "relation": "defines",
+      "_origin": "ast",
+      "confidence": "EXTRACTED",
+      "confidence_score": 1.0,
+      "source_file": "scripts/gcp-setup.sh",
+      "source_location": "L62",
+      "weight": 1.0
+    },
+    {
+      "source": "scripts_gcp_setup",
+      "target": "scripts_gcp_setup_warn",
+      "relation": "defines",
+      "_origin": "ast",
+      "confidence": "EXTRACTED",
+      "confidence_score": 1.0,
+      "source_file": "scripts/gcp-setup.sh",
+      "source_location": "L63",
+      "weight": 1.0
+    },
+    {
+      "source": "scripts_gcp_setup",
+      "target": "scripts_gcp_setup_die",
+      "relation": "defines",
+      "_origin": "ast",
+      "confidence": "EXTRACTED",
+      "confidence_score": 1.0,
+      "source_file": "scripts/gcp-setup.sh",
+      "source_location": "L64",
+      "weight": 1.0
+    },
+    {
+      "source": "scripts_gcp_setup",
+      "target": "scripts_gcp_setup_ask_yn",
+      "relation": "defines",
+      "_origin": "ast",
+      "confidence": "EXTRACTED",
+      "confidence_score": 1.0,
+      "source_file": "scripts/gcp-setup.sh",
+      "source_location": "L67",
+      "weight": 1.0
+    },
+    {
+      "source": "scripts_gcp_setup",
+      "target": "scripts_gcp_setup_put_secret",
+      "relation": "defines",
+      "_origin": "ast",
+      "confidence": "EXTRACTED",
+      "confidence_score": 1.0,
+      "source_file": "scripts/gcp-setup.sh",
+      "source_location": "L76",
+      "weight": 1.0
+    },
+    {
+      "source": "scripts_gcp_setup",
+      "target": "scripts_gcp_setup_secret_exists",
+      "relation": "defines",
+      "_origin": "ast",
+      "confidence": "EXTRACTED",
+      "confidence_score": 1.0,
+      "source_file": "scripts/gcp-setup.sh",
+      "source_location": "L93",
+      "weight": 1.0
+    },
+    {
+      "source": "scripts_gcp_setup",
+      "target": "scripts_gcp_setup_ensure_sa",
+      "relation": "defines",
+      "_origin": "ast",
+      "confidence": "EXTRACTED",
+      "confidence_score": 1.0,
+      "source_file": "scripts/gcp-setup.sh",
+      "source_location": "L95",
       "weight": 1.0
     },
     {
@@ -38048,5 +38436,5 @@
       "source_file": "apps/web/public/icons/icon-512.png"
     }
   ],
-  "built_at_commit": "5637e482692cd3e197f84aa35f0523a40f5a85af"
+  "built_at_commit": "6d3ad537ebb9295fe7fc73f02cf7dd85debe5c2e"
 }

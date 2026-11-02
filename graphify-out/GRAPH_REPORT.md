@@ -1,17 +1,17 @@
-# Graph Report - stickman-video-app  (2026-10-30)
+# Graph Report - stickman-video-app  (2026-11-02)
 
 ## Corpus Check
-- 152 files · ~131,446 words
+- 153 files · ~130,165 words
 - Verdict: corpus is large enough that graph structure adds value.
 - Unclassified: 9 file(s) not represented in the graph (top: (none) 5, .example 2, .ico 1)
 
 ## Summary
-- 1126 nodes · 2120 edges · 91 communities (59 shown, 32 thin omitted)
+- 1137 nodes · 2139 edges · 89 communities (57 shown, 32 thin omitted)
 - Extraction: 98% EXTRACTED · 2% INFERRED · 0% AMBIGUOUS · INFERRED: 39 edges (avg confidence: 0.86)
 - Token cost: 0 input · 0 output
 
 ## Graph Freshness
-- Built from commit: `5637e482`
+- Built from commit: `6d3ad537`
 - Run `git rev-parse HEAD` and compare to check if the graph is stale.
 - Run `graphify update .` after code changes (no API cost).
 
@@ -33,7 +33,7 @@
 - apps/web/app/components
 - Migraciones append-only
 - set-ai-key.mjs
-- brand-templates.ts
+- batch/route.ts
 - video-persistence.ts
 - make-backdrop.mjs
 - Variables de entorno del proyecto
@@ -56,7 +56,7 @@
 - web/vercel.json
 - public.brand_templates
 - vercel.json
-- next
+- speak/route.ts
 - create-next-app Boilerplate README
 - npm run verify (lint + typecheck + build)
 - Next.js Agent Rules Block
@@ -71,7 +71,7 @@
 - render-worker/package.json
 - voice.ts
 - video-list.tsx
-- getVideo
+- gcp-setup.sh
 - scene-panel.tsx
 - Desplegar y comprobar
 - layout.tsx
@@ -83,7 +83,6 @@
 - frontend-agent.md
 - graphify-agent.md
 - SceneRow
-- getSupabaseClient
 - devops-agent.md
 - qa-agent.md
 - bake-voice.mjs
@@ -98,7 +97,6 @@
 - scripts/e2e.mjs y la suite de pruebas
 - Instalacion como aplicacion (manifiesto y service worker que cachea solo el armazon)
 - supabase/migrations (esquema de la base de datos)
-- error-reporting.ts
 - StatusPanel
 - video.ts
 
@@ -117,14 +115,14 @@
 ## Surprising Connections (you probably didn't know these)
 - `What is already there` --references--> `generateWithFallback()`  [INFERRED]
   plugin/agents/backend-agent.md → apps/web/lib/ai-provider.ts
-- `Before you finish` --references--> `drawSceneFrame()`  [INFERRED]
-  plugin/agents/render-worker-agent.md → apps/render-worker/drawing.ts
 - `Before you finish` --references--> `createFrameCanvas()`  [INFERRED]
+  plugin/agents/render-worker-agent.md → apps/render-worker/drawing.ts
+- `Before you finish` --references--> `drawSceneFrame()`  [INFERRED]
   plugin/agents/render-worker-agent.md → apps/render-worker/drawing.ts
 - `toVideoRecord()` --calls--> `getTemplate()`  [EXTRACTED]
   apps/web/lib/video-persistence.ts → packages/shared-types/templates.ts
-- `buildSentenceFallback()` --calls--> `getTemplate()`  [EXTRACTED]
-  apps/web/app/api/videos/[id]/scenes/route.ts → packages/shared-types/templates.ts
+- `POST()` --calls--> `getTemplate()`  [EXTRACTED]
+  apps/web/app/api/videos/batch/route.ts → packages/shared-types/templates.ts
 
 ## Import Cycles
 - None detected.
@@ -132,7 +130,7 @@
 ## Hyperedges (group relationships)
 - **Stickman PWA Icon Set (192 / 512 / maskable / apple-touch)** — apps_web_public_icons_icon_192_stickman_icon, apps_web_public_icons_icon_512_stickman_icon, apps_web_public_icons_icon_maskable_512_stickman_icon, apps_web_public_icons_apple_touch_icon_stickman_icon [INFERRED 0.95]
 
-## Communities (91 total, 32 thin omitted)
+## Communities (89 total, 32 thin omitted)
 
 ### Community 0 - "branding-panel.tsx"
 Cohesion: 0.20
@@ -140,11 +138,11 @@ Nodes (17): applyBrandTemplate(), BrandingPatch, deleteBrandTemplate(), saveBran
 
 ### Community 1 - "api.ts"
 Cohesion: 0.11
-Nodes (26): BatchCreateResult, deleteSound(), fetchSession(), fetchVideos(), JSON_HEADERS, registerSound(), request(), requestSoundUpload() (+18 more)
+Nodes (24): BatchCreateResult, deleteSound(), fetchVideos(), JSON_HEADERS, registerSound(), requestSoundUpload(), setVideoMusic(), SoundUploadTicket (+16 more)
 
 ### Community 2 - "copilot.ts"
-Cohesion: 0.05
-Nodes (93): POST(), BatchFailure, BatchWarning, BatchWarningCause, buildWarning(), planScenes(), PLATFORMS, POST() (+85 more)
+Cohesion: 0.06
+Nodes (84): POST(), apps_web_app_api_videos_id_music_route, apps_web_app_api_videos_id_music_route_patch, GET(), PLATFORMS, POST(), isCopilotConfigured(), abrirVideo() (+76 more)
 
 ### Community 3 - "Verificar: la puerta de calidad"
 Cohesion: 0.17
@@ -183,8 +181,8 @@ Cohesion: 0.12
 Nodes (11): key, nextConfig, rootEnvPath, ref_node_fs, ref_node_path, ref_node_process, ref_node_url, MODELS (+3 more)
 
 ### Community 12 - "video-studio.tsx"
-Cohesion: 0.21
-Nodes (7): logout(), SIGN_IN_REQUIRED_EVENT, RevealRequest, VideoStudio(), handleCreated(), handleLogout(), selectVideo()
+Cohesion: 0.18
+Nodes (9): fetchSession(), logout(), request(), SIGN_IN_REQUIRED_EVENT, RevealRequest, VideoStudio(), handleCreated(), handleLogout() (+1 more)
 
 ### Community 13 - "Los dos servicios se comunican solo por HTTP y no comparten codigo"
 Cohesion: 0.50
@@ -194,13 +192,13 @@ Nodes (4): apps/render-worker, apps/web/app/api (rutas de API), Deuda: el render
 Cohesion: 0.14
 Nodes (19): ref_node_readline, Cancelled, createSession(), question(), ENV_FILE, envFileIsIgnored(), lastLine(), main() (+11 more)
 
-### Community 17 - "brand-templates.ts"
-Cohesion: 0.17
-Nodes (17): DELETE(), RouteContext, coerceBranding(), CreateBody, GET(), LOGO_POSITIONS, POST(), createBrandTemplate() (+9 more)
+### Community 17 - "batch/route.ts"
+Cohesion: 0.15
+Nodes (15): BatchFailure, BatchWarning, BatchWarningCause, buildWarning(), planScenes(), PLATFORMS, POST(), globalStore (+7 more)
 
 ### Community 18 - "video-persistence.ts"
-Cohesion: 0.18
-Nodes (21): DELETE(), PATCH(), RouteContext, canTransition(), createInSupabase(), DatabaseRow, deleteVideo(), markStalledRenders() (+13 more)
+Cohesion: 0.06
+Nodes (68): DELETE(), RouteContext, coerceBranding(), CreateBody, GET(), LOGO_POSITIONS, POST(), EXTENSIONS (+60 more)
 
 ### Community 19 - "make-backdrop.mjs"
 Cohesion: 0.18
@@ -231,8 +229,8 @@ Cohesion: 0.18
 Nodes (15): API_KEY, AVATAR_ID, AvatarClip, AvatarScene, ENGINE, heygenError(), heygenFetch(), sleep() (+7 more)
 
 ### Community 27 - "[sceneId]/route.ts"
-Cohesion: 0.18
-Nodes (18): ACTIONS, buildRegenerateSystemPrompt(), CHARACTERS, coerceAction(), coerceCharacter(), coerceDescription(), coerceProp(), DELETE() (+10 more)
+Cohesion: 0.19
+Nodes (17): ACTIONS, buildRegenerateSystemPrompt(), CHARACTERS, coerceAction(), coerceCharacter(), coerceDescription(), coerceProp(), DELETE() (+9 more)
 
 ### Community 28 - "dev.mjs"
 Cohesion: 0.18
@@ -252,7 +250,7 @@ Nodes (5): public.scenes, public.videos, scenes_video_id_order_idx, auth.users, 
 
 ### Community 33 - "scenes/route.ts"
 Cohesion: 0.05
-Nodes (52): ACTIONS, buildScenesFromAiJson(), buildSentenceFallback(), buildSystemPrompt(), CHARACTERS, coerceAction(), coerceCharacter(), coerceDescription() (+44 more)
+Nodes (51): ACTIONS, buildScenesFromAiJson(), buildSentenceFallback(), buildSystemPrompt(), CHARACTERS, coerceAction(), coerceCharacter(), coerceDescription() (+43 more)
 
 ### Community 34 - "sign-in-required.ts"
 Cohesion: 0.25
@@ -278,25 +276,25 @@ Nodes (3): brand_templates_user_id_idx, public.brand_templates, auth.users
 Cohesion: 0.40
 Nodes (4): buildCommand, crons, framework, installCommand
 
-### Community 40 - "next"
-Cohesion: 0.14
-Nodes (10): API_KEY, POST(), silent(), VOICE_ID, EXTENSIONS, PLATFORMS, POST(), RouteContext (+2 more)
+### Community 40 - "speak/route.ts"
+Cohesion: 0.50
+Nodes (4): API_KEY, POST(), silent(), VOICE_ID
 
 ### Community 57 - "render-worker/package.json"
 Cohesion: 0.06
-Nodes (34): dependencies, dejavu-fonts-ttf, ffmpeg-static, fluent-ffmpeg, @napi-rs/canvas, sherpa-onnx, @supabase/supabase-js, tar-stream (+26 more)
+Nodes (35): dependencies, dejavu-fonts-ttf, ffmpeg-static, fluent-ffmpeg, @napi-rs/canvas, sherpa-onnx, @supabase/supabase-js, tar-stream (+27 more)
 
 ### Community 58 - "voice.ts"
 Cohesion: 0.18
 Nodes (13): clampIndex(), downloadModel(), ensureVoiceModel(), estimateWordTimings(), exists(), getTts(), mouthEnvelope(), speak() (+5 more)
 
 ### Community 59 - "video-list.tsx"
-Cohesion: 0.15
-Nodes (18): BatchCreateFailure, BatchCreateWarning, BatchWarningCause, createVideo(), createVideosBatch(), deleteVideo(), BatchSummary, CreateMode (+10 more)
+Cohesion: 0.13
+Nodes (20): BatchCreateFailure, BatchCreateWarning, BatchWarningCause, createVideo(), createVideosBatch(), deleteVideo(), BatchSummary, CreateMode (+12 more)
 
-### Community 60 - "getVideo"
-Cohesion: 0.19
-Nodes (14): POST(), RouteContext, BrandingPatchBody, LOGO_POSITIONS, PATCH(), RouteContext, MIME_CONTENT_TYPES, MIME_EXTENSIONS (+6 more)
+### Community 60 - "gcp-setup.sh"
+Cohesion: 0.35
+Nodes (10): ask_yn(), die(), ensure_sa(), ok(), put_secret(), say(), secret_exists(), SECRET_SET (+2 more)
 
 ### Community 61 - "scene-panel.tsx"
 Cohesion: 0.12
@@ -323,12 +321,12 @@ Cohesion: 0.25
 Nodes (7): author, name, description, keywords, name, $schema, version
 
 ### Community 67 - "render.ts"
-Cohesion: 0.13
-Nodes (27): applyLogoOverlayOrFallback(), CLIP_AUDIO_ARGS, decodeSceneAudio(), decodeToPcm(), DEFAULT_BRANDING, discardFiles(), ENCODER_THREADS, FFMPEG_TIMEOUT_MS (+19 more)
+Cohesion: 0.12
+Nodes (29): applyLogoOverlayOrFallback(), CLIP_AUDIO_ARGS, decodeSceneAudio(), decodeToPcm(), DEFAULT_BRANDING, discardFiles(), ENCODER_THREADS, FFMPEG_TIMEOUT_MS (+21 more)
 
 ### Community 68 - "run-job.ts"
-Cohesion: 0.20
-Nodes (19): flushErrorReports(), reportError(), isUuid(), markRenderFailed(), parseRenderJob(), previousObjectName(), readPreviousVideoUrl(), removePreviousObject() (+11 more)
+Cohesion: 0.15
+Nodes (23): Dsn, errorReportingStatus(), flushErrorReports(), pendingReports, reportError(), sendReport(), stackFrames(), isUuid() (+15 more)
 
 ### Community 69 - "frontend-agent.md"
 Cohesion: 0.25
@@ -342,10 +340,6 @@ Nodes (7): Git, Preparing the output for commit, Report, Running it, What to loo
 Cohesion: 0.29
 Nodes (12): deleteScene(), regenerateScene(), updateScene(), SceneRow(), applyPatch(), handleActionChange(), handleCharacterChange(), handleDelete() (+4 more)
 
-### Community 72 - "getSupabaseClient"
-Cohesion: 0.33
-Nodes (7): POST(), RouteContext, getSupabaseClient(), supabase, synthesizeSpeech(), updateScene(), @supabase/supabase-js
-
 ### Community 73 - "devops-agent.md"
 Cohesion: 0.33
 Nodes (5): Before you finish, Git, Rules, What must keep working, Your files
@@ -358,37 +352,33 @@ Nodes (5): Git, How to report, Rules, What to run, Your files
 Cohesion: 0.25
 Nodes (7): apps_render_worker_dist_voice, { ensureVoiceModel, speak, voiceModelName }, require, c_dev_stickman_video_app_apps_render_worker_dist_voice_ensurevoicemodel, c_dev_stickman_video_app_apps_render_worker_dist_voice_speak, c_dev_stickman_video_app_apps_render_worker_dist_voice_voicemodelname, ref_node_module
 
-### Community 88 - "error-reporting.ts"
-Cohesion: 0.29
-Nodes (6): Dsn, errorReportingStatus(), pendingReports, sendReport(), stackFrames(), ref_node_crypto
-
 ### Community 89 - "StatusPanel"
 Cohesion: 0.60
 Nodes (5): duplicateVideo(), transitionStatus(), StatusPanel(), handleDuplicate(), runAction()
 
 ### Community 90 - "video.ts"
-Cohesion: 0.10
-Nodes (30): Exact, CharacterType, SceneAction, ScenePropType, GET(), PLATFORMS, globalStore, transitions (+22 more)
+Cohesion: 0.15
+Nodes (20): Exact, CharacterType, SceneAction, ScenePropType, StatusAction, PLATFORM_LABELS, PLATFORM_OPTIONS, STATUS_BADGE_CLASSES (+12 more)
 
 ## Knowledge Gaps
-- **420 isolated node(s):** `Dsn`, `pendingReports`, `activeRenders`, `name`, `version` (+415 more)
-  These have ≤1 connection - possible missing edges or undocumented components. (Counts symbols only; 509 node(s) total have ≤1 connection when file, concept and rationale nodes are included.)
+- **421 isolated node(s):** `raiz`, `S`, `W`, `mp4Path`, `results` (+416 more)
+  These have ≤1 connection - possible missing edges or undocumented components. (Counts symbols only; 510 node(s) total have ≤1 connection when file, concept and rationale nodes are included.)
 - **32 thin communities (<3 nodes) omitted from report** — run `graphify query` to explore isolated nodes.
 
 ## Suggested Questions
 _Questions this graph is uniquely positioned to answer:_
 
-- **Why does `next` connect `next` to `assistant.tsx`, `scenes/route.ts`, `copilot.ts`, `sign-in-required.ts`, `scripts`, `assistant.ts`, `getSupabaseClient`, `ref_node_fs`, `brand-templates.ts`, `video-persistence.ts`, `video.ts`, `[sceneId]/route.ts`, `getVideo`, `layout.tsx`?**
-  _High betweenness centrality (0.102) - this node is a cross-community bridge._
-- **Why does `Assistant()` connect `assistant.tsx` to `video-studio.tsx`?**
-  _High betweenness centrality (0.054) - this node is a cross-community bridge._
-- **Why does `@supabase/supabase-js` connect `getSupabaseClient` to `render-worker/package.json`, `render.ts`?**
+- **Why does `next` connect `video-persistence.ts` to `assistant.tsx`, `scenes/route.ts`, `copilot.ts`, `sign-in-required.ts`, `scripts`, `assistant.ts`, `speak/route.ts`, `ref_node_fs`, `batch/route.ts`, `[sceneId]/route.ts`, `layout.tsx`?**
+  _High betweenness centrality (0.093) - this node is a cross-community bridge._
+- **Why does `Platform` connect `video.ts` to `api.ts`, `copilot.ts`, `assistant.ts`, `batch/route.ts`, `video-persistence.ts`, `video-list.tsx`?**
   _High betweenness centrality (0.043) - this node is a cross-community bridge._
-- **What connects `Dsn`, `pendingReports`, `activeRenders` to the rest of the system?**
-  _420 weakly-connected nodes found - possible documentation gaps or missing edges._
+- **Why does `@supabase/supabase-js` connect `render-worker/package.json` to `video-persistence.ts`, `render.ts`?**
+  _High betweenness centrality (0.034) - this node is a cross-community bridge._
+- **What connects `raiz`, `S`, `W` to the rest of the system?**
+  _421 weakly-connected nodes found - possible documentation gaps or missing edges._
 - **Should `api.ts` be split into smaller, more focused modules?**
-  _Cohesion score 0.10837438423645321 - nodes in this community are weakly interconnected._
+  _Cohesion score 0.11396011396011396 - nodes in this community are weakly interconnected._
 - **Should `copilot.ts` be split into smaller, more focused modules?**
-  _Cohesion score 0.052192982456140354 - nodes in this community are weakly interconnected._
+  _Cohesion score 0.0590751136059877 - nodes in this community are weakly interconnected._
 - **Should `web/package.json` be split into smaller, more focused modules?**
   _Cohesion score 0.05 - nodes in this community are weakly interconnected._
