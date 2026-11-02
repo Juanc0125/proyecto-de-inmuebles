@@ -451,9 +451,7 @@ export default function VideoStudio() {
             content = (
                 <SoundsView
                     videos={videos}
-                    selected={selectedVideo}
                     libraries={libraries}
-                    onSelectVideo={setStickyId}
                     onUpdated={handleUpdated}
                 />
             );

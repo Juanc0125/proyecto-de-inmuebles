@@ -1,17 +1,15 @@
 'use client';
 
 import { useRef, useState, type ChangeEvent } from 'react';
-import type { SoundAsset, SoundKind } from '@shared-types/sounds';
+import type { SoundAsset } from '@shared-types/sounds';
 import {
-    deleteSound, fetchVideos, registerSound, requestSoundUpload, setVideoMusic, uploadSoundFile,
+    deleteSound, fetchVideos, registerSound, requestSoundUpload, uploadSoundFile,
     type VideoRecord,
 } from './api';
 import SectionIcon from './section-icon';
 
 interface SoundPanelProps {
-    video: VideoRecord;
     sounds: SoundAsset[];
-    soundsLoading: boolean;
     soundsError: string;
     onSoundsChanged: (update: (current: SoundAsset[]) => SoundAsset[]) => void;
     onUpdated: (video: VideoRecord) => void;
@@ -41,37 +39,21 @@ function withAudioType(file: File): File {
     return type ? new File([file], file.name, { type }) : file;
 }
 
-export const KIND_LABELS: Record<SoundKind, string> = {
-    musica: 'Música',
-    efecto: 'Efecto',
-};
-
 const fieldClass = 'field';
 
-export default function SoundPanel({ video, sounds, soundsLoading, soundsError, onSoundsChanged, onUpdated }: SoundPanelProps) {
+export default function SoundPanel({ sounds, soundsError, onSoundsChanged, onUpdated }: SoundPanelProps) {
     return (
         <section className="panel panel-pad">
             <div className="panel-head">
                 <div className="panel-head-main">
                     <SectionIcon name="sound" />
                     <div className="min-w-0">
-                        <h3 className="panel-title">Música y sonidos</h3>
-                        <p className="hint">La música de fondo de este video y los audios propios del negocio.</p>
+                        <h3 className="panel-title">Efectos de sonido</h3>
+                        <p className="hint">Cada escena elige su efecto en el Storyboard. Aquí se suben los efectos propios del negocio.</p>
                     </div>
                 </div>
             </div>
             {soundsError && <p className="alert alert-error mb-4" role="alert">{soundsError}</p>}
-
-            {/* Keyed by the stored choice: the picker holds a candidate in its
-                own state for listening, and the copilot or a deleted sound can
-                change music_id from outside. */}
-            <MusicPicker
-                key={`musica:${video.music_id ?? ''}`}
-                video={video}
-                sounds={sounds}
-                soundsLoading={soundsLoading}
-                onUpdated={onUpdated}
-            />
 
             <BusinessSounds
                 sounds={sounds}
@@ -79,118 +61,6 @@ export default function SoundPanel({ video, sounds, soundsLoading, soundsError, 
                 onUpdated={onUpdated}
             />
         </section>
-    );
-}
-
-interface MusicPickerProps {
-    video: VideoRecord;
-    sounds: SoundAsset[];
-    soundsLoading: boolean;
-    onUpdated: (video: VideoRecord) => void;
-}
-
-export function MusicPicker({ video, sounds, soundsLoading, onUpdated }: MusicPickerProps) {
-    const stored = video.music_id ?? '';
-    // A candidate separate from the stored value so the person can listen to
-    // a track before it becomes the video's music.
-    const [candidate, setCandidate] = useState(stored);
-    const [saving, setSaving] = useState(false);
-    const [error, setError] = useState('');
-
-    const music = sounds.filter((sound) => sound.kind === 'musica');
-    const library = music.filter((sound) => sound.origin === 'biblioteca');
-    const uploaded = music.filter((sound) => sound.origin === 'subido');
-    const selected = music.find((sound) => sound.id === candidate) ?? null;
-    const candidateMissing = candidate !== '' && !selected;
-    const dirty = candidate !== stored;
-
-    async function handleApply() {
-        setSaving(true);
-        setError('');
-        try {
-            onUpdated(await setVideoMusic(video.id, candidate === '' ? null : candidate));
-        } catch (err) {
-            setError(err instanceof Error ? err.message : 'No se pudo guardar la música de fondo.');
-        } finally {
-            setSaving(false);
-        }
-    }
-
-    return (
-        <div>
-            <label className="label" htmlFor={`music-${video.id}`}>Música de fondo</label>
-            <div className="flex flex-wrap items-center gap-2">
-                <select
-                    id={`music-${video.id}`}
-                    value={candidate}
-                    onChange={(event) => setCandidate(event.target.value)}
-                    disabled={saving}
-                    className={`${fieldClass} min-w-0 flex-1`}
-                >
-                    <option value="">Sin música</option>
-                    {candidateMissing && (
-                        <option value={candidate} disabled>
-                            {soundsLoading ? 'Cargando sonidos...' : 'Sonido no disponible'}
-                        </option>
-                    )}
-                    {library.length > 0 && (
-                        <optgroup label="Biblioteca">
-                            {library.map((sound) => (
-                                <option key={sound.id} value={sound.id}>{sound.name}</option>
-                            ))}
-                        </optgroup>
-                    )}
-                    {uploaded.length > 0 && (
-                        <optgroup label="Subidos por el negocio">
-                            {uploaded.map((sound) => (
-                                <option key={sound.id} value={sound.id}>{sound.name}</option>
-                            ))}
-                        </optgroup>
-                    )}
-                </select>
-                <button
-                    type="button"
-                    onClick={handleApply}
-                    disabled={saving || !dirty}
-                    className="btn btn-primary"
-                >
-                    {saving && <span className="spinner" aria-hidden="true" />}
-                    {saving ? 'Guardando...' : candidate === '' ? 'Quitar música' : 'Usar esta música'}
-                </button>
-            </div>
-
-            {selected ? (
-                <div className="mt-2">
-                    <audio
-                        key={selected.id}
-                        controls
-                        preload="none"
-                        src={selected.url}
-                        aria-label={`Escuchar ${selected.name}`}
-                        className="w-full"
-                    />
-                    <p className="hint mt-1.5">
-                        Licencia: {selected.license}
-                        {selected.source && (
-                            <>
-                                {' · '}
-                                <a href={selected.source} target="_blank" rel="noreferrer" className="text-brand-300 underline-offset-2 hover:underline">
-                                    Fuente
-                                </a>
-                            </>
-                        )}
-                    </p>
-                </div>
-            ) : (
-                <p className="hint mt-1.5">
-                    La música suena de fondo durante todo el video y baja sola cuando habla la voz.
-                </p>
-            )}
-            {dirty && !saving && (
-                <p className="mt-1.5 text-xs text-amber-200">Escúchala y pulsa el botón para aplicarla al video.</p>
-            )}
-            {error && <p className="alert alert-error mt-3" role="alert">{error}</p>}
-        </div>
     );
 }
 
@@ -213,7 +83,6 @@ const UPLOAD_STEP_LABELS: Record<Exclude<UploadStep, null>, string> = {
 
 export function BusinessSounds({ sounds, onSoundsChanged, onUpdated, standalone = false }: BusinessSoundsProps) {
     const [name, setName] = useState('');
-    const [kind, setKind] = useState<SoundKind>('musica');
     const [file, setFile] = useState<File | null>(null);
     const [license, setLicense] = useState('');
     const [rightsConfirmed, setRightsConfirmed] = useState(false);
@@ -222,7 +91,9 @@ export function BusinessSounds({ sounds, onSoundsChanged, onUpdated, standalone 
     const [deletingId, setDeletingId] = useState<string | null>(null);
     const fileInputRef = useRef<HTMLInputElement>(null);
 
-    const uploaded = sounds.filter((sound) => sound.origin === 'subido');
+    // Background music was dropped: a music file uploaded earlier stays in
+    // storage but is no longer offered anywhere.
+    const uploaded = sounds.filter((sound) => sound.origin === 'subido' && sound.kind === 'efecto');
     const uploading = step !== null;
     const canUpload = !uploading && name.trim() !== '' && file !== null && license.trim() !== '' && rightsConfirmed;
 
@@ -249,7 +120,7 @@ export function BusinessSounds({ sounds, onSoundsChanged, onUpdated, standalone 
             setStep('uploading');
             await uploadSoundFile(ticket, file);
             setStep('registering');
-            const created = await registerSound(name.trim(), kind, ticket.path, license.trim());
+            const created = await registerSound(name.trim(), 'efecto', ticket.path, license.trim());
             onSoundsChanged((current) => [...current, created]);
             setName('');
             setFile(null);
@@ -279,7 +150,7 @@ export function BusinessSounds({ sounds, onSoundsChanged, onUpdated, standalone 
             setDeletingId(null);
             return;
         }
-        // The server clears music_id / sound_effect_id wherever the sound was
+        // The server clears sound_effect_id wherever the sound was
         // used, in any video. Re-read the records instead of mirroring that
         // rule here, so every panel shows what the database holds. A failed
         // refresh is not a failed delete: the pickers already label an id
@@ -295,38 +166,25 @@ export function BusinessSounds({ sounds, onSoundsChanged, onUpdated, standalone 
 
     return (
         <div className={standalone ? '' : 'divider mt-6 pt-5'}>
-            <h4 className="panel-title mb-1">Sonidos del negocio</h4>
+            <h4 className="panel-title mb-1">Efectos del negocio</h4>
             <p className="panel-subtitle mb-4">
-                Sube música o efectos propios para usarlos en cualquier video. Solo audios que el negocio pueda usar
+                Sube efectos propios para usarlos en las escenas de cualquier video. Solo audios que el negocio pueda usar
                 comercialmente: el video es publicidad.
             </p>
 
             <div className="grid grid-cols-1 gap-3 sm:grid-cols-2">
-                <div>
+                <div className="sm:col-span-2">
                     <label className="label" htmlFor="sound-name">Nombre</label>
                     <input
                         id="sound-name"
                         type="text"
                         value={name}
                         onChange={(event) => setName(event.target.value)}
-                        placeholder="Ej. Jingle de la marca"
+                        placeholder="Ej. Campana de la marca"
                         maxLength={80}
                         disabled={uploading}
                         className={fieldClass}
                     />
-                </div>
-                <div>
-                    <label className="label" htmlFor="sound-kind">Tipo</label>
-                    <select
-                        id="sound-kind"
-                        value={kind}
-                        onChange={(event) => setKind(event.target.value as SoundKind)}
-                        disabled={uploading}
-                        className={fieldClass}
-                    >
-                        <option value="musica">Música de fondo</option>
-                        <option value="efecto">Efecto de sonido</option>
-                    </select>
                 </div>
                 <div className="sm:col-span-2">
                     <label className="label" htmlFor="sound-file">Archivo de audio</label>
@@ -379,7 +237,7 @@ export function BusinessSounds({ sounds, onSoundsChanged, onUpdated, standalone 
                     className="btn btn-secondary"
                 >
                     {step && <span className="spinner" aria-hidden="true" />}
-                    {step ? UPLOAD_STEP_LABELS[step] : 'Subir sonido'}
+                    {step ? UPLOAD_STEP_LABELS[step] : 'Subir efecto'}
                 </button>
                 {!uploading && !canUpload && (
                     <span className="hint">Completa nombre, archivo y licencia, y marca la casilla.</span>
@@ -389,16 +247,13 @@ export function BusinessSounds({ sounds, onSoundsChanged, onUpdated, standalone 
             {error && <p className="alert alert-error mt-3" role="alert">{error}</p>}
 
             {uploaded.length === 0 ? (
-                <p className="mt-4 rounded-xl border border-dashed border-white/[0.12] px-4 py-5 text-center text-sm text-slate-400">Todavía no hay sonidos subidos por el negocio.</p>
+                <p className="mt-4 rounded-xl border border-dashed border-white/[0.12] px-4 py-5 text-center text-sm text-slate-400">Todavía no hay efectos subidos por el negocio.</p>
             ) : (
                 <ul className="mt-4 space-y-2">
                     {uploaded.map((sound) => (
                         <li key={sound.id} className="tile px-3.5 py-3">
                             <div className="flex items-center gap-2">
-                                <span className="chip shrink-0 px-2 text-[11px]">
-                                    {KIND_LABELS[sound.kind]}
-                                </span>
-                                <span className="min-w-0 flex-1 truncate text-sm" title={sound.name}>{sound.name}</span>
+                                                                <span className="min-w-0 flex-1 truncate text-sm" title={sound.name}>{sound.name}</span>
                                 <button
                                     type="button"
                                     onClick={() => handleDelete(sound)}

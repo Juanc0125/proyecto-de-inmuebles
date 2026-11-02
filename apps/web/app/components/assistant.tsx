@@ -134,9 +134,12 @@ export default function Assistant({
     const voiceRef = useRef(true);
     const handsFreeRef = useRef(false);
     const speakingRef = useRef(false);
-    // The HeyGen clip being played, so muting or a newer reply can cut it.
+    // The server voice clip being played (Google TTS or HeyGen, often a
+    // data: URL), so muting or a newer reply can cut it.
     const audioRef = useRef<HTMLAudioElement | null>(null);
     const wordTimersRef = useRef<Array<ReturnType<typeof setTimeout>>>([]);
+    // The steady pulse used when the clip came without word timings.
+    const cadenceTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
     // When /api/speak may be tried again; 0 means "try it now".
     const heygenOffUntilRef = useRef(0);
     // The utterance being spoken. Held so Chrome does not garbage-collect it
@@ -293,9 +296,31 @@ export default function Assistant({
     // (or was never spoken at all - unsupported browser, empty string). This
     // is the one hook point for the whole echo trap: recognition must stay
     // suspended until this fires, never a fixed delay.
-    function stopVoiceClip() {
+    function clearVoiceTimers() {
         wordTimersRef.current.forEach(clearTimeout);
         wordTimersRef.current = [];
+        if (cadenceTimerRef.current) clearTimeout(cadenceTimerRef.current);
+        cadenceTimerRef.current = null;
+    }
+
+    // A clip without word timings (Google TTS answers word_starts: []) still
+    // has to look alive: pulse at roughly syllable pace, with some jitter so
+    // the mouth does not tick like a metronome, for as long as it plays.
+    function startCadence(audio: HTMLAudioElement) {
+        const tick = () => {
+            if (audioRef.current !== audio || audio.paused || audio.ended) {
+                cadenceTimerRef.current = null;
+                return;
+            }
+            onVoiceActivity();
+            cadenceTimerRef.current = setTimeout(tick, 200 + Math.random() * 160);
+        };
+        if (cadenceTimerRef.current) clearTimeout(cadenceTimerRef.current);
+        tick();
+    }
+
+    function stopVoiceClip() {
+        clearVoiceTimers();
         const audio = audioRef.current;
         audioRef.current = null;
         if (audio) {
@@ -309,7 +334,7 @@ export default function Assistant({
         }
     }
 
-    // The HeyGen voice first (the same voice as the videos), the browser's
+    // The server voice first (Google TTS or HeyGen), the browser's
     // own voice whenever that is not available: /api/speak answers 204 with no
     // key, no balance, no session or any error, and a clip that will not play
     // falls back too. Either way onDone fires exactly once. A 204 is
@@ -352,8 +377,7 @@ export default function Assistant({
                         const done = () => {
                             if (settled) return;
                             settled = true;
-                            wordTimersRef.current.forEach(clearTimeout);
-                            wordTimersRef.current = [];
+                            clearVoiceTimers();
                             if (audioRef.current === audio) audioRef.current = null;
                             finish();
                         };
@@ -362,14 +386,25 @@ export default function Assistant({
                         audio.onerror = () => {
                             if (settled) return;
                             settled = true;
+                            clearVoiceTimers();
                             if (audioRef.current === audio) audioRef.current = null;
                             speakWithBrowser(spoken, token, finish);
                         };
                         audio.onplay = () => {
                             onSpeechStart(token);
+                            clearVoiceTimers();
                             // Pulse the figure on every word, like the browser
-                            // voice's boundary events do.
-                            wordTimersRef.current = (data.word_starts ?? []).map((start) => setTimeout(onVoiceActivity, start * 1000));
+                            // voice's boundary events do; without timings, a
+                            // steady cadence while the clip sounds.
+                            const starts = data.word_starts ?? [];
+                            if (starts.length > 0) {
+                                const offset = audio.currentTime;
+                                wordTimersRef.current = starts
+                                    .filter((start) => start >= offset)
+                                    .map((start) => setTimeout(onVoiceActivity, (start - offset) * 1000));
+                            } else {
+                                startCadence(audio);
+                            }
                         };
                         try {
                             await audio.play();
@@ -378,6 +413,7 @@ export default function Assistant({
                             // Autoplay refused or the clip will not decode:
                             // drop it so the browser voice below takes over.
                             settled = true;
+                            clearVoiceTimers();
                             if (audioRef.current === audio) audioRef.current = null;
                         }
                     }

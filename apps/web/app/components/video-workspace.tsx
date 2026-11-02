@@ -48,7 +48,7 @@ const BACK_TO_DRAFT_NOTICE = 'El video volvió a borrador: hay que aprobarlo de 
 const JUMPS: { id: string; label: string; icon: SectionIconName }[] = [
     { id: 'guion', label: 'Guion', icon: 'script' },
     { id: 'escenas', label: 'Storyboard', icon: 'scenes' },
-    { id: 'sonido', label: 'Sonido', icon: 'sound' },
+    { id: 'sonido', label: 'Efectos', icon: 'sound' },
     { id: 'marca', label: 'Marca', icon: 'brand' },
     { id: 'aprobacion', label: 'Aprobación', icon: 'shield' },
     { id: 'exportar', label: 'Exportar', icon: 'export' },
@@ -199,9 +199,7 @@ export default function VideoWorkspace({ video, libraries, onUpdated, onDuplicat
             </div>
             <div id="ws-sonido" tabIndex={-1} className="scroll-mt-32 outline-none">
                 <SoundPanel
-                    video={video}
                     sounds={libraries.sounds}
-                    soundsLoading={libraries.soundsLoading}
                     soundsError={libraries.soundsError}
                     onSoundsChanged={libraries.onSoundsChanged}
                     onUpdated={handleEdited}

@@ -14,7 +14,7 @@ export const SHORTCUTS: { keys: string[]; label: string; sequence?: boolean }[] 
     { sequence: true, keys: ['G', 'B'], label: 'Ir a la Biblioteca' },
     { sequence: true, keys: ['G', 'F'], label: 'Ir al Flujo de aprobación' },
     { sequence: true, keys: ['G', 'M'], label: 'Ir a Marca' },
-    { sequence: true, keys: ['G', 'S'], label: 'Ir a Sonidos' },
+    { sequence: true, keys: ['G', 'S'], label: 'Ir a Efectos de sonido' },
     { keys: ['Esc'], label: 'Cerrar un diálogo o el copiloto en pantallas pequeñas' },
 ];
 

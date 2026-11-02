@@ -12,7 +12,7 @@ export const SECTIONS: { id: Section; label: string; description: string }[] = [
     { id: 'biblioteca', label: 'Biblioteca', description: 'Todos los videos, con filtros' },
     { id: 'flujo', label: 'Flujo de aprobación', description: 'Tablero por estado' },
     { id: 'marca', label: 'Marca', description: 'Logo, colores y plantillas' },
-    { id: 'sonidos', label: 'Sonidos', description: 'Música y efectos' },
+    { id: 'sonidos', label: 'Efectos de sonido', description: 'Biblioteca de efectos por escena' },
 ];
 
 export function sortedScenes(video: VideoRecord) {

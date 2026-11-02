@@ -75,7 +75,7 @@ function PaletteBody({ onClose, videos, actions }: Omit<CommandPaletteProps, 'op
             label: section.label,
             hint: section.description,
             icon: SECTION_ICONS[section.id],
-            keywords: `${section.label} ${section.description} ir seccion`,
+            keywords: `${section.id} ${section.label} ${section.description} ir seccion`,
             run: () => actions.goTo(section.id),
         })),
         ...videos.map((video) => ({

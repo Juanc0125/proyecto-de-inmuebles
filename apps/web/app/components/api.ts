@@ -270,7 +270,7 @@ export async function deleteScene(id: string, sceneId: string): Promise<VideoRec
     return data.video;
 }
 
-// RF-010: background music and sound effects. The library sounds and the ones
+// RF-010: per-scene sound effects (background music was dropped). The library sounds and the ones
 // the business uploaded come back in one list; `origin` tells them apart.
 export async function fetchSounds(): Promise<SoundAsset[]> {
     const data = await request<{ sonidos: SoundAsset[] }>('/api/sounds');
@@ -322,13 +322,4 @@ export async function registerSound(name: string, kind: SoundKind, path: string,
 
 export async function deleteSound(id: string): Promise<void> {
     await request<unknown>(`/api/sounds/${id}`, { method: 'DELETE' });
-}
-
-export async function setVideoMusic(id: string, musicId: string | null): Promise<VideoRecord> {
-    const data = await request<{ video: VideoRecord }>(`/api/videos/${id}/music`, {
-        method: 'PATCH',
-        headers: JSON_HEADERS,
-        body: JSON.stringify({ music_id: musicId }),
-    });
-    return data.video;
 }
