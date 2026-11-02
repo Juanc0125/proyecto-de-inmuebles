@@ -34,6 +34,19 @@
       "source_location": "L204"
     },
     {
+      "id": "packages_shared_types_templates_brandtemplate",
+      "label": "BrandTemplate",
+      "_callable": true,
+      "_callable_class": true,
+      "_origin": "ast",
+      "community": 0,
+      "community_name": "branding-panel.tsx",
+      "file_type": "code",
+      "norm_label": "brandtemplate",
+      "source_file": "packages/shared-types/templates.ts",
+      "source_location": "L113"
+    },
+    {
       "id": "apps_web_app_components_api_batchcreateresult",
       "label": "BatchCreateResult",
       "_callable": true,
@@ -138,82 +151,30 @@
       "source_location": "L106"
     },
     {
-      "id": "apps_web_app_api_videos_batch_route_batchfailure",
-      "label": "BatchFailure",
+      "id": "apps_web_app_api_videos_id_scenes_route_routecontext",
+      "label": "RouteContext",
       "_callable": true,
       "_callable_class": true,
       "_origin": "ast",
       "community": 17,
-      "community_name": "batch/route.ts",
+      "community_name": "scenes/route.ts",
       "file_type": "code",
-      "norm_label": "batchfailure",
-      "source_file": "apps/web/app/api/videos/batch/route.ts",
-      "source_location": "L18"
+      "norm_label": "routecontext",
+      "source_file": "apps/web/app/api/videos/[id]/scenes/route.ts",
+      "source_location": "L7"
     },
     {
-      "id": "apps_web_app_api_videos_batch_route_batchwarning",
-      "label": "BatchWarning",
+      "id": "apps_web_app_api_videos_id_scenes_route_sceneinput",
+      "label": "SceneInput",
       "_callable": true,
       "_callable_class": true,
       "_origin": "ast",
       "community": 17,
-      "community_name": "batch/route.ts",
+      "community_name": "scenes/route.ts",
       "file_type": "code",
-      "norm_label": "batchwarning",
-      "source_file": "apps/web/app/api/videos/batch/route.ts",
-      "source_location": "L32"
-    },
-    {
-      "id": "apps_web_app_api_videos_batch_route_batchwarningcause",
-      "label": "BatchWarningCause",
-      "_callable": true,
-      "_callable_class": true,
-      "_origin": "ast",
-      "community": 17,
-      "community_name": "batch/route.ts",
-      "file_type": "code",
-      "norm_label": "batchwarningcause",
-      "source_file": "apps/web/app/api/videos/batch/route.ts",
-      "source_location": "L30"
-    },
-    {
-      "id": "apps_web_app_api_videos_store_videorecord",
-      "label": "VideoRecord",
-      "_callable": true,
-      "_callable_class": true,
-      "_origin": "ast",
-      "community": 17,
-      "community_name": "batch/route.ts",
-      "file_type": "code",
-      "norm_label": "videorecord",
-      "source_file": "apps/web/app/api/videos/store.ts",
-      "source_location": "L3"
-    },
-    {
-      "id": "packages_shared_types_video_scene",
-      "label": "Scene",
-      "_callable": true,
-      "_callable_class": true,
-      "_origin": "ast",
-      "community": 17,
-      "community_name": "batch/route.ts",
-      "file_type": "code",
-      "norm_label": "scene",
-      "source_file": "packages/shared-types/video.ts",
-      "source_location": "L74"
-    },
-    {
-      "id": "packages_shared_types_video_video",
-      "label": "Video",
-      "_callable": true,
-      "_callable_class": true,
-      "_origin": "ast",
-      "community": 17,
-      "community_name": "batch/route.ts",
-      "file_type": "code",
-      "norm_label": "video",
-      "source_file": "packages/shared-types/video.ts",
-      "source_location": "L55"
+      "norm_label": "sceneinput",
+      "source_file": "apps/web/app/api/videos/[id]/scenes/route.ts",
+      "source_location": "L8"
     },
     {
       "id": "apps_web_app_api_brand_templates_id_route_routecontext",
@@ -333,6 +294,19 @@
       "source_location": "L5"
     },
     {
+      "id": "apps_web_app_api_videos_store_videorecord",
+      "label": "VideoRecord",
+      "_callable": true,
+      "_callable_class": true,
+      "_origin": "ast",
+      "community": 18,
+      "community_name": "video-persistence.ts",
+      "file_type": "code",
+      "norm_label": "videorecord",
+      "source_file": "apps/web/app/api/videos/store.ts",
+      "source_location": "L3"
+    },
+    {
       "id": "apps_web_lib_brand_templates_databaserow",
       "label": "DatabaseRow",
       "_callable": true,
@@ -411,6 +385,45 @@
       "source_location": "L11"
     },
     {
+      "id": "apps_web_app_api_videos_batch_route_batchfailure",
+      "label": "BatchFailure",
+      "_callable": true,
+      "_callable_class": true,
+      "_origin": "ast",
+      "community": 2,
+      "community_name": "copilot.ts",
+      "file_type": "code",
+      "norm_label": "batchfailure",
+      "source_file": "apps/web/app/api/videos/batch/route.ts",
+      "source_location": "L18"
+    },
+    {
+      "id": "apps_web_app_api_videos_batch_route_batchwarning",
+      "label": "BatchWarning",
+      "_callable": true,
+      "_callable_class": true,
+      "_origin": "ast",
+      "community": 2,
+      "community_name": "copilot.ts",
+      "file_type": "code",
+      "norm_label": "batchwarning",
+      "source_file": "apps/web/app/api/videos/batch/route.ts",
+      "source_location": "L32"
+    },
+    {
+      "id": "apps_web_app_api_videos_batch_route_batchwarningcause",
+      "label": "BatchWarningCause",
+      "_callable": true,
+      "_callable_class": true,
+      "_origin": "ast",
+      "community": 2,
+      "community_name": "copilot.ts",
+      "file_type": "code",
+      "norm_label": "batchwarningcause",
+      "source_file": "apps/web/app/api/videos/batch/route.ts",
+      "source_location": "L30"
+    },
+    {
       "id": "apps_web_lib_copilot_batchwarning",
       "label": "BatchWarning",
       "_callable": true,
@@ -461,19 +474,6 @@
       "norm_label": "copilotstate",
       "source_file": "apps/web/lib/copilot.ts",
       "source_location": "L45"
-    },
-    {
-      "id": "apps_web_lib_copilot_copilotturn",
-      "label": "CopilotTurn",
-      "_callable": true,
-      "_callable_class": true,
-      "_origin": "ast",
-      "community": 2,
-      "community_name": "copilot.ts",
-      "file_type": "code",
-      "norm_label": "copilotturn",
-      "source_file": "apps/web/lib/copilot.ts",
-      "source_location": "L24"
     },
     {
       "id": "apps_web_lib_copilot_resolved",
@@ -580,12 +580,25 @@
       "source_location": "L44"
     },
     {
+      "id": "apps_render_worker_error_reporting_dsn",
+      "label": "Dsn",
+      "_callable": true,
+      "_callable_class": true,
+      "_origin": "ast",
+      "community": 27,
+      "community_name": "error-reporting.ts",
+      "file_type": "code",
+      "norm_label": "dsn",
+      "source_file": "apps/render-worker/error-reporting.ts",
+      "source_location": "L14"
+    },
+    {
       "id": "apps_web_app_api_videos_id_scenes_sceneid_route_routecontext",
       "label": "RouteContext",
       "_callable": true,
       "_callable_class": true,
       "_origin": "ast",
-      "community": 27,
+      "community": 33,
       "community_name": "[sceneId]/route.ts",
       "file_type": "code",
       "norm_label": "routecontext",
@@ -598,7 +611,7 @@
       "_callable": true,
       "_callable_class": true,
       "_origin": "ast",
-      "community": 27,
+      "community": 33,
       "community_name": "[sceneId]/route.ts",
       "file_type": "code",
       "norm_label": "scenecontentpatch",
@@ -611,38 +624,12 @@
       "_callable": true,
       "_callable_class": true,
       "_origin": "ast",
-      "community": 27,
+      "community": 33,
       "community_name": "[sceneId]/route.ts",
       "file_type": "code",
       "norm_label": "sceneinput",
       "source_file": "apps/web/app/api/videos/[id]/scenes/[sceneId]/route.ts",
       "source_location": "L7"
-    },
-    {
-      "id": "apps_web_app_api_videos_id_scenes_route_routecontext",
-      "label": "RouteContext",
-      "_callable": true,
-      "_callable_class": true,
-      "_origin": "ast",
-      "community": 33,
-      "community_name": "scenes/route.ts",
-      "file_type": "code",
-      "norm_label": "routecontext",
-      "source_file": "apps/web/app/api/videos/[id]/scenes/route.ts",
-      "source_location": "L7"
-    },
-    {
-      "id": "apps_web_app_api_videos_id_scenes_route_sceneinput",
-      "label": "SceneInput",
-      "_callable": true,
-      "_callable_class": true,
-      "_origin": "ast",
-      "community": 33,
-      "community_name": "scenes/route.ts",
-      "file_type": "code",
-      "norm_label": "sceneinput",
-      "source_file": "apps/web/app/api/videos/[id]/scenes/route.ts",
-      "source_location": "L8"
     },
     {
       "id": "apps_web_lib_ai_aiprovider",
@@ -651,7 +638,7 @@
       "_callable_class": true,
       "_origin": "ast",
       "community": 33,
-      "community_name": "scenes/route.ts",
+      "community_name": "[sceneId]/route.ts",
       "file_type": "code",
       "norm_label": "aiprovider",
       "source_file": "apps/web/lib/ai.ts",
@@ -664,7 +651,7 @@
       "_callable_class": true,
       "_origin": "ast",
       "community": 33,
-      "community_name": "scenes/route.ts",
+      "community_name": "[sceneId]/route.ts",
       "file_type": "code",
       "norm_label": "generatedresponse",
       "source_file": "apps/web/lib/ai.ts",
@@ -677,7 +664,7 @@
       "_callable_class": true,
       "_origin": "ast",
       "community": 33,
-      "community_name": "scenes/route.ts",
+      "community_name": "[sceneId]/route.ts",
       "file_type": "code",
       "norm_label": "chatmessage",
       "source_file": "apps/web/lib/ai-provider.ts",
@@ -690,7 +677,7 @@
       "_callable_class": true,
       "_origin": "ast",
       "community": 33,
-      "community_name": "scenes/route.ts",
+      "community_name": "[sceneId]/route.ts",
       "file_type": "code",
       "norm_label": "completionresponse",
       "source_file": "apps/web/lib/ai-provider.ts",
@@ -703,7 +690,7 @@
       "_callable_class": true,
       "_origin": "ast",
       "community": 33,
-      "community_name": "scenes/route.ts",
+      "community_name": "[sceneId]/route.ts",
       "file_type": "code",
       "norm_label": "generateoptions",
       "source_file": "apps/web/lib/ai-provider.ts",
@@ -716,7 +703,7 @@
       "_callable_class": true,
       "_origin": "ast",
       "community": 33,
-      "community_name": "scenes/route.ts",
+      "community_name": "[sceneId]/route.ts",
       "file_type": "code",
       "norm_label": "generationresult",
       "source_file": "apps/web/lib/ai-provider.ts",
@@ -729,7 +716,7 @@
       "_callable_class": true,
       "_origin": "ast",
       "community": 33,
-      "community_name": "scenes/route.ts",
+      "community_name": "[sceneId]/route.ts",
       "file_type": "code",
       "norm_label": "provider",
       "source_file": "apps/web/lib/ai-provider.ts",
@@ -742,7 +729,7 @@
       "_callable_class": true,
       "_origin": "ast",
       "community": 33,
-      "community_name": "scenes/route.ts",
+      "community_name": "[sceneId]/route.ts",
       "file_type": "code",
       "norm_label": "providererror",
       "source_file": "apps/web/lib/ai-provider.ts",
@@ -755,7 +742,7 @@
       "_callable_class": true,
       "_origin": "ast",
       "community": 33,
-      "community_name": "scenes/route.ts",
+      "community_name": "[sceneId]/route.ts",
       "file_type": "code",
       "norm_label": "toolcall",
       "source_file": "apps/web/lib/ai-provider.ts",
@@ -768,7 +755,7 @@
       "_callable_class": true,
       "_origin": "ast",
       "community": 33,
-      "community_name": "scenes/route.ts",
+      "community_name": "[sceneId]/route.ts",
       "file_type": "code",
       "norm_label": "toolschema",
       "source_file": "apps/web/lib/ai-provider.ts",
@@ -781,7 +768,7 @@
       "_callable_class": true,
       "_origin": "ast",
       "community": 33,
-      "community_name": "scenes/route.ts",
+      "community_name": "[sceneId]/route.ts",
       "file_type": "code",
       "norm_label": "wiremessage",
       "source_file": "apps/web/lib/ai-provider.ts",
@@ -794,11 +781,24 @@
       "_callable_class": true,
       "_origin": "ast",
       "community": 33,
-      "community_name": "scenes/route.ts",
+      "community_name": "[sceneId]/route.ts",
       "file_type": "code",
       "norm_label": "wiretoolcall",
       "source_file": "apps/web/lib/ai-provider.ts",
       "source_location": "L42"
+    },
+    {
+      "id": "apps_web_lib_copilot_copilotturn",
+      "label": "CopilotTurn",
+      "_callable": true,
+      "_callable_class": true,
+      "_origin": "ast",
+      "community": 34,
+      "community_name": "sign-in-required.ts",
+      "file_type": "code",
+      "norm_label": "copilotturn",
+      "source_file": "apps/web/lib/copilot.ts",
+      "source_location": "L24"
     },
     {
       "id": "apps_render_worker_elevenlabs_alignment",
@@ -838,6 +838,45 @@
       "norm_label": "elevenlabsspeech",
       "source_file": "apps/render-worker/elevenlabs.ts",
       "source_location": "L41"
+    },
+    {
+      "id": "apps_web_lib_elevenlabs_tts_alignment",
+      "label": "Alignment",
+      "_callable": true,
+      "_callable_class": true,
+      "_origin": "ast",
+      "community": 40,
+      "community_name": "speak/route.ts",
+      "file_type": "code",
+      "norm_label": "alignment",
+      "source_file": "apps/web/lib/elevenlabs-tts.ts",
+      "source_location": "L33"
+    },
+    {
+      "id": "apps_web_lib_elevenlabs_tts_elevenlabsspeech",
+      "label": "ElevenlabsSpeech",
+      "_callable": true,
+      "_callable_class": true,
+      "_origin": "ast",
+      "community": 40,
+      "community_name": "speak/route.ts",
+      "file_type": "code",
+      "norm_label": "elevenlabsspeech",
+      "source_file": "apps/web/lib/elevenlabs-tts.ts",
+      "source_location": "L26"
+    },
+    {
+      "id": "apps_web_lib_elevenlabs_tts_elevenlabsttsconfig",
+      "label": "ElevenlabsTtsConfig",
+      "_callable": true,
+      "_callable_class": true,
+      "_origin": "ast",
+      "community": 40,
+      "community_name": "speak/route.ts",
+      "file_type": "code",
+      "norm_label": "elevenlabsttsconfig",
+      "source_file": "apps/web/lib/elevenlabs-tts.ts",
+      "source_location": "L18"
     },
     {
       "id": "apps_render_worker_drawing_cameraprofile",
@@ -1048,45 +1087,6 @@
       "source_location": "L33"
     },
     {
-      "id": "packages_shared_types_templates_brandtemplate",
-      "label": "BrandTemplate",
-      "_callable": true,
-      "_callable_class": true,
-      "_origin": "ast",
-      "community": 59,
-      "community_name": "video-list.tsx",
-      "file_type": "code",
-      "norm_label": "brandtemplate",
-      "source_file": "packages/shared-types/templates.ts",
-      "source_location": "L113"
-    },
-    {
-      "id": "packages_shared_types_templates_templatedefinition",
-      "label": "TemplateDefinition",
-      "_callable": true,
-      "_callable_class": true,
-      "_origin": "ast",
-      "community": 59,
-      "community_name": "video-list.tsx",
-      "file_type": "code",
-      "norm_label": "templatedefinition",
-      "source_file": "packages/shared-types/templates.ts",
-      "source_location": "L12"
-    },
-    {
-      "id": "packages_shared_types_templates_videotemplate",
-      "label": "VideoTemplate",
-      "_callable": true,
-      "_callable_class": true,
-      "_origin": "ast",
-      "community": 59,
-      "community_name": "video-list.tsx",
-      "file_type": "code",
-      "norm_label": "videotemplate",
-      "source_file": "packages/shared-types/templates.ts",
-      "source_location": "L3"
-    },
-    {
       "id": "apps_render_worker_render_branding",
       "label": "Branding",
       "_callable": true,
@@ -1228,6 +1228,19 @@
       "norm_label": "videoworkspaceprops",
       "source_file": "apps/web/app/components/video-workspace.tsx",
       "source_location": "L16"
+    },
+    {
+      "id": "packages_shared_types_video_scene",
+      "label": "Scene",
+      "_callable": true,
+      "_callable_class": true,
+      "_origin": "ast",
+      "community": 61,
+      "community_name": "scene-panel.tsx",
+      "file_type": "code",
+      "norm_label": "scene",
+      "source_file": "packages/shared-types/video.ts",
+      "source_location": "L74"
     },
     {
       "id": "apps_web_app_components_assistant_assistantprops",
@@ -1464,19 +1477,6 @@
       "source_location": "L421"
     },
     {
-      "id": "apps_render_worker_error_reporting_dsn",
-      "label": "Dsn",
-      "_callable": true,
-      "_callable_class": true,
-      "_origin": "ast",
-      "community": 68,
-      "community_name": "run-job.ts",
-      "file_type": "code",
-      "norm_label": "dsn",
-      "source_file": "apps/render-worker/error-reporting.ts",
-      "source_location": "L14"
-    },
-    {
       "id": "apps_render_worker_render_renderjob",
       "label": "RenderJob",
       "_callable": true,
@@ -1555,6 +1555,19 @@
       "source_location": "L26"
     },
     {
+      "id": "apps_web_app_components_api_statusaction",
+      "label": "StatusAction",
+      "_callable": true,
+      "_callable_class": true,
+      "_origin": "ast",
+      "community": 89,
+      "community_name": "status-panel.tsx",
+      "file_type": "code",
+      "norm_label": "statusaction",
+      "source_file": "apps/web/app/components/api.ts",
+      "source_location": "L156"
+    },
+    {
       "id": "apps_render_worker_checks_type_parity_exact",
       "label": "Exact",
       "_callable": true,
@@ -1607,19 +1620,6 @@
       "source_location": "L7"
     },
     {
-      "id": "apps_web_app_components_api_statusaction",
-      "label": "StatusAction",
-      "_callable": true,
-      "_callable_class": true,
-      "_origin": "ast",
-      "community": 90,
-      "community_name": "video.ts",
-      "file_type": "code",
-      "norm_label": "statusaction",
-      "source_file": "apps/web/app/components/api.ts",
-      "source_location": "L156"
-    },
-    {
       "id": "packages_shared_types_templates_templatebeat",
       "label": "TemplateBeat",
       "_callable": true,
@@ -1631,6 +1631,32 @@
       "norm_label": "templatebeat",
       "source_file": "packages/shared-types/templates.ts",
       "source_location": "L6"
+    },
+    {
+      "id": "packages_shared_types_templates_templatedefinition",
+      "label": "TemplateDefinition",
+      "_callable": true,
+      "_callable_class": true,
+      "_origin": "ast",
+      "community": 90,
+      "community_name": "video.ts",
+      "file_type": "code",
+      "norm_label": "templatedefinition",
+      "source_file": "packages/shared-types/templates.ts",
+      "source_location": "L12"
+    },
+    {
+      "id": "packages_shared_types_templates_videotemplate",
+      "label": "VideoTemplate",
+      "_callable": true,
+      "_callable_class": true,
+      "_origin": "ast",
+      "community": 90,
+      "community_name": "video.ts",
+      "file_type": "code",
+      "norm_label": "videotemplate",
+      "source_file": "packages/shared-types/templates.ts",
+      "source_location": "L3"
     },
     {
       "id": "packages_shared_types_video_charactertype",
@@ -1711,6 +1737,19 @@
       "source_location": "L8"
     },
     {
+      "id": "packages_shared_types_video_video",
+      "label": "Video",
+      "_callable": true,
+      "_callable_class": true,
+      "_origin": "ast",
+      "community": 90,
+      "community_name": "video.ts",
+      "file_type": "code",
+      "norm_label": "video",
+      "source_file": "packages/shared-types/video.ts",
+      "source_location": "L55"
+    },
+    {
       "id": "packages_shared_types_video_videostatus",
       "label": "VideoStatus",
       "_callable": true,
@@ -1770,18 +1809,6 @@
       "norm_label": "updatebranding()",
       "source_file": "apps/web/app/components/api.ts",
       "source_location": "L211"
-    },
-    {
-      "id": "apps_web_app_components_api_uploadlogo",
-      "label": "uploadLogo()",
-      "_callable": true,
-      "_origin": "ast",
-      "community": 0,
-      "community_name": "branding-panel.tsx",
-      "file_type": "code",
-      "norm_label": "uploadlogo()",
-      "source_file": "apps/web/app/components/api.ts",
-      "source_location": "L220"
     },
     {
       "id": "apps_web_app_components_branding_panel_brandingpanel",
@@ -1904,6 +1931,18 @@
       "source_location": "L323"
     },
     {
+      "id": "apps_web_app_components_api_fetchsession",
+      "label": "fetchSession()",
+      "_callable": true,
+      "_origin": "ast",
+      "community": 1,
+      "community_name": "api.ts",
+      "file_type": "code",
+      "norm_label": "fetchsession()",
+      "source_file": "apps/web/app/components/api.ts",
+      "source_location": "L75"
+    },
+    {
       "id": "apps_web_app_components_api_fetchvideos",
       "label": "fetchVideos()",
       "_callable": true,
@@ -1928,6 +1967,18 @@
       "source_location": "L314"
     },
     {
+      "id": "apps_web_app_components_api_request",
+      "label": "request()",
+      "_callable": true,
+      "_origin": "ast",
+      "community": 1,
+      "community_name": "api.ts",
+      "file_type": "code",
+      "norm_label": "request()",
+      "source_file": "apps/web/app/components/api.ts",
+      "source_location": "L38"
+    },
+    {
       "id": "apps_web_app_components_api_requestsoundupload",
       "label": "requestSoundUpload()",
       "_callable": true,
@@ -1950,6 +2001,18 @@
       "norm_label": "setvideomusic()",
       "source_file": "apps/web/app/components/api.ts",
       "source_location": "L327"
+    },
+    {
+      "id": "apps_web_app_components_api_uploadlogo",
+      "label": "uploadLogo()",
+      "_callable": true,
+      "_origin": "ast",
+      "community": 1,
+      "community_name": "api.ts",
+      "file_type": "code",
+      "norm_label": "uploadlogo()",
+      "source_file": "apps/web/app/components/api.ts",
+      "source_location": "L220"
     },
     {
       "id": "apps_web_app_components_api_uploadsoundfile",
@@ -2132,18 +2195,6 @@
       "source_location": "L77"
     },
     {
-      "id": "apps_web_app_components_api_fetchsession",
-      "label": "fetchSession()",
-      "_callable": true,
-      "_origin": "ast",
-      "community": 12,
-      "community_name": "video-studio.tsx",
-      "file_type": "code",
-      "norm_label": "fetchsession()",
-      "source_file": "apps/web/app/components/api.ts",
-      "source_location": "L75"
-    },
-    {
       "id": "apps_web_app_components_api_logout",
       "label": "logout()",
       "_callable": true,
@@ -2154,18 +2205,6 @@
       "norm_label": "logout()",
       "source_file": "apps/web/app/components/api.ts",
       "source_location": "L71"
-    },
-    {
-      "id": "apps_web_app_components_api_request",
-      "label": "request()",
-      "_callable": true,
-      "_origin": "ast",
-      "community": 12,
-      "community_name": "video-studio.tsx",
-      "file_type": "code",
-      "norm_label": "request()",
-      "source_file": "apps/web/app/components/api.ts",
-      "source_location": "L38"
     },
     {
       "id": "apps_web_app_components_video_studio_videostudio",
@@ -2432,64 +2471,124 @@
       "source_location": "L277"
     },
     {
-      "id": "apps_web_app_api_videos_batch_route_buildwarning",
-      "label": "buildWarning()",
+      "id": "apps_web_app_api_videos_id_scenes_route_buildscenesfromaijson",
+      "label": "buildScenesFromAiJson()",
       "_callable": true,
       "_origin": "ast",
       "community": 17,
-      "community_name": "batch/route.ts",
+      "community_name": "scenes/route.ts",
       "file_type": "code",
-      "norm_label": "buildwarning()",
-      "source_file": "apps/web/app/api/videos/batch/route.ts",
-      "source_location": "L58"
+      "norm_label": "buildscenesfromaijson()",
+      "source_file": "apps/web/app/api/videos/[id]/scenes/route.ts",
+      "source_location": "L75"
     },
     {
-      "id": "apps_web_app_api_videos_batch_route_planscenes",
-      "label": "planScenes()",
+      "id": "apps_web_app_api_videos_id_scenes_route_buildsentencefallback",
+      "label": "buildSentenceFallback()",
       "_callable": true,
       "_origin": "ast",
       "community": 17,
-      "community_name": "batch/route.ts",
+      "community_name": "scenes/route.ts",
       "file_type": "code",
-      "norm_label": "planscenes()",
-      "source_file": "apps/web/app/api/videos/batch/route.ts",
-      "source_location": "L41"
+      "norm_label": "buildsentencefallback()",
+      "source_file": "apps/web/app/api/videos/[id]/scenes/route.ts",
+      "source_location": "L96"
     },
     {
-      "id": "apps_web_app_api_videos_batch_route_post",
+      "id": "apps_web_app_api_videos_id_scenes_route_buildsystemprompt",
+      "label": "buildSystemPrompt()",
+      "_callable": true,
+      "_origin": "ast",
+      "community": 17,
+      "community_name": "scenes/route.ts",
+      "file_type": "code",
+      "norm_label": "buildsystemprompt()",
+      "source_file": "apps/web/app/api/videos/[id]/scenes/route.ts",
+      "source_location": "L55"
+    },
+    {
+      "id": "apps_web_app_api_videos_id_scenes_route_coerceaction",
+      "label": "coerceAction()",
+      "_callable": true,
+      "_origin": "ast",
+      "community": 17,
+      "community_name": "scenes/route.ts",
+      "file_type": "code",
+      "norm_label": "coerceaction()",
+      "source_file": "apps/web/app/api/videos/[id]/scenes/route.ts",
+      "source_location": "L21"
+    },
+    {
+      "id": "apps_web_app_api_videos_id_scenes_route_coercecharacter",
+      "label": "coerceCharacter()",
+      "_callable": true,
+      "_origin": "ast",
+      "community": 17,
+      "community_name": "scenes/route.ts",
+      "file_type": "code",
+      "norm_label": "coercecharacter()",
+      "source_file": "apps/web/app/api/videos/[id]/scenes/route.ts",
+      "source_location": "L17"
+    },
+    {
+      "id": "apps_web_app_api_videos_id_scenes_route_coercedescription",
+      "label": "coerceDescription()",
+      "_callable": true,
+      "_origin": "ast",
+      "community": 17,
+      "community_name": "scenes/route.ts",
+      "file_type": "code",
+      "norm_label": "coercedescription()",
+      "source_file": "apps/web/app/api/videos/[id]/scenes/route.ts",
+      "source_location": "L34"
+    },
+    {
+      "id": "apps_web_app_api_videos_id_scenes_route_coerceduration",
+      "label": "coerceDuration()",
+      "_callable": true,
+      "_origin": "ast",
+      "community": 17,
+      "community_name": "scenes/route.ts",
+      "file_type": "code",
+      "norm_label": "coerceduration()",
+      "source_file": "apps/web/app/api/videos/[id]/scenes/route.ts",
+      "source_location": "L29"
+    },
+    {
+      "id": "apps_web_app_api_videos_id_scenes_route_coerceprop",
+      "label": "coerceProp()",
+      "_callable": true,
+      "_origin": "ast",
+      "community": 17,
+      "community_name": "scenes/route.ts",
+      "file_type": "code",
+      "norm_label": "coerceprop()",
+      "source_file": "apps/web/app/api/videos/[id]/scenes/route.ts",
+      "source_location": "L25"
+    },
+    {
+      "id": "apps_web_app_api_videos_id_scenes_route_extractjson",
+      "label": "extractJson()",
+      "_callable": true,
+      "_origin": "ast",
+      "community": 17,
+      "community_name": "scenes/route.ts",
+      "file_type": "code",
+      "norm_label": "extractjson()",
+      "source_file": "apps/web/app/api/videos/[id]/scenes/route.ts",
+      "source_location": "L40"
+    },
+    {
+      "id": "apps_web_app_api_videos_id_scenes_route_post",
       "label": "POST()",
       "_callable": true,
       "_origin": "ast",
       "community": 17,
-      "community_name": "batch/route.ts",
+      "community_name": "scenes/route.ts",
       "file_type": "code",
       "norm_label": "post()",
-      "source_file": "apps/web/app/api/videos/batch/route.ts",
-      "source_location": "L81"
-    },
-    {
-      "id": "apps_web_lib_video_persistence_buildfallbackscript",
-      "label": "buildFallbackScript()",
-      "_callable": true,
-      "_origin": "ast",
-      "community": 17,
-      "community_name": "batch/route.ts",
-      "file_type": "code",
-      "norm_label": "buildfallbackscript()",
-      "source_file": "apps/web/lib/video-persistence.ts",
-      "source_location": "L189"
-    },
-    {
-      "id": "apps_web_lib_video_persistence_generatescript",
-      "label": "generateScript()",
-      "_callable": true,
-      "_origin": "ast",
-      "community": 17,
-      "community_name": "batch/route.ts",
-      "file_type": "code",
-      "norm_label": "generatescript()",
-      "source_file": "apps/web/lib/video-persistence.ts",
-      "source_location": "L216"
+      "source_file": "apps/web/app/api/videos/[id]/scenes/route.ts",
+      "source_location": "L157"
     },
     {
       "id": "apps_web_app_api_brand_templates_id_route_delete",
@@ -2768,6 +2867,30 @@
       "source_location": "L11"
     },
     {
+      "id": "apps_web_lib_video_persistence_buildfallbackscript",
+      "label": "buildFallbackScript()",
+      "_callable": true,
+      "_origin": "ast",
+      "community": 18,
+      "community_name": "video-persistence.ts",
+      "file_type": "code",
+      "norm_label": "buildfallbackscript()",
+      "source_file": "apps/web/lib/video-persistence.ts",
+      "source_location": "L189"
+    },
+    {
+      "id": "apps_web_lib_video_persistence_buildlocalvideorecord",
+      "label": "buildLocalVideoRecord()",
+      "_callable": true,
+      "_origin": "ast",
+      "community": 18,
+      "community_name": "video-persistence.ts",
+      "file_type": "code",
+      "norm_label": "buildlocalvideorecord()",
+      "source_file": "apps/web/lib/video-persistence.ts",
+      "source_location": "L269"
+    },
+    {
       "id": "apps_web_lib_video_persistence_createinsupabase",
       "label": "createInSupabase()",
       "_callable": true,
@@ -3044,7 +3167,31 @@
       "source_location": "L14"
     },
     {
-      "id": "apps_web_app_api_copilot_route_post",
+      "id": "apps_web_app_api_videos_batch_route_buildwarning",
+      "label": "buildWarning()",
+      "_callable": true,
+      "_origin": "ast",
+      "community": 2,
+      "community_name": "copilot.ts",
+      "file_type": "code",
+      "norm_label": "buildwarning()",
+      "source_file": "apps/web/app/api/videos/batch/route.ts",
+      "source_location": "L58"
+    },
+    {
+      "id": "apps_web_app_api_videos_batch_route_planscenes",
+      "label": "planScenes()",
+      "_callable": true,
+      "_origin": "ast",
+      "community": 2,
+      "community_name": "copilot.ts",
+      "file_type": "code",
+      "norm_label": "planscenes()",
+      "source_file": "apps/web/app/api/videos/batch/route.ts",
+      "source_location": "L41"
+    },
+    {
+      "id": "apps_web_app_api_videos_batch_route_post",
       "label": "POST()",
       "_callable": true,
       "_origin": "ast",
@@ -3052,8 +3199,8 @@
       "community_name": "copilot.ts",
       "file_type": "code",
       "norm_label": "post()",
-      "source_file": "apps/web/app/api/copilot/route.ts",
-      "source_location": "L8"
+      "source_file": "apps/web/app/api/videos/batch/route.ts",
+      "source_location": "L81"
     },
     {
       "id": "apps_web_app_api_videos_route_get",
@@ -3704,30 +3851,6 @@
       "source_location": "L982"
     },
     {
-      "id": "apps_web_lib_sign_in_required_requiresession",
-      "label": "requireSession()",
-      "_callable": true,
-      "_origin": "ast",
-      "community": 2,
-      "community_name": "copilot.ts",
-      "file_type": "code",
-      "norm_label": "requiresession()",
-      "source_file": "apps/web/lib/sign-in-required.ts",
-      "source_location": "L25"
-    },
-    {
-      "id": "apps_web_lib_video_persistence_buildlocalvideorecord",
-      "label": "buildLocalVideoRecord()",
-      "_callable": true,
-      "_origin": "ast",
-      "community": 2,
-      "community_name": "copilot.ts",
-      "file_type": "code",
-      "norm_label": "buildlocalvideorecord()",
-      "source_file": "apps/web/lib/video-persistence.ts",
-      "source_location": "L269"
-    },
-    {
       "id": "apps_web_lib_video_persistence_createvideo",
       "label": "createVideo()",
       "_callable": true,
@@ -3738,6 +3861,18 @@
       "norm_label": "createvideo()",
       "source_file": "apps/web/lib/video-persistence.ts",
       "source_location": "L304"
+    },
+    {
+      "id": "apps_web_lib_video_persistence_generatescript",
+      "label": "generateScript()",
+      "_callable": true,
+      "_origin": "ast",
+      "community": 2,
+      "community_name": "copilot.ts",
+      "file_type": "code",
+      "norm_label": "generatescript()",
+      "source_file": "apps/web/lib/video-persistence.ts",
+      "source_location": "L216"
     },
     {
       "id": "apps_web_lib_video_persistence_listvideos",
@@ -4148,136 +4283,52 @@
       "source_location": "L114"
     },
     {
-      "id": "apps_web_app_api_videos_id_scenes_sceneid_route_buildregeneratesystemprompt",
-      "label": "buildRegenerateSystemPrompt()",
+      "id": "apps_render_worker_error_reporting_errorreportingstatus",
+      "label": "errorReportingStatus()",
       "_callable": true,
       "_origin": "ast",
       "community": 27,
-      "community_name": "[sceneId]/route.ts",
+      "community_name": "error-reporting.ts",
       "file_type": "code",
-      "norm_label": "buildregeneratesystemprompt()",
-      "source_file": "apps/web/app/api/videos/[id]/scenes/[sceneId]/route.ts",
-      "source_location": "L58"
-    },
-    {
-      "id": "apps_web_app_api_videos_id_scenes_sceneid_route_coerceaction",
-      "label": "coerceAction()",
-      "_callable": true,
-      "_origin": "ast",
-      "community": 27,
-      "community_name": "[sceneId]/route.ts",
-      "file_type": "code",
-      "norm_label": "coerceaction()",
-      "source_file": "apps/web/app/api/videos/[id]/scenes/[sceneId]/route.ts",
-      "source_location": "L30"
-    },
-    {
-      "id": "apps_web_app_api_videos_id_scenes_sceneid_route_coercecharacter",
-      "label": "coerceCharacter()",
-      "_callable": true,
-      "_origin": "ast",
-      "community": 27,
-      "community_name": "[sceneId]/route.ts",
-      "file_type": "code",
-      "norm_label": "coercecharacter()",
-      "source_file": "apps/web/app/api/videos/[id]/scenes/[sceneId]/route.ts",
-      "source_location": "L26"
-    },
-    {
-      "id": "apps_web_app_api_videos_id_scenes_sceneid_route_coercedescription",
-      "label": "coerceDescription()",
-      "_callable": true,
-      "_origin": "ast",
-      "community": 27,
-      "community_name": "[sceneId]/route.ts",
-      "file_type": "code",
-      "norm_label": "coercedescription()",
-      "source_file": "apps/web/app/api/videos/[id]/scenes/[sceneId]/route.ts",
+      "norm_label": "errorreportingstatus()",
+      "source_file": "apps/render-worker/error-reporting.ts",
       "source_location": "L38"
     },
     {
-      "id": "apps_web_app_api_videos_id_scenes_sceneid_route_coerceprop",
-      "label": "coerceProp()",
+      "id": "apps_render_worker_error_reporting_parsedsn",
+      "label": "parseDsn()",
       "_callable": true,
       "_origin": "ast",
       "community": 27,
-      "community_name": "[sceneId]/route.ts",
+      "community_name": "error-reporting.ts",
       "file_type": "code",
-      "norm_label": "coerceprop()",
-      "source_file": "apps/web/app/api/videos/[id]/scenes/[sceneId]/route.ts",
-      "source_location": "L34"
-    },
-    {
-      "id": "apps_web_app_api_videos_id_scenes_sceneid_route_delete",
-      "label": "DELETE()",
-      "_callable": true,
-      "_origin": "ast",
-      "community": 27,
-      "community_name": "[sceneId]/route.ts",
-      "file_type": "code",
-      "norm_label": "delete()",
-      "source_file": "apps/web/app/api/videos/[id]/scenes/[sceneId]/route.ts",
-      "source_location": "L208"
-    },
-    {
-      "id": "apps_web_app_api_videos_id_scenes_sceneid_route_extractjson",
-      "label": "extractJson()",
-      "_callable": true,
-      "_origin": "ast",
-      "community": 27,
-      "community_name": "[sceneId]/route.ts",
-      "file_type": "code",
-      "norm_label": "extractjson()",
-      "source_file": "apps/web/app/api/videos/[id]/scenes/[sceneId]/route.ts",
-      "source_location": "L43"
-    },
-    {
-      "id": "apps_web_app_api_videos_id_scenes_sceneid_route_isaction",
-      "label": "isAction()",
-      "_callable": true,
-      "_origin": "ast",
-      "community": 27,
-      "community_name": "[sceneId]/route.ts",
-      "file_type": "code",
-      "norm_label": "isaction()",
-      "source_file": "apps/web/app/api/videos/[id]/scenes/[sceneId]/route.ts",
-      "source_location": "L18"
-    },
-    {
-      "id": "apps_web_app_api_videos_id_scenes_sceneid_route_ischaracter",
-      "label": "isCharacter()",
-      "_callable": true,
-      "_origin": "ast",
-      "community": 27,
-      "community_name": "[sceneId]/route.ts",
-      "file_type": "code",
-      "norm_label": "ischaracter()",
-      "source_file": "apps/web/app/api/videos/[id]/scenes/[sceneId]/route.ts",
-      "source_location": "L14"
-    },
-    {
-      "id": "apps_web_app_api_videos_id_scenes_sceneid_route_isprop",
-      "label": "isProp()",
-      "_callable": true,
-      "_origin": "ast",
-      "community": 27,
-      "community_name": "[sceneId]/route.ts",
-      "file_type": "code",
-      "norm_label": "isprop()",
-      "source_file": "apps/web/app/api/videos/[id]/scenes/[sceneId]/route.ts",
+      "norm_label": "parsedsn()",
+      "source_file": "apps/render-worker/error-reporting.ts",
       "source_location": "L22"
     },
     {
-      "id": "apps_web_app_api_videos_id_scenes_sceneid_route_patch",
-      "label": "PATCH()",
+      "id": "apps_render_worker_error_reporting_sendreport",
+      "label": "sendReport()",
       "_callable": true,
       "_origin": "ast",
       "community": 27,
-      "community_name": "[sceneId]/route.ts",
+      "community_name": "error-reporting.ts",
       "file_type": "code",
-      "norm_label": "patch()",
-      "source_file": "apps/web/app/api/videos/[id]/scenes/[sceneId]/route.ts",
-      "source_location": "L70"
+      "norm_label": "sendreport()",
+      "source_file": "apps/render-worker/error-reporting.ts",
+      "source_location": "L91"
+    },
+    {
+      "id": "apps_render_worker_error_reporting_stackframes",
+      "label": "stackFrames()",
+      "_callable": true,
+      "_origin": "ast",
+      "community": 27,
+      "community_name": "error-reporting.ts",
+      "file_type": "code",
+      "norm_label": "stackframes()",
+      "source_file": "apps/render-worker/error-reporting.ts",
+      "source_location": "L44"
     },
     {
       "id": "scripts_dev_shutdown",
@@ -4316,124 +4367,136 @@
       "source_location": "L21"
     },
     {
-      "id": "apps_web_app_api_videos_id_scenes_route_buildscenesfromaijson",
-      "label": "buildScenesFromAiJson()",
+      "id": "apps_web_app_api_videos_id_scenes_sceneid_route_buildregeneratesystemprompt",
+      "label": "buildRegenerateSystemPrompt()",
       "_callable": true,
       "_origin": "ast",
       "community": 33,
-      "community_name": "scenes/route.ts",
+      "community_name": "[sceneId]/route.ts",
       "file_type": "code",
-      "norm_label": "buildscenesfromaijson()",
-      "source_file": "apps/web/app/api/videos/[id]/scenes/route.ts",
-      "source_location": "L75"
+      "norm_label": "buildregeneratesystemprompt()",
+      "source_file": "apps/web/app/api/videos/[id]/scenes/[sceneId]/route.ts",
+      "source_location": "L58"
     },
     {
-      "id": "apps_web_app_api_videos_id_scenes_route_buildsentencefallback",
-      "label": "buildSentenceFallback()",
-      "_callable": true,
-      "_origin": "ast",
-      "community": 33,
-      "community_name": "scenes/route.ts",
-      "file_type": "code",
-      "norm_label": "buildsentencefallback()",
-      "source_file": "apps/web/app/api/videos/[id]/scenes/route.ts",
-      "source_location": "L96"
-    },
-    {
-      "id": "apps_web_app_api_videos_id_scenes_route_buildsystemprompt",
-      "label": "buildSystemPrompt()",
-      "_callable": true,
-      "_origin": "ast",
-      "community": 33,
-      "community_name": "scenes/route.ts",
-      "file_type": "code",
-      "norm_label": "buildsystemprompt()",
-      "source_file": "apps/web/app/api/videos/[id]/scenes/route.ts",
-      "source_location": "L55"
-    },
-    {
-      "id": "apps_web_app_api_videos_id_scenes_route_coerceaction",
+      "id": "apps_web_app_api_videos_id_scenes_sceneid_route_coerceaction",
       "label": "coerceAction()",
       "_callable": true,
       "_origin": "ast",
       "community": 33,
-      "community_name": "scenes/route.ts",
+      "community_name": "[sceneId]/route.ts",
       "file_type": "code",
       "norm_label": "coerceaction()",
-      "source_file": "apps/web/app/api/videos/[id]/scenes/route.ts",
-      "source_location": "L21"
+      "source_file": "apps/web/app/api/videos/[id]/scenes/[sceneId]/route.ts",
+      "source_location": "L30"
     },
     {
-      "id": "apps_web_app_api_videos_id_scenes_route_coercecharacter",
+      "id": "apps_web_app_api_videos_id_scenes_sceneid_route_coercecharacter",
       "label": "coerceCharacter()",
       "_callable": true,
       "_origin": "ast",
       "community": 33,
-      "community_name": "scenes/route.ts",
+      "community_name": "[sceneId]/route.ts",
       "file_type": "code",
       "norm_label": "coercecharacter()",
-      "source_file": "apps/web/app/api/videos/[id]/scenes/route.ts",
-      "source_location": "L17"
+      "source_file": "apps/web/app/api/videos/[id]/scenes/[sceneId]/route.ts",
+      "source_location": "L26"
     },
     {
-      "id": "apps_web_app_api_videos_id_scenes_route_coercedescription",
+      "id": "apps_web_app_api_videos_id_scenes_sceneid_route_coercedescription",
       "label": "coerceDescription()",
       "_callable": true,
       "_origin": "ast",
       "community": 33,
-      "community_name": "scenes/route.ts",
+      "community_name": "[sceneId]/route.ts",
       "file_type": "code",
       "norm_label": "coercedescription()",
-      "source_file": "apps/web/app/api/videos/[id]/scenes/route.ts",
-      "source_location": "L34"
+      "source_file": "apps/web/app/api/videos/[id]/scenes/[sceneId]/route.ts",
+      "source_location": "L38"
     },
     {
-      "id": "apps_web_app_api_videos_id_scenes_route_coerceduration",
-      "label": "coerceDuration()",
-      "_callable": true,
-      "_origin": "ast",
-      "community": 33,
-      "community_name": "scenes/route.ts",
-      "file_type": "code",
-      "norm_label": "coerceduration()",
-      "source_file": "apps/web/app/api/videos/[id]/scenes/route.ts",
-      "source_location": "L29"
-    },
-    {
-      "id": "apps_web_app_api_videos_id_scenes_route_coerceprop",
+      "id": "apps_web_app_api_videos_id_scenes_sceneid_route_coerceprop",
       "label": "coerceProp()",
       "_callable": true,
       "_origin": "ast",
       "community": 33,
-      "community_name": "scenes/route.ts",
+      "community_name": "[sceneId]/route.ts",
       "file_type": "code",
       "norm_label": "coerceprop()",
-      "source_file": "apps/web/app/api/videos/[id]/scenes/route.ts",
-      "source_location": "L25"
+      "source_file": "apps/web/app/api/videos/[id]/scenes/[sceneId]/route.ts",
+      "source_location": "L34"
     },
     {
-      "id": "apps_web_app_api_videos_id_scenes_route_extractjson",
+      "id": "apps_web_app_api_videos_id_scenes_sceneid_route_delete",
+      "label": "DELETE()",
+      "_callable": true,
+      "_origin": "ast",
+      "community": 33,
+      "community_name": "[sceneId]/route.ts",
+      "file_type": "code",
+      "norm_label": "delete()",
+      "source_file": "apps/web/app/api/videos/[id]/scenes/[sceneId]/route.ts",
+      "source_location": "L208"
+    },
+    {
+      "id": "apps_web_app_api_videos_id_scenes_sceneid_route_extractjson",
       "label": "extractJson()",
       "_callable": true,
       "_origin": "ast",
       "community": 33,
-      "community_name": "scenes/route.ts",
+      "community_name": "[sceneId]/route.ts",
       "file_type": "code",
       "norm_label": "extractjson()",
-      "source_file": "apps/web/app/api/videos/[id]/scenes/route.ts",
-      "source_location": "L40"
+      "source_file": "apps/web/app/api/videos/[id]/scenes/[sceneId]/route.ts",
+      "source_location": "L43"
     },
     {
-      "id": "apps_web_app_api_videos_id_scenes_route_post",
-      "label": "POST()",
+      "id": "apps_web_app_api_videos_id_scenes_sceneid_route_isaction",
+      "label": "isAction()",
       "_callable": true,
       "_origin": "ast",
       "community": 33,
-      "community_name": "scenes/route.ts",
+      "community_name": "[sceneId]/route.ts",
       "file_type": "code",
-      "norm_label": "post()",
-      "source_file": "apps/web/app/api/videos/[id]/scenes/route.ts",
-      "source_location": "L157"
+      "norm_label": "isaction()",
+      "source_file": "apps/web/app/api/videos/[id]/scenes/[sceneId]/route.ts",
+      "source_location": "L18"
+    },
+    {
+      "id": "apps_web_app_api_videos_id_scenes_sceneid_route_ischaracter",
+      "label": "isCharacter()",
+      "_callable": true,
+      "_origin": "ast",
+      "community": 33,
+      "community_name": "[sceneId]/route.ts",
+      "file_type": "code",
+      "norm_label": "ischaracter()",
+      "source_file": "apps/web/app/api/videos/[id]/scenes/[sceneId]/route.ts",
+      "source_location": "L14"
+    },
+    {
+      "id": "apps_web_app_api_videos_id_scenes_sceneid_route_isprop",
+      "label": "isProp()",
+      "_callable": true,
+      "_origin": "ast",
+      "community": 33,
+      "community_name": "[sceneId]/route.ts",
+      "file_type": "code",
+      "norm_label": "isprop()",
+      "source_file": "apps/web/app/api/videos/[id]/scenes/[sceneId]/route.ts",
+      "source_location": "L22"
+    },
+    {
+      "id": "apps_web_app_api_videos_id_scenes_sceneid_route_patch",
+      "label": "PATCH()",
+      "_callable": true,
+      "_origin": "ast",
+      "community": 33,
+      "community_name": "[sceneId]/route.ts",
+      "file_type": "code",
+      "norm_label": "patch()",
+      "source_file": "apps/web/app/api/videos/[id]/scenes/[sceneId]/route.ts",
+      "source_location": "L70"
     },
     {
       "id": "apps_web_lib_ai_configuredproviders",
@@ -4441,7 +4504,7 @@
       "_callable": true,
       "_origin": "ast",
       "community": 33,
-      "community_name": "scenes/route.ts",
+      "community_name": "[sceneId]/route.ts",
       "file_type": "code",
       "norm_label": "configuredproviders()",
       "source_file": "apps/web/lib/ai.ts",
@@ -4453,7 +4516,7 @@
       "_callable": true,
       "_origin": "ast",
       "community": 33,
-      "community_name": "scenes/route.ts",
+      "community_name": "[sceneId]/route.ts",
       "file_type": "code",
       "norm_label": "generateaitext()",
       "source_file": "apps/web/lib/ai.ts",
@@ -4465,7 +4528,7 @@
       "_callable": true,
       "_origin": "ast",
       "community": 33,
-      "community_name": "scenes/route.ts",
+      "community_name": "[sceneId]/route.ts",
       "file_type": "code",
       "norm_label": "generatewithfallback()",
       "source_file": "apps/web/lib/ai-provider.ts",
@@ -4477,7 +4540,7 @@
       "_callable": true,
       "_origin": "ast",
       "community": 33,
-      "community_name": "scenes/route.ts",
+      "community_name": "[sceneId]/route.ts",
       "file_type": "code",
       "norm_label": "isexhausted()",
       "source_file": "apps/web/lib/ai-provider.ts",
@@ -4489,7 +4552,7 @@
       "_callable": true,
       "_origin": "ast",
       "community": 33,
-      "community_name": "scenes/route.ts",
+      "community_name": "[sceneId]/route.ts",
       "file_type": "code",
       "norm_label": "parsetoolarguments()",
       "source_file": "apps/web/lib/ai-provider.ts",
@@ -4501,7 +4564,7 @@
       "_callable": true,
       "_origin": "ast",
       "community": 33,
-      "community_name": "scenes/route.ts",
+      "community_name": "[sceneId]/route.ts",
       "file_type": "code",
       "norm_label": ".constructor()",
       "source_file": "apps/web/lib/ai-provider.ts",
@@ -4513,7 +4576,7 @@
       "_callable": true,
       "_origin": "ast",
       "community": 33,
-      "community_name": "scenes/route.ts",
+      "community_name": "[sceneId]/route.ts",
       "file_type": "code",
       "norm_label": "providers()",
       "source_file": "apps/web/lib/ai-provider.ts",
@@ -4525,7 +4588,7 @@
       "_callable": true,
       "_origin": "ast",
       "community": 33,
-      "community_name": "scenes/route.ts",
+      "community_name": "[sceneId]/route.ts",
       "file_type": "code",
       "norm_label": "requestcompletion()",
       "source_file": "apps/web/lib/ai-provider.ts",
@@ -4537,7 +4600,7 @@
       "_callable": true,
       "_origin": "ast",
       "community": 33,
-      "community_name": "scenes/route.ts",
+      "community_name": "[sceneId]/route.ts",
       "file_type": "code",
       "norm_label": "requestlegacy()",
       "source_file": "apps/web/lib/ai-provider.ts",
@@ -4549,7 +4612,7 @@
       "_callable": true,
       "_origin": "ast",
       "community": 33,
-      "community_name": "scenes/route.ts",
+      "community_name": "[sceneId]/route.ts",
       "file_type": "code",
       "norm_label": "secondsuntilretry()",
       "source_file": "apps/web/lib/ai-provider.ts",
@@ -4561,7 +4624,7 @@
       "_callable": true,
       "_origin": "ast",
       "community": 33,
-      "community_name": "scenes/route.ts",
+      "community_name": "[sceneId]/route.ts",
       "file_type": "code",
       "norm_label": "tolegacymessages()",
       "source_file": "apps/web/lib/ai-provider.ts",
@@ -4573,7 +4636,7 @@
       "_callable": true,
       "_origin": "ast",
       "community": 33,
-      "community_name": "scenes/route.ts",
+      "community_name": "[sceneId]/route.ts",
       "file_type": "code",
       "norm_label": "totoolcalls()",
       "source_file": "apps/web/lib/ai-provider.ts",
@@ -4585,7 +4648,7 @@
       "_callable": true,
       "_origin": "ast",
       "community": 33,
-      "community_name": "scenes/route.ts",
+      "community_name": "[sceneId]/route.ts",
       "file_type": "code",
       "norm_label": "towiremessage()",
       "source_file": "apps/web/lib/ai-provider.ts",
@@ -4597,7 +4660,7 @@
       "_callable": true,
       "_origin": "ast",
       "community": 33,
-      "community_name": "scenes/route.ts",
+      "community_name": "[sceneId]/route.ts",
       "file_type": "code",
       "norm_label": "providerkey()",
       "source_file": "apps/web/lib/ai.ts",
@@ -4609,7 +4672,7 @@
       "_callable": true,
       "_origin": "ast",
       "community": 33,
-      "community_name": "scenes/route.ts",
+      "community_name": "[sceneId]/route.ts",
       "file_type": "code",
       "norm_label": "requestanthropic()",
       "source_file": "apps/web/lib/ai.ts",
@@ -4621,11 +4684,35 @@
       "_callable": true,
       "_origin": "ast",
       "community": 33,
-      "community_name": "scenes/route.ts",
+      "community_name": "[sceneId]/route.ts",
       "file_type": "code",
       "norm_label": "requestopenai()",
       "source_file": "apps/web/lib/ai.ts",
       "source_location": "L16"
+    },
+    {
+      "id": "apps_web_app_api_copilot_route_post",
+      "label": "POST()",
+      "_callable": true,
+      "_origin": "ast",
+      "community": 34,
+      "community_name": "sign-in-required.ts",
+      "file_type": "code",
+      "norm_label": "post()",
+      "source_file": "apps/web/app/api/copilot/route.ts",
+      "source_location": "L8"
+    },
+    {
+      "id": "apps_web_lib_sign_in_required_requiresession",
+      "label": "requireSession()",
+      "_callable": true,
+      "_origin": "ast",
+      "community": 34,
+      "community_name": "sign-in-required.ts",
+      "file_type": "code",
+      "norm_label": "requiresession()",
+      "source_file": "apps/web/lib/sign-in-required.ts",
+      "source_location": "L25"
     },
     {
       "id": "apps_web_proxy_needssession",
@@ -4745,7 +4832,7 @@
       "file_type": "code",
       "norm_label": "post()",
       "source_file": "apps/web/app/api/speak/route.ts",
-      "source_location": "L21"
+      "source_location": "L33"
     },
     {
       "id": "apps_web_app_api_speak_route_silent",
@@ -4757,7 +4844,55 @@
       "file_type": "code",
       "norm_label": "silent()",
       "source_file": "apps/web/app/api/speak/route.ts",
-      "source_location": "L17"
+      "source_location": "L29"
+    },
+    {
+      "id": "apps_web_app_api_speak_route_speakwithheygen",
+      "label": "speakWithHeyGen()",
+      "_callable": true,
+      "_origin": "ast",
+      "community": 40,
+      "community_name": "speak/route.ts",
+      "file_type": "code",
+      "norm_label": "speakwithheygen()",
+      "source_file": "apps/web/app/api/speak/route.ts",
+      "source_location": "L53"
+    },
+    {
+      "id": "apps_web_lib_elevenlabs_tts_readelevenlabsconfig",
+      "label": "readElevenlabsConfig()",
+      "_callable": true,
+      "_origin": "ast",
+      "community": 40,
+      "community_name": "speak/route.ts",
+      "file_type": "code",
+      "norm_label": "readelevenlabsconfig()",
+      "source_file": "apps/web/lib/elevenlabs-tts.ts",
+      "source_location": "L40"
+    },
+    {
+      "id": "apps_web_lib_elevenlabs_tts_synthesizewithelevenlabs",
+      "label": "synthesizeWithElevenlabs()",
+      "_callable": true,
+      "_origin": "ast",
+      "community": 40,
+      "community_name": "speak/route.ts",
+      "file_type": "code",
+      "norm_label": "synthesizewithelevenlabs()",
+      "source_file": "apps/web/lib/elevenlabs-tts.ts",
+      "source_location": "L72"
+    },
+    {
+      "id": "apps_web_lib_elevenlabs_tts_wordstartsfromalignment",
+      "label": "wordStartsFromAlignment()",
+      "_callable": true,
+      "_origin": "ast",
+      "community": 40,
+      "community_name": "speak/route.ts",
+      "file_type": "code",
+      "norm_label": "wordstartsfromalignment()",
+      "source_file": "apps/web/lib/elevenlabs-tts.ts",
+      "source_location": "L51"
     },
     {
       "id": "apps_render_worker_drawing_camerafor",
@@ -6128,18 +6263,6 @@
       "source_location": "L601"
     },
     {
-      "id": "apps_render_worker_render_sleep",
-      "label": "sleep()",
-      "_callable": true,
-      "_origin": "ast",
-      "community": 67,
-      "community_name": "render.ts",
-      "file_type": "code",
-      "norm_label": "sleep()",
-      "source_file": "apps/render-worker/render.ts",
-      "source_location": "L196"
-    },
-    {
       "id": "apps_render_worker_render_tocsshexcolor",
       "label": "toCssHexColor()",
       "_callable": true,
@@ -6164,18 +6287,6 @@
       "source_location": "L314"
     },
     {
-      "id": "apps_render_worker_render_uploadtosupabase",
-      "label": "uploadToSupabase()",
-      "_callable": true,
-      "_origin": "ast",
-      "community": 67,
-      "community_name": "render.ts",
-      "file_type": "code",
-      "norm_label": "uploadtosupabase()",
-      "source_file": "apps/render-worker/render.ts",
-      "source_location": "L230"
-    },
-    {
       "id": "apps_render_worker_render_writewavfile",
       "label": "writeWavFile()",
       "_callable": true,
@@ -6186,18 +6297,6 @@
       "norm_label": "writewavfile()",
       "source_file": "apps/render-worker/render.ts",
       "source_location": "L671"
-    },
-    {
-      "id": "apps_render_worker_error_reporting_errorreportingstatus",
-      "label": "errorReportingStatus()",
-      "_callable": true,
-      "_origin": "ast",
-      "community": 68,
-      "community_name": "run-job.ts",
-      "file_type": "code",
-      "norm_label": "errorreportingstatus()",
-      "source_file": "apps/render-worker/error-reporting.ts",
-      "source_location": "L38"
     },
     {
       "id": "apps_render_worker_error_reporting_flusherrorreports",
@@ -6212,18 +6311,6 @@
       "source_location": "L81"
     },
     {
-      "id": "apps_render_worker_error_reporting_parsedsn",
-      "label": "parseDsn()",
-      "_callable": true,
-      "_origin": "ast",
-      "community": 68,
-      "community_name": "run-job.ts",
-      "file_type": "code",
-      "norm_label": "parsedsn()",
-      "source_file": "apps/render-worker/error-reporting.ts",
-      "source_location": "L22"
-    },
-    {
       "id": "apps_render_worker_error_reporting_reporterror",
       "label": "reportError()",
       "_callable": true,
@@ -6234,30 +6321,6 @@
       "norm_label": "reporterror()",
       "source_file": "apps/render-worker/error-reporting.ts",
       "source_location": "L70"
-    },
-    {
-      "id": "apps_render_worker_error_reporting_sendreport",
-      "label": "sendReport()",
-      "_callable": true,
-      "_origin": "ast",
-      "community": 68,
-      "community_name": "run-job.ts",
-      "file_type": "code",
-      "norm_label": "sendreport()",
-      "source_file": "apps/render-worker/error-reporting.ts",
-      "source_location": "L91"
-    },
-    {
-      "id": "apps_render_worker_error_reporting_stackframes",
-      "label": "stackFrames()",
-      "_callable": true,
-      "_origin": "ast",
-      "community": 68,
-      "community_name": "run-job.ts",
-      "file_type": "code",
-      "norm_label": "stackframes()",
-      "source_file": "apps/render-worker/error-reporting.ts",
-      "source_location": "L44"
     },
     {
       "id": "apps_render_worker_render_isuuid",
@@ -6356,6 +6419,18 @@
       "source_location": "L1137"
     },
     {
+      "id": "apps_render_worker_render_sleep",
+      "label": "sleep()",
+      "_callable": true,
+      "_origin": "ast",
+      "community": 68,
+      "community_name": "run-job.ts",
+      "file_type": "code",
+      "norm_label": "sleep()",
+      "source_file": "apps/render-worker/render.ts",
+      "source_location": "L196"
+    },
+    {
       "id": "apps_render_worker_render_toerror",
       "label": "toError()",
       "_callable": true,
@@ -6366,6 +6441,18 @@
       "norm_label": "toerror()",
       "source_file": "apps/render-worker/render.ts",
       "source_location": "L202"
+    },
+    {
+      "id": "apps_render_worker_render_uploadtosupabase",
+      "label": "uploadToSupabase()",
+      "_callable": true,
+      "_origin": "ast",
+      "community": 68,
+      "community_name": "run-job.ts",
+      "file_type": "code",
+      "norm_label": "uploadtosupabase()",
+      "source_file": "apps/render-worker/render.ts",
+      "source_location": "L230"
     },
     {
       "id": "apps_render_worker_run_job_decodejob",
@@ -6673,7 +6760,7 @@
       "_callable": true,
       "_origin": "ast",
       "community": 89,
-      "community_name": "StatusPanel",
+      "community_name": "status-panel.tsx",
       "file_type": "code",
       "norm_label": "duplicatevideo()",
       "source_file": "apps/web/app/components/api.ts",
@@ -6685,7 +6772,7 @@
       "_callable": true,
       "_origin": "ast",
       "community": 89,
-      "community_name": "StatusPanel",
+      "community_name": "status-panel.tsx",
       "file_type": "code",
       "norm_label": "transitionstatus()",
       "source_file": "apps/web/app/components/api.ts",
@@ -6697,7 +6784,7 @@
       "_callable": true,
       "_origin": "ast",
       "community": 89,
-      "community_name": "StatusPanel",
+      "community_name": "status-panel.tsx",
       "file_type": "code",
       "norm_label": "statuspanel()",
       "source_file": "apps/web/app/components/status-panel.tsx",
@@ -6709,7 +6796,7 @@
       "_callable": true,
       "_origin": "ast",
       "community": 89,
-      "community_name": "StatusPanel",
+      "community_name": "status-panel.tsx",
       "file_type": "code",
       "norm_label": "handleduplicate()",
       "source_file": "apps/web/app/components/status-panel.tsx",
@@ -6721,7 +6808,7 @@
       "_callable": true,
       "_origin": "ast",
       "community": 89,
-      "community_name": "StatusPanel",
+      "community_name": "status-panel.tsx",
       "file_type": "code",
       "norm_label": "runaction()",
       "source_file": "apps/web/app/components/status-panel.tsx",
@@ -7059,70 +7146,48 @@
       "source_location": "L41"
     },
     {
-      "id": "apps_web_app_api_videos_batch_route",
-      "label": "batch/route.ts",
+      "id": "apps_web_app_api_videos_id_scenes_route",
+      "label": "scenes/route.ts",
       "_origin": "ast",
       "community": 17,
-      "community_name": "batch/route.ts",
+      "community_name": "scenes/route.ts",
       "file_type": "code",
-      "norm_label": "batch/route.ts",
-      "source_file": "apps/web/app/api/videos/batch/route.ts",
+      "norm_label": "scenes/route.ts",
+      "source_file": "apps/web/app/api/videos/[id]/scenes/route.ts",
       "source_location": "L1"
     },
     {
-      "id": "apps_web_app_api_videos_batch_route_platforms",
-      "label": "PLATFORMS",
+      "id": "apps_web_app_api_videos_id_scenes_route_actions",
+      "label": "ACTIONS",
       "_origin": "ast",
       "community": 17,
-      "community_name": "batch/route.ts",
+      "community_name": "scenes/route.ts",
       "file_type": "code",
-      "norm_label": "platforms",
-      "source_file": "apps/web/app/api/videos/batch/route.ts",
-      "source_location": "L8"
-    },
-    {
-      "id": "apps_web_app_api_videos_store",
-      "label": "store.ts",
-      "_origin": "ast",
-      "community": 17,
-      "community_name": "batch/route.ts",
-      "file_type": "code",
-      "norm_label": "store.ts",
-      "source_file": "apps/web/app/api/videos/store.ts",
-      "source_location": "L1"
-    },
-    {
-      "id": "apps_web_app_api_videos_store_globalstore",
-      "label": "globalStore",
-      "_origin": "ast",
-      "community": 17,
-      "community_name": "batch/route.ts",
-      "file_type": "code",
-      "norm_label": "globalstore",
-      "source_file": "apps/web/app/api/videos/store.ts",
-      "source_location": "L5"
-    },
-    {
-      "id": "apps_web_app_api_videos_store_transitions",
-      "label": "transitions",
-      "_origin": "ast",
-      "community": 17,
-      "community_name": "batch/route.ts",
-      "file_type": "code",
-      "norm_label": "transitions",
-      "source_file": "apps/web/app/api/videos/store.ts",
+      "norm_label": "actions",
+      "source_file": "apps/web/app/api/videos/[id]/scenes/route.ts",
       "source_location": "L11"
     },
     {
-      "id": "apps_web_app_api_videos_store_videos",
-      "label": "videos",
+      "id": "apps_web_app_api_videos_id_scenes_route_characters",
+      "label": "CHARACTERS",
       "_origin": "ast",
       "community": 17,
-      "community_name": "batch/route.ts",
+      "community_name": "scenes/route.ts",
       "file_type": "code",
-      "norm_label": "videos",
-      "source_file": "apps/web/app/api/videos/store.ts",
-      "source_location": "L9"
+      "norm_label": "characters",
+      "source_file": "apps/web/app/api/videos/[id]/scenes/route.ts",
+      "source_location": "L10"
+    },
+    {
+      "id": "apps_web_app_api_videos_id_scenes_route_props",
+      "label": "PROPS",
+      "_origin": "ast",
+      "community": 17,
+      "community_name": "scenes/route.ts",
+      "file_type": "code",
+      "norm_label": "props",
+      "source_file": "apps/web/app/api/videos/[id]/scenes/route.ts",
+      "source_location": "L12"
     },
     {
       "id": "apps_web_app_api_brand_templates_id_route",
@@ -7290,6 +7355,50 @@
       "source_location": "L1"
     },
     {
+      "id": "apps_web_app_api_videos_store",
+      "label": "store.ts",
+      "_origin": "ast",
+      "community": 18,
+      "community_name": "video-persistence.ts",
+      "file_type": "code",
+      "norm_label": "store.ts",
+      "source_file": "apps/web/app/api/videos/store.ts",
+      "source_location": "L1"
+    },
+    {
+      "id": "apps_web_app_api_videos_store_globalstore",
+      "label": "globalStore",
+      "_origin": "ast",
+      "community": 18,
+      "community_name": "video-persistence.ts",
+      "file_type": "code",
+      "norm_label": "globalstore",
+      "source_file": "apps/web/app/api/videos/store.ts",
+      "source_location": "L5"
+    },
+    {
+      "id": "apps_web_app_api_videos_store_transitions",
+      "label": "transitions",
+      "_origin": "ast",
+      "community": 18,
+      "community_name": "video-persistence.ts",
+      "file_type": "code",
+      "norm_label": "transitions",
+      "source_file": "apps/web/app/api/videos/store.ts",
+      "source_location": "L11"
+    },
+    {
+      "id": "apps_web_app_api_videos_store_videos",
+      "label": "videos",
+      "_origin": "ast",
+      "community": 18,
+      "community_name": "video-persistence.ts",
+      "file_type": "code",
+      "norm_label": "videos",
+      "source_file": "apps/web/app/api/videos/store.ts",
+      "source_location": "L9"
+    },
+    {
       "id": "apps_web_app_manifest",
       "label": "manifest.ts",
       "_origin": "ast",
@@ -7376,6 +7485,17 @@
       "norm_label": "default_branding",
       "source_file": "packages/shared-types/video.ts",
       "source_location": "L19"
+    },
+    {
+      "id": "packages_shared_types_video_render_stalled_error",
+      "label": "RENDER_STALLED_ERROR",
+      "_origin": "ast",
+      "community": 18,
+      "community_name": "video-persistence.ts",
+      "file_type": "code",
+      "norm_label": "render_stalled_error",
+      "source_file": "packages/shared-types/video.ts",
+      "source_location": "L42"
     },
     {
       "id": "ref_next",
@@ -7510,15 +7630,26 @@
       "source_location": "L22"
     },
     {
-      "id": "apps_web_app_api_copilot_route",
-      "label": "copilot/route.ts",
+      "id": "apps_web_app_api_videos_batch_route",
+      "label": "batch/route.ts",
       "_origin": "ast",
       "community": 2,
       "community_name": "copilot.ts",
       "file_type": "code",
-      "norm_label": "copilot/route.ts",
-      "source_file": "apps/web/app/api/copilot/route.ts",
+      "norm_label": "batch/route.ts",
+      "source_file": "apps/web/app/api/videos/batch/route.ts",
       "source_location": "L1"
+    },
+    {
+      "id": "apps_web_app_api_videos_batch_route_platforms",
+      "label": "PLATFORMS",
+      "_origin": "ast",
+      "community": 2,
+      "community_name": "copilot.ts",
+      "file_type": "code",
+      "norm_label": "platforms",
+      "source_file": "apps/web/app/api/videos/batch/route.ts",
+      "source_location": "L8"
     },
     {
       "id": "apps_web_app_api_videos_route",
@@ -8115,48 +8246,26 @@
       "source_location": "L3"
     },
     {
-      "id": "apps_web_app_api_videos_id_scenes_sceneid_route",
-      "label": "[sceneId]/route.ts",
+      "id": "apps_render_worker_error_reporting",
+      "label": "error-reporting.ts",
       "_origin": "ast",
       "community": 27,
-      "community_name": "[sceneId]/route.ts",
+      "community_name": "error-reporting.ts",
       "file_type": "code",
-      "norm_label": "[sceneid]/route.ts",
-      "source_file": "apps/web/app/api/videos/[id]/scenes/[sceneId]/route.ts",
+      "norm_label": "error-reporting.ts",
+      "source_file": "apps/render-worker/error-reporting.ts",
       "source_location": "L1"
     },
     {
-      "id": "apps_web_app_api_videos_id_scenes_sceneid_route_actions",
-      "label": "ACTIONS",
+      "id": "apps_render_worker_error_reporting_pendingreports",
+      "label": "pendingReports",
       "_origin": "ast",
       "community": 27,
-      "community_name": "[sceneId]/route.ts",
+      "community_name": "error-reporting.ts",
       "file_type": "code",
-      "norm_label": "actions",
-      "source_file": "apps/web/app/api/videos/[id]/scenes/[sceneId]/route.ts",
-      "source_location": "L11"
-    },
-    {
-      "id": "apps_web_app_api_videos_id_scenes_sceneid_route_characters",
-      "label": "CHARACTERS",
-      "_origin": "ast",
-      "community": 27,
-      "community_name": "[sceneId]/route.ts",
-      "file_type": "code",
-      "norm_label": "characters",
-      "source_file": "apps/web/app/api/videos/[id]/scenes/[sceneId]/route.ts",
-      "source_location": "L10"
-    },
-    {
-      "id": "apps_web_app_api_videos_id_scenes_sceneid_route_props",
-      "label": "PROPS",
-      "_origin": "ast",
-      "community": 27,
-      "community_name": "[sceneId]/route.ts",
-      "file_type": "code",
-      "norm_label": "props",
-      "source_file": "apps/web/app/api/videos/[id]/scenes/[sceneId]/route.ts",
-      "source_location": "L12"
+      "norm_label": "pendingreports",
+      "source_file": "apps/render-worker/error-reporting.ts",
+      "source_location": "L66"
     },
     {
       "id": "scripts_dev",
@@ -8593,47 +8702,47 @@
       "source_location": "L35"
     },
     {
-      "id": "apps_web_app_api_videos_id_scenes_route",
-      "label": "scenes/route.ts",
+      "id": "apps_web_app_api_videos_id_scenes_sceneid_route",
+      "label": "[sceneId]/route.ts",
       "_origin": "ast",
       "community": 33,
-      "community_name": "scenes/route.ts",
+      "community_name": "[sceneId]/route.ts",
       "file_type": "code",
-      "norm_label": "scenes/route.ts",
-      "source_file": "apps/web/app/api/videos/[id]/scenes/route.ts",
+      "norm_label": "[sceneid]/route.ts",
+      "source_file": "apps/web/app/api/videos/[id]/scenes/[sceneId]/route.ts",
       "source_location": "L1"
     },
     {
-      "id": "apps_web_app_api_videos_id_scenes_route_actions",
+      "id": "apps_web_app_api_videos_id_scenes_sceneid_route_actions",
       "label": "ACTIONS",
       "_origin": "ast",
       "community": 33,
-      "community_name": "scenes/route.ts",
+      "community_name": "[sceneId]/route.ts",
       "file_type": "code",
       "norm_label": "actions",
-      "source_file": "apps/web/app/api/videos/[id]/scenes/route.ts",
+      "source_file": "apps/web/app/api/videos/[id]/scenes/[sceneId]/route.ts",
       "source_location": "L11"
     },
     {
-      "id": "apps_web_app_api_videos_id_scenes_route_characters",
+      "id": "apps_web_app_api_videos_id_scenes_sceneid_route_characters",
       "label": "CHARACTERS",
       "_origin": "ast",
       "community": 33,
-      "community_name": "scenes/route.ts",
+      "community_name": "[sceneId]/route.ts",
       "file_type": "code",
       "norm_label": "characters",
-      "source_file": "apps/web/app/api/videos/[id]/scenes/route.ts",
+      "source_file": "apps/web/app/api/videos/[id]/scenes/[sceneId]/route.ts",
       "source_location": "L10"
     },
     {
-      "id": "apps_web_app_api_videos_id_scenes_route_props",
+      "id": "apps_web_app_api_videos_id_scenes_sceneid_route_props",
       "label": "PROPS",
       "_origin": "ast",
       "community": 33,
-      "community_name": "scenes/route.ts",
+      "community_name": "[sceneId]/route.ts",
       "file_type": "code",
       "norm_label": "props",
-      "source_file": "apps/web/app/api/videos/[id]/scenes/route.ts",
+      "source_file": "apps/web/app/api/videos/[id]/scenes/[sceneId]/route.ts",
       "source_location": "L12"
     },
     {
@@ -8641,7 +8750,7 @@
       "label": "ai.ts",
       "_origin": "ast",
       "community": 33,
-      "community_name": "scenes/route.ts",
+      "community_name": "[sceneId]/route.ts",
       "file_type": "code",
       "norm_label": "ai.ts",
       "source_file": "apps/web/lib/ai.ts",
@@ -8652,7 +8761,7 @@
       "label": "ai-provider.ts",
       "_origin": "ast",
       "community": 33,
-      "community_name": "scenes/route.ts",
+      "community_name": "[sceneId]/route.ts",
       "file_type": "code",
       "norm_label": "ai-provider.ts",
       "source_file": "apps/web/lib/ai-provider.ts",
@@ -8663,7 +8772,7 @@
       "label": "EXHAUSTED",
       "_origin": "ast",
       "community": 33,
-      "community_name": "scenes/route.ts",
+      "community_name": "[sceneId]/route.ts",
       "file_type": "code",
       "norm_label": "exhausted",
       "source_file": "apps/web/lib/ai-provider.ts",
@@ -8674,7 +8783,7 @@
       "label": "backend-agent.md",
       "_origin": "ast",
       "community": 33,
-      "community_name": "scenes/route.ts",
+      "community_name": "[sceneId]/route.ts",
       "file_type": "document",
       "frontmatter": {
         "name": "backend-agent",
@@ -8692,7 +8801,7 @@
       "label": "Antes de escribir algo nuevo",
       "_origin": "ast",
       "community": 33,
-      "community_name": "scenes/route.ts",
+      "community_name": "[sceneId]/route.ts",
       "file_type": "document",
       "node_kind": "heading",
       "norm_label": "antes de escribir algo nuevo",
@@ -8704,7 +8813,7 @@
       "label": "Before you finish",
       "_origin": "ast",
       "community": 33,
-      "community_name": "scenes/route.ts",
+      "community_name": "[sceneId]/route.ts",
       "file_type": "document",
       "node_kind": "heading",
       "norm_label": "before you finish",
@@ -8716,7 +8825,7 @@
       "label": "Git",
       "_origin": "ast",
       "community": 33,
-      "community_name": "scenes/route.ts",
+      "community_name": "[sceneId]/route.ts",
       "file_type": "document",
       "node_kind": "heading",
       "norm_label": "git",
@@ -8728,7 +8837,7 @@
       "label": "Rules",
       "_origin": "ast",
       "community": 33,
-      "community_name": "scenes/route.ts",
+      "community_name": "[sceneId]/route.ts",
       "file_type": "document",
       "node_kind": "heading",
       "norm_label": "rules",
@@ -8740,7 +8849,7 @@
       "label": "Style",
       "_origin": "ast",
       "community": 33,
-      "community_name": "scenes/route.ts",
+      "community_name": "[sceneId]/route.ts",
       "file_type": "document",
       "node_kind": "heading",
       "norm_label": "style",
@@ -8752,7 +8861,7 @@
       "label": "What is already there",
       "_origin": "ast",
       "community": 33,
-      "community_name": "scenes/route.ts",
+      "community_name": "[sceneId]/route.ts",
       "file_type": "document",
       "node_kind": "heading",
       "norm_label": "what is already there",
@@ -8764,12 +8873,23 @@
       "label": "Your files",
       "_origin": "ast",
       "community": 33,
-      "community_name": "scenes/route.ts",
+      "community_name": "[sceneId]/route.ts",
       "file_type": "document",
       "node_kind": "heading",
       "norm_label": "your files",
       "source_file": "plugin/agents/backend-agent.md",
       "source_location": "L10"
+    },
+    {
+      "id": "apps_web_app_api_copilot_route",
+      "label": "copilot/route.ts",
+      "_origin": "ast",
+      "community": 34,
+      "community_name": "sign-in-required.ts",
+      "file_type": "code",
+      "norm_label": "copilot/route.ts",
+      "source_file": "apps/web/app/api/copilot/route.ts",
+      "source_location": "L1"
     },
     {
       "id": "apps_web_lib_sign_in_required",
@@ -9487,25 +9607,36 @@
       "source_location": "L1"
     },
     {
-      "id": "apps_web_app_api_speak_route_api_key",
-      "label": "API_KEY",
+      "id": "apps_web_lib_elevenlabs_tts",
+      "label": "elevenlabs-tts.ts",
       "_origin": "ast",
       "community": 40,
       "community_name": "speak/route.ts",
       "file_type": "code",
-      "norm_label": "api_key",
-      "source_file": "apps/web/app/api/speak/route.ts",
-      "source_location": "L11"
+      "norm_label": "elevenlabs-tts.ts",
+      "source_file": "apps/web/lib/elevenlabs-tts.ts",
+      "source_location": "L1"
     },
     {
-      "id": "apps_web_app_api_speak_route_voice_id",
-      "label": "VOICE_ID",
+      "id": "apps_web_lib_elevenlabs_tts_default_assistant_model",
+      "label": "DEFAULT_ASSISTANT_MODEL",
       "_origin": "ast",
       "community": 40,
       "community_name": "speak/route.ts",
       "file_type": "code",
-      "norm_label": "voice_id",
-      "source_file": "apps/web/app/api/speak/route.ts",
+      "norm_label": "default_assistant_model",
+      "source_file": "apps/web/lib/elevenlabs-tts.ts",
+      "source_location": "L15"
+    },
+    {
+      "id": "apps_web_lib_elevenlabs_tts_default_assistant_voice_id",
+      "label": "DEFAULT_ASSISTANT_VOICE_ID",
+      "_origin": "ast",
+      "community": 40,
+      "community_name": "speak/route.ts",
+      "file_type": "code",
+      "norm_label": "default_assistant_voice_id",
+      "source_file": "apps/web/lib/elevenlabs-tts.ts",
       "source_location": "L12"
     },
     {
@@ -10340,17 +10471,6 @@
       "norm_label": "poster_classes",
       "source_file": "apps/web/app/components/video-list.tsx",
       "source_location": "L39"
-    },
-    {
-      "id": "packages_shared_types_templates",
-      "label": "templates.ts",
-      "_origin": "ast",
-      "community": 59,
-      "community_name": "video-list.tsx",
-      "file_type": "code",
-      "norm_label": "templates.ts",
-      "source_file": "packages/shared-types/templates.ts",
-      "source_location": "L1"
     },
     {
       "id": "packages_shared_types_templates_video_templates",
@@ -11202,28 +11322,6 @@
       "source_location": "L211"
     },
     {
-      "id": "apps_render_worker_error_reporting",
-      "label": "error-reporting.ts",
-      "_origin": "ast",
-      "community": 68,
-      "community_name": "run-job.ts",
-      "file_type": "code",
-      "norm_label": "error-reporting.ts",
-      "source_file": "apps/render-worker/error-reporting.ts",
-      "source_location": "L1"
-    },
-    {
-      "id": "apps_render_worker_error_reporting_pendingreports",
-      "label": "pendingReports",
-      "_origin": "ast",
-      "community": 68,
-      "community_name": "run-job.ts",
-      "file_type": "code",
-      "norm_label": "pendingreports",
-      "source_file": "apps/render-worker/error-reporting.ts",
-      "source_location": "L66"
-    },
-    {
       "id": "apps_render_worker_run_job",
       "label": "run-job.ts",
       "_origin": "ast",
@@ -12068,6 +12166,50 @@
       "source_location": "L1"
     },
     {
+      "id": "apps_web_app_components_constants_platform_labels",
+      "label": "PLATFORM_LABELS",
+      "_origin": "ast",
+      "community": 89,
+      "community_name": "status-panel.tsx",
+      "file_type": "code",
+      "norm_label": "platform_labels",
+      "source_file": "apps/web/app/components/constants.ts",
+      "source_location": "L16"
+    },
+    {
+      "id": "apps_web_app_components_constants_platform_options",
+      "label": "PLATFORM_OPTIONS",
+      "_origin": "ast",
+      "community": 89,
+      "community_name": "status-panel.tsx",
+      "file_type": "code",
+      "norm_label": "platform_options",
+      "source_file": "apps/web/app/components/constants.ts",
+      "source_location": "L10"
+    },
+    {
+      "id": "apps_web_app_components_status_panel",
+      "label": "status-panel.tsx",
+      "_origin": "ast",
+      "community": 89,
+      "community_name": "status-panel.tsx",
+      "file_type": "code",
+      "norm_label": "status-panel.tsx",
+      "source_file": "apps/web/app/components/status-panel.tsx",
+      "source_location": "L1"
+    },
+    {
+      "id": "packages_shared_types_video_render_stall_timeout_ms",
+      "label": "RENDER_STALL_TIMEOUT_MS",
+      "_origin": "ast",
+      "community": 89,
+      "community_name": "status-panel.tsx",
+      "file_type": "code",
+      "norm_label": "render_stall_timeout_ms",
+      "source_file": "packages/shared-types/video.ts",
+      "source_location": "L38"
+    },
+    {
       "id": "apps_web_tsconfig",
       "label": "web/tsconfig.json",
       "_origin": "ast",
@@ -12310,28 +12452,6 @@
       "source_location": "L1"
     },
     {
-      "id": "apps_web_app_components_constants_platform_labels",
-      "label": "PLATFORM_LABELS",
-      "_origin": "ast",
-      "community": 90,
-      "community_name": "video.ts",
-      "file_type": "code",
-      "norm_label": "platform_labels",
-      "source_file": "apps/web/app/components/constants.ts",
-      "source_location": "L16"
-    },
-    {
-      "id": "apps_web_app_components_constants_platform_options",
-      "label": "PLATFORM_OPTIONS",
-      "_origin": "ast",
-      "community": 90,
-      "community_name": "video.ts",
-      "file_type": "code",
-      "norm_label": "platform_options",
-      "source_file": "apps/web/app/components/constants.ts",
-      "source_location": "L10"
-    },
-    {
       "id": "apps_web_app_components_constants_status_badge_classes",
       "label": "STATUS_BADGE_CLASSES",
       "_origin": "ast",
@@ -12376,14 +12496,14 @@
       "source_location": "L1"
     },
     {
-      "id": "apps_web_app_components_status_panel",
-      "label": "status-panel.tsx",
+      "id": "packages_shared_types_templates",
+      "label": "templates.ts",
       "_origin": "ast",
       "community": 90,
       "community_name": "video.ts",
       "file_type": "code",
-      "norm_label": "status-panel.tsx",
-      "source_file": "apps/web/app/components/status-panel.tsx",
+      "norm_label": "templates.ts",
+      "source_file": "packages/shared-types/templates.ts",
       "source_location": "L1"
     },
     {
@@ -12396,28 +12516,6 @@
       "norm_label": "video.ts",
       "source_file": "packages/shared-types/video.ts",
       "source_location": "L1"
-    },
-    {
-      "id": "packages_shared_types_video_render_stall_timeout_ms",
-      "label": "RENDER_STALL_TIMEOUT_MS",
-      "_origin": "ast",
-      "community": 90,
-      "community_name": "video.ts",
-      "file_type": "code",
-      "norm_label": "render_stall_timeout_ms",
-      "source_file": "packages/shared-types/video.ts",
-      "source_location": "L38"
-    },
-    {
-      "id": "packages_shared_types_video_render_stalled_error",
-      "label": "RENDER_STALLED_ERROR",
-      "_origin": "ast",
-      "community": 90,
-      "community_name": "video.ts",
-      "file_type": "code",
-      "norm_label": "render_stalled_error",
-      "source_file": "packages/shared-types/video.ts",
-      "source_location": "L42"
     },
     {
       "id": "claude_lead_agent",
@@ -13194,6 +13292,18 @@
       "source_url": null
     },
     {
+      "id": "packages_shared_types_sounds",
+      "label": "packages_shared_types_sounds",
+      "_origin": "semantic",
+      "community": 1,
+      "community_name": "api.ts",
+      "external": true,
+      "file_type": "concept",
+      "norm_label": "packages_shared_types_sounds",
+      "source_file": "",
+      "type": "external"
+    },
+    {
       "id": "packages_shared_types_sounds_soundkind",
       "label": "packages_shared_types_sounds_soundkind",
       "_origin": "semantic",
@@ -13338,6 +13448,18 @@
       "type": "external"
     },
     {
+      "id": "ref_node_crypto",
+      "label": "ref_node_crypto",
+      "_origin": "semantic",
+      "community": 27,
+      "community_name": "error-reporting.ts",
+      "external": true,
+      "file_type": "concept",
+      "norm_label": "ref_node_crypto",
+      "source_file": "",
+      "type": "external"
+    },
+    {
       "id": "ref_node_child_process",
       "label": "ref_node_child_process",
       "_origin": "semantic",
@@ -13354,7 +13476,7 @@
       "label": "apps_web_lib_ai_models",
       "_origin": "semantic",
       "community": 33,
-      "community_name": "scenes/route.ts",
+      "community_name": "[sceneId]/route.ts",
       "external": true,
       "file_type": "concept",
       "norm_label": "apps_web_lib_ai_models",
@@ -13406,18 +13528,6 @@
       "external": true,
       "file_type": "concept",
       "norm_label": "ref_node_http",
-      "source_file": "",
-      "type": "external"
-    },
-    {
-      "id": "packages_shared_types_sounds",
-      "label": "packages_shared_types_sounds",
-      "_origin": "semantic",
-      "community": 61,
-      "community_name": "scene-panel.tsx",
-      "external": true,
-      "file_type": "concept",
-      "norm_label": "packages_shared_types_sounds",
       "source_file": "",
       "type": "external"
     },
@@ -13542,18 +13652,6 @@
       "type": "external"
     },
     {
-      "id": "ref_node_crypto",
-      "label": "ref_node_crypto",
-      "_origin": "semantic",
-      "community": 68,
-      "community_name": "run-job.ts",
-      "external": true,
-      "file_type": "concept",
-      "norm_label": "ref_node_crypto",
-      "source_file": "",
-      "type": "external"
-    },
-    {
       "id": "apps_render_worker_dist_voice",
       "label": "apps_render_worker_dist_voice",
       "_origin": "semantic",
@@ -13610,6 +13708,39 @@
       "external": true,
       "file_type": "concept",
       "norm_label": "ref_node_module",
+      "source_file": "",
+      "type": "external"
+    },
+    {
+      "id": "apps_web_lib_google_tts",
+      "label": "apps_web_lib_google_tts",
+      "community": 40,
+      "community_name": "speak/route.ts",
+      "external": true,
+      "file_type": "concept",
+      "norm_label": "apps_web_lib_google_tts",
+      "source_file": "",
+      "type": "external"
+    },
+    {
+      "id": "apps_web_lib_google_tts_readgooglettsconfig",
+      "label": "apps_web_lib_google_tts_readgooglettsconfig",
+      "community": 40,
+      "community_name": "speak/route.ts",
+      "external": true,
+      "file_type": "concept",
+      "norm_label": "apps_web_lib_google_tts_readgooglettsconfig",
+      "source_file": "",
+      "type": "external"
+    },
+    {
+      "id": "apps_web_lib_google_tts_synthesizewithgoogle",
+      "label": "apps_web_lib_google_tts_synthesizewithgoogle",
+      "community": 40,
+      "community_name": "speak/route.ts",
+      "external": true,
+      "file_type": "concept",
+      "norm_label": "apps_web_lib_google_tts_synthesizewithgoogle",
       "source_file": "",
       "type": "external"
     }
@@ -15508,7 +15639,55 @@
       "confidence_score": 1.0,
       "context": "call",
       "source_file": "apps/web/app/api/speak/route.ts",
-      "source_location": "L22",
+      "source_location": "L36",
+      "weight": 1.0
+    },
+    {
+      "source": "apps_web_app_api_speak_route_post",
+      "target": "apps_web_lib_elevenlabs_tts_readelevenlabsconfig",
+      "relation": "calls",
+      "_origin": "ast",
+      "confidence": "EXTRACTED",
+      "confidence_score": 1.0,
+      "context": "call",
+      "source_file": "apps/web/app/api/speak/route.ts",
+      "source_location": "L38",
+      "weight": 1.0
+    },
+    {
+      "source": "apps_web_app_api_speak_route_post",
+      "target": "apps_web_lib_elevenlabs_tts_synthesizewithelevenlabs",
+      "relation": "calls",
+      "_origin": "ast",
+      "confidence": "EXTRACTED",
+      "confidence_score": 1.0,
+      "context": "call",
+      "source_file": "apps/web/app/api/speak/route.ts",
+      "source_location": "L40",
+      "weight": 1.0
+    },
+    {
+      "source": "apps_web_app_api_speak_route_post",
+      "target": "apps_web_app_api_speak_route_speakwithheygen",
+      "relation": "calls",
+      "_origin": "ast",
+      "confidence": "EXTRACTED",
+      "confidence_score": 1.0,
+      "context": "call",
+      "source_file": "apps/web/app/api/speak/route.ts",
+      "source_location": "L50",
+      "weight": 1.0
+    },
+    {
+      "source": "apps_web_app_api_speak_route_speakwithheygen",
+      "target": "apps_web_app_api_speak_route_silent",
+      "relation": "calls",
+      "_origin": "ast",
+      "confidence": "EXTRACTED",
+      "confidence_score": 1.0,
+      "context": "call",
+      "source_file": "apps/web/app/api/speak/route.ts",
+      "source_location": "L56",
       "weight": 1.0
     },
     {
@@ -19460,6 +19639,18 @@
       "weight": 1.0
     },
     {
+      "source": "apps_web_lib_elevenlabs_tts_synthesizewithelevenlabs",
+      "target": "apps_web_lib_elevenlabs_tts_wordstartsfromalignment",
+      "relation": "calls",
+      "_origin": "ast",
+      "confidence": "EXTRACTED",
+      "confidence_score": 1.0,
+      "context": "call",
+      "source_file": "apps/web/lib/elevenlabs-tts.ts",
+      "source_location": "L100",
+      "weight": 1.0
+    },
+    {
       "source": "apps_web_lib_tts_synthesizespeech",
       "target": "apps_web_lib_supabaseclient_getsupabaseclient",
       "relation": "calls",
@@ -21834,6 +22025,54 @@
       "confidence_score": 1.0,
       "context": "import",
       "source_file": "apps/web/app/api/copilot/route.ts",
+      "source_location": "L3",
+      "weight": 1.0
+    },
+    {
+      "source": "apps_web_app_api_speak_route",
+      "target": "apps_web_lib_elevenlabs_tts_readelevenlabsconfig",
+      "relation": "imports",
+      "_origin": "ast",
+      "confidence": "EXTRACTED",
+      "confidence_score": 1.0,
+      "context": "import",
+      "source_file": "apps/web/app/api/speak/route.ts",
+      "source_location": "L2",
+      "weight": 1.0
+    },
+    {
+      "source": "apps_web_app_api_speak_route",
+      "target": "apps_web_lib_elevenlabs_tts_synthesizewithelevenlabs",
+      "relation": "imports",
+      "_origin": "ast",
+      "confidence": "EXTRACTED",
+      "confidence_score": 1.0,
+      "context": "import",
+      "source_file": "apps/web/app/api/speak/route.ts",
+      "source_location": "L2",
+      "weight": 1.0
+    },
+    {
+      "source": "apps_web_app_api_speak_route",
+      "target": "apps_web_lib_google_tts_readgooglettsconfig",
+      "relation": "imports",
+      "_origin": "ast",
+      "confidence": "EXTRACTED",
+      "confidence_score": 1.0,
+      "context": "import",
+      "source_file": "apps/web/app/api/speak/route.ts",
+      "source_location": "L3",
+      "weight": 1.0
+    },
+    {
+      "source": "apps_web_app_api_speak_route",
+      "target": "apps_web_lib_google_tts_synthesizewithgoogle",
+      "relation": "imports",
+      "_origin": "ast",
+      "confidence": "EXTRACTED",
+      "confidence_score": 1.0,
+      "context": "import",
+      "source_file": "apps/web/app/api/speak/route.ts",
       "source_location": "L3",
       "weight": 1.0
     },
@@ -25730,6 +25969,30 @@
       "context": "import",
       "source_file": "apps/web/app/api/speak/route.ts",
       "source_location": "L1",
+      "weight": 1.0
+    },
+    {
+      "source": "apps_web_app_api_speak_route",
+      "target": "apps_web_lib_elevenlabs_tts",
+      "relation": "imports_from",
+      "_origin": "ast",
+      "confidence": "EXTRACTED",
+      "confidence_score": 1.0,
+      "context": "import",
+      "source_file": "apps/web/app/api/speak/route.ts",
+      "source_location": "L2",
+      "weight": 1.0
+    },
+    {
+      "source": "apps_web_app_api_speak_route",
+      "target": "apps_web_lib_google_tts",
+      "relation": "imports_from",
+      "_origin": "ast",
+      "confidence": "EXTRACTED",
+      "confidence_score": 1.0,
+      "context": "import",
+      "source_file": "apps/web/app/api/speak/route.ts",
+      "source_location": "L3",
       "weight": 1.0
     },
     {
@@ -30582,35 +30845,13 @@
     },
     {
       "source": "apps_web_app_api_speak_route",
-      "target": "apps_web_app_api_speak_route_api_key",
-      "relation": "contains",
-      "_origin": "ast",
-      "confidence": "EXTRACTED",
-      "confidence_score": 1.0,
-      "source_file": "apps/web/app/api/speak/route.ts",
-      "source_location": "L11",
-      "weight": 1.0
-    },
-    {
-      "source": "apps_web_app_api_speak_route",
-      "target": "apps_web_app_api_speak_route_voice_id",
-      "relation": "contains",
-      "_origin": "ast",
-      "confidence": "EXTRACTED",
-      "confidence_score": 1.0,
-      "source_file": "apps/web/app/api/speak/route.ts",
-      "source_location": "L12",
-      "weight": 1.0
-    },
-    {
-      "source": "apps_web_app_api_speak_route",
       "target": "apps_web_app_api_speak_route_silent",
       "relation": "contains",
       "_origin": "ast",
       "confidence": "EXTRACTED",
       "confidence_score": 1.0,
       "source_file": "apps/web/app/api/speak/route.ts",
-      "source_location": "L17",
+      "source_location": "L29",
       "weight": 1.0
     },
     {
@@ -30621,7 +30862,18 @@
       "confidence": "EXTRACTED",
       "confidence_score": 1.0,
       "source_file": "apps/web/app/api/speak/route.ts",
-      "source_location": "L21",
+      "source_location": "L33",
+      "weight": 1.0
+    },
+    {
+      "source": "apps_web_app_api_speak_route",
+      "target": "apps_web_app_api_speak_route_speakwithheygen",
+      "relation": "contains",
+      "_origin": "ast",
+      "confidence": "EXTRACTED",
+      "confidence_score": 1.0,
+      "source_file": "apps/web/app/api/speak/route.ts",
+      "source_location": "L53",
       "weight": 1.0
     },
     {
@@ -34461,6 +34713,94 @@
       "confidence_score": 1.0,
       "source_file": "apps/web/lib/copilot.ts",
       "source_location": "L999",
+      "weight": 1.0
+    },
+    {
+      "source": "apps_web_lib_elevenlabs_tts",
+      "target": "apps_web_lib_elevenlabs_tts_default_assistant_voice_id",
+      "relation": "contains",
+      "_origin": "ast",
+      "confidence": "EXTRACTED",
+      "confidence_score": 1.0,
+      "source_file": "apps/web/lib/elevenlabs-tts.ts",
+      "source_location": "L12",
+      "weight": 1.0
+    },
+    {
+      "source": "apps_web_lib_elevenlabs_tts",
+      "target": "apps_web_lib_elevenlabs_tts_default_assistant_model",
+      "relation": "contains",
+      "_origin": "ast",
+      "confidence": "EXTRACTED",
+      "confidence_score": 1.0,
+      "source_file": "apps/web/lib/elevenlabs-tts.ts",
+      "source_location": "L15",
+      "weight": 1.0
+    },
+    {
+      "source": "apps_web_lib_elevenlabs_tts",
+      "target": "apps_web_lib_elevenlabs_tts_elevenlabsttsconfig",
+      "relation": "contains",
+      "_origin": "ast",
+      "confidence": "EXTRACTED",
+      "confidence_score": 1.0,
+      "source_file": "apps/web/lib/elevenlabs-tts.ts",
+      "source_location": "L18",
+      "weight": 1.0
+    },
+    {
+      "source": "apps_web_lib_elevenlabs_tts",
+      "target": "apps_web_lib_elevenlabs_tts_elevenlabsspeech",
+      "relation": "contains",
+      "_origin": "ast",
+      "confidence": "EXTRACTED",
+      "confidence_score": 1.0,
+      "source_file": "apps/web/lib/elevenlabs-tts.ts",
+      "source_location": "L26",
+      "weight": 1.0
+    },
+    {
+      "source": "apps_web_lib_elevenlabs_tts",
+      "target": "apps_web_lib_elevenlabs_tts_alignment",
+      "relation": "contains",
+      "_origin": "ast",
+      "confidence": "EXTRACTED",
+      "confidence_score": 1.0,
+      "source_file": "apps/web/lib/elevenlabs-tts.ts",
+      "source_location": "L33",
+      "weight": 1.0
+    },
+    {
+      "source": "apps_web_lib_elevenlabs_tts",
+      "target": "apps_web_lib_elevenlabs_tts_readelevenlabsconfig",
+      "relation": "contains",
+      "_origin": "ast",
+      "confidence": "EXTRACTED",
+      "confidence_score": 1.0,
+      "source_file": "apps/web/lib/elevenlabs-tts.ts",
+      "source_location": "L40",
+      "weight": 1.0
+    },
+    {
+      "source": "apps_web_lib_elevenlabs_tts",
+      "target": "apps_web_lib_elevenlabs_tts_wordstartsfromalignment",
+      "relation": "contains",
+      "_origin": "ast",
+      "confidence": "EXTRACTED",
+      "confidence_score": 1.0,
+      "source_file": "apps/web/lib/elevenlabs-tts.ts",
+      "source_location": "L51",
+      "weight": 1.0
+    },
+    {
+      "source": "apps_web_lib_elevenlabs_tts",
+      "target": "apps_web_lib_elevenlabs_tts_synthesizewithelevenlabs",
+      "relation": "contains",
+      "_origin": "ast",
+      "confidence": "EXTRACTED",
+      "confidence_score": 1.0,
+      "source_file": "apps/web/lib/elevenlabs-tts.ts",
+      "source_location": "L72",
       "weight": 1.0
     },
     {
@@ -38436,5 +38776,5 @@
       "source_file": "apps/web/public/icons/icon-512.png"
     }
   ],
-  "built_at_commit": "6d3ad537ebb9295fe7fc73f02cf7dd85debe5c2e"
+  "built_at_commit": "4821afce8049bed0be7c88e818627599d2f342c7"
 }

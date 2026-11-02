@@ -738,9 +738,9 @@
     "semantic_hash": ""
   },
   "apps/web/app/api/speak/route.ts": {
-    "mtime": 1793661941.9817026,
-    "seen": 1793662597.051752,
-    "ast_hash": "604f1a3a87f016d36421f83657df2414",
+    "mtime": 1793662688.8091776,
+    "seen": 1793663003.1288965,
+    "ast_hash": "ad0d32908c669e6bbc5b1d6c39a26a5b",
     "semantic_hash": ""
   },
   "apps/web/app/components/barge-in.ts": {
@@ -963,6 +963,12 @@
     "mtime": 1793661920.578861,
     "seen": 1793662597.052196,
     "ast_hash": "481266cd432cfa548452d73543538bd6",
+    "semantic_hash": ""
+  },
+  "apps/web/lib/elevenlabs-tts.ts": {
+    "mtime": 1793662662.7110095,
+    "seen": 1793663003.1292818,
+    "ast_hash": "e40b046281dce4318280bd6a1994b346",
     "semantic_hash": ""
   }
 }
