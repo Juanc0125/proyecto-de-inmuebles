@@ -118,8 +118,6 @@ export type RenderJob = {
 	platform: Platform;
 	branding: Branding;
 	scenes: RenderScene[];
-	// RF-010: one background track for the whole video, as a public URL.
-	music_url?: string | null;
 };
 
 export const port = Number(process.env.PORT ?? 8080);
@@ -394,29 +392,19 @@ async function applyLogoOverlayOrFallback(sourcePath: string, destinationPath: s
 	}
 }
 
-// ---- Music and sound effects (RF-010) ----
+// ---- Sound effects (RF-010) ----
 
-// Background music sits well under the narration even before ducking: the
-// library is normalised to about -18 dB mean, so this puts it near -33 dB.
-const MUSIC_VOLUME = 0.18;
+// Background music was removed from the product; only per-scene effects are
+// mixed over the narration now. A job from an older web deployment may still
+// carry `music_url`: it is not part of RenderJob any more and is never read.
+
 // Effects are short, peak-normalised accents; at 1.0 they jumped out over the
 // voice, so they are pulled down a little.
 const EFFECT_VOLUME = 0.6;
-const MUSIC_FADE_IN_SECONDS = 1;
-const MUSIC_FADE_OUT_SECONDS = 1.5;
-// Overlap between two consecutive copies of a track that is shorter than the
-// video. A plain splice would click: AAC can't reproduce a file's first and
-// last ~20ms exactly, so even the library's sample-exact loops end up with a
-// step at the seam, and an uploaded song was never meant to loop at all.
-const MUSIC_LOOP_CROSSFADE_SECONDS = 0.08;
-const MUSIC_MIN_SECONDS = 1;
 // Every input is brought to one format before mixing, since narration (mono,
-// whatever rate the voice model speaks at), music and effects all differ.
+// whatever rate the voice model speaks at) and effects differ.
 const MIX_SAMPLE_RATE = 48000;
 const MIX_FORMAT = `aresample=${MIX_SAMPLE_RATE},aformat=sample_fmts=fltp:channel_layouts=stereo`;
-// Ducking: the narration is the compressor's key, so the music dips about
-// 8-10 dB while someone speaks and comes back within half a second of a pause.
-const DUCKING = 'sidechaincompress=threshold=0.04:ratio=4:attack=20:release=400:knee=4';
 
 type TimedEffect = { url: string; startSeconds: number };
 
@@ -446,34 +434,17 @@ function pcmInput(path: string, channels: number, sampleRate: number): string[] 
 // the video stream is copied, so this costs a few seconds and the memory of an
 // audio decode, not another x264 encode. Returns the path of the mixed video,
 // or the untouched source when there is nothing usable to mix or the mix
-// fails - a broken music URL must never cost the person their video (same
-// convention as applyLogoOverlayOrFallback). Each input is decoded on its own
-// first, so one bad effect drops only that effect, not the music and the rest.
+// fails - a broken effect URL must never cost the person their video (same
+// convention as applyLogoOverlayOrFallback). Each effect is decoded on its own
+// first, so one bad effect drops only that effect, not the rest.
 async function mixSoundsOrKeep(
 	sourcePath: string,
 	jobDirectory: string,
-	musicUrl: string | null,
 	effects: TimedEffect[],
 	totalSeconds: number,
 	jobId: string,
 ): Promise<string> {
-	if (!musicUrl && effects.length === 0) return sourcePath;
-
-	// Only as much as the video needs (a three-minute upload is cut at the
-	// video's length); the loop copies below then read a local file instead
-	// of downloading the URL once per copy.
-	let music: { path: string; seconds: number } | null = null;
-	if (musicUrl) {
-		const musicPcmPath = join(jobDirectory, 'music.pcm');
-		try {
-			const seconds = await decodeToPcm(musicUrl, musicPcmPath, totalSeconds + 1, 2, MIX_SAMPLE_RATE);
-			if (seconds < MUSIC_MIN_SECONDS) throw new Error(`La musica dura ${seconds.toFixed(2)} s, demasiado corta para usarla de fondo.`);
-			music = { path: musicPcmPath, seconds };
-		} catch (error) {
-			console.warn('No se pudo usar la musica de fondo; el video sale sin ella.', error);
-			void reportError(error, { job_id: jobId, stage: 'music', music_url: musicUrl });
-		}
-	}
+	if (effects.length === 0) return sourcePath;
 
 	const usableEffects: Array<{ path: string; startSeconds: number }> = [];
 	for (const [effectIndex, effect] of effects.entries()) {
@@ -487,42 +458,14 @@ async function mixSoundsOrKeep(
 		}
 	}
 
-	if (!music && usableEffects.length === 0) return sourcePath;
+	if (usableEffects.length === 0) return sourcePath;
 
 	const mixedPath = join(jobDirectory, 'mixed-output.mp4');
 	try {
 		const inputs: string[] = ['-i', sourcePath];
-		const graph: string[] = [];
+		const graph: string[] = [`[0:a]${MIX_FORMAT}[voice]`];
 		const mixLabels = ['[voice]'];
 		let nextInput = 1;
-
-		if (music) {
-			const copies = music.seconds >= totalSeconds
-				? 1
-				: 1 + Math.ceil((totalSeconds - music.seconds) / (music.seconds - MUSIC_LOOP_CROSSFADE_SECONDS));
-			for (let copy = 0; copy < copies; copy += 1) {
-				inputs.push(...pcmInput(music.path, 2, MIX_SAMPLE_RATE));
-			}
-
-			let musicLabel = `[${nextInput}:a]`;
-			for (let copy = 1; copy < copies; copy += 1) {
-				const joined = `[loop${copy}]`;
-				graph.push(`${musicLabel}[${nextInput + copy}:a]acrossfade=d=${MUSIC_LOOP_CROSSFADE_SECONDS}:c1=qsin:c2=qsin${joined}`);
-				musicLabel = joined;
-			}
-			nextInput += copies;
-
-			const fadeOutStart = Math.max(0, totalSeconds - MUSIC_FADE_OUT_SECONDS);
-			graph.push(`[0:a]${MIX_FORMAT},asplit=2[voice][duckkey]`);
-			graph.push(
-				`${musicLabel}${MIX_FORMAT},atrim=0:${totalSeconds.toFixed(3)},asetpts=PTS-STARTPTS,volume=${MUSIC_VOLUME},`
-				+ `afade=t=in:st=0:d=${MUSIC_FADE_IN_SECONDS},afade=t=out:st=${fadeOutStart.toFixed(3)}:d=${MUSIC_FADE_OUT_SECONDS}[bed]`,
-			);
-			graph.push(`[bed][duckkey]${DUCKING}[music]`);
-			mixLabels.push('[music]');
-		} else {
-			graph.push(`[0:a]${MIX_FORMAT}[voice]`);
-		}
 
 		usableEffects.forEach((effect, effectIndex) => {
 			inputs.push(...pcmInput(effect.path, 2, MIX_SAMPLE_RATE));
@@ -552,8 +495,8 @@ async function mixSoundsOrKeep(
 		]);
 		return mixedPath;
 	} catch (error) {
-		console.warn('Fallo al mezclar la musica o los efectos de sonido, se conserva el video sin mezcla.', error);
-		void reportError(error, { job_id: jobId, stage: 'mix', music: Boolean(music), effects: usableEffects.length });
+		console.warn('Fallo al mezclar los efectos de sonido, se conserva el video sin mezcla.', error);
+		void reportError(error, { job_id: jobId, stage: 'mix', effects: usableEffects.length });
 		await unlink(mixedPath).catch(() => undefined);
 		return sourcePath;
 	}
@@ -1074,15 +1017,15 @@ export async function render(job: RenderJob, onProgress?: (percent: number) => v
 
 		// Mixed before the logo so the logo's re-encode (the expensive one)
 		// copies the finished audio rather than the other way round.
-		const soundtrackPath = await mixSoundsOrKeep(concatOutputPath, jobDirectory, nonEmptyUrl(job.music_url), timedEffects, elapsedSeconds, jobId);
+		const soundtrackPath = await mixSoundsOrKeep(concatOutputPath, jobDirectory, timedEffects, elapsedSeconds, jobId);
 
 		// A new name per render (not `<id>.mp4`): the web app stores whatever
 		// URL is written, so a re-render gets a URL no cache has seen yet.
 		const filename = `${jobId}-${Date.now()}.mp4`;
 		const outputPath = join(renderDirectory, filename);
 		await applyLogoOverlayOrFallback(soundtrackPath, outputPath, branding, jobId);
-		// Whatever is left in the job directory (the pre-mix video, music and
-		// effect PCM, the pre-logo video) is superseded by outputPath; free it
+		// Whatever is left in the job directory (the pre-mix video, effect
+		// PCM, the pre-logo video) is superseded by outputPath; free it
 		// before the upload rather than in the finally after it.
 		await rm(jobDirectory, { recursive: true, force: true });
 

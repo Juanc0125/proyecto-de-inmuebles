@@ -7,7 +7,7 @@ import { reportError } from './error-reporting';
 // The main video engine when it is configured: every scene becomes a HeyGen
 // avatar - a realistic person - saying that scene's narration, lip-synced, in
 // the avatar's own filmed set. The worker then puts its own subtitles,
-// logo and music on top, exactly as it does for drawn scenes.
+// logo and sound effects on top, exactly as it does for drawn scenes.
 //
 // Billing: this uses HeyGen's API wallet (pay-as-you-go, per second of
 // output), which is separate from a HeyGen web subscription - the
