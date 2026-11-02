@@ -134,6 +134,7 @@ gcloud services enable \
   iam.googleapis.com \
   sts.googleapis.com \
   secretmanager.googleapis.com \
+  texttospeech.googleapis.com \
   billingbudgets.googleapis.com \
   cloudresourcemanager.googleapis.com \
   --project "$PROJECT_ID" --quiet

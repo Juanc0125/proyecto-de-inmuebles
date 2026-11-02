@@ -202,6 +202,48 @@ try {
     record('duracion de escena 50 s se rechaza', longScene.status === 400 && afterLong?.duration_seconds === first.duration_seconds,
         `HTTP ${longScene.status}, guardada=${afterLong?.duration_seconds} (antes ${first.duration_seconds})`);
 
+    // 4b. sounds (RF-010). Background music was removed from the product:
+    // only per-scene sound effects remain. The catalog must list effects only,
+    // a music upload must be refused before anything is stored, the music
+    // route must be gone and a video must no longer carry a music field.
+    const sounds = await api('/api/sounds');
+    const soundList = Array.isArray(sounds.body?.sonidos) ? sounds.body.sonidos : [];
+    const notEffects = soundList.filter((s) => s.kind !== 'efecto');
+    record('catalogo de sonidos solo trae efectos', sounds.status === 200 && soundList.length > 0 && notEffects.length === 0,
+        `HTTP ${sounds.status}, ${soundList.length} sonidos, ${notEffects.length} que no son efecto`);
+
+    const musicUpload = await api('/api/sounds', {
+        method: 'POST',
+        body: JSON.stringify({ name: 'QA musica', kind: 'musica', path: 'subidos/qa-no-existe.mp3', licencia: 'QA' }),
+    });
+    if (musicUpload.status === 201 && musicUpload.body?.sonido?.id) {
+        await api(`/api/sounds/${encodeURIComponent(musicUpload.body.sonido.id)}`, { method: 'DELETE' });
+    }
+    record('subir musica se rechaza', musicUpload.status === 400, `HTTP ${musicUpload.status} ${musicUpload.body?.error ?? ''}`);
+
+    const musicRoute = await api(`/api/videos/${videoId}/music`, { method: 'PATCH', body: JSON.stringify({ music_id: 'biblioteca:calma' }) });
+    const storedVideo = (await api('/api/videos')).body?.videos?.find((x) => x.id === videoId);
+    record('la ruta de musica ya no existe', (musicRoute.status === 404 || musicRoute.status === 405)
+        && !!storedVideo && !('music_id' in storedVideo),
+        `PATCH /music HTTP ${musicRoute.status}, music_id en el video: ${storedVideo ? 'music_id' in storedVideo : 'video no encontrado'}`);
+
+    // Sound effects stay: one can be put on a scene and taken off again, and
+    // the stored scene is what gets asserted.
+    const effectId = soundList.find((s) => s.kind === 'efecto')?.id;
+    const withEffect = await api(`/api/videos/${videoId}/scenes/${first.id}`, {
+        method: 'PATCH',
+        body: JSON.stringify({ sound_effect_id: effectId }),
+    });
+    const storedWith = (await api('/api/videos')).body?.videos?.find((x) => x.id === videoId)?.scenes?.find((sc) => sc.id === first.id);
+    const withoutEffect = await api(`/api/videos/${videoId}/scenes/${first.id}`, {
+        method: 'PATCH',
+        body: JSON.stringify({ sound_effect_id: null }),
+    });
+    const storedWithout = (await api('/api/videos')).body?.videos?.find((x) => x.id === videoId)?.scenes?.find((sc) => sc.id === first.id);
+    record('efecto de sonido en una escena', !!effectId && withEffect.status === 200 && storedWith?.sound_effect_id === effectId
+        && withoutEffect.status === 200 && storedWithout?.sound_effect_id === null,
+        `poner ${withEffect.status} (${storedWith?.sound_effect_id}), quitar ${withoutEffect.status} (${storedWithout?.sound_effect_id})`);
+
     // 5. manual script edit
     const script = await api(`/api/videos/${videoId}`, {
         method: 'PATCH',
