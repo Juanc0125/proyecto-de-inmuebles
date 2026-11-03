@@ -14,7 +14,10 @@ export interface ChatMessage {
 
 export interface ToolSchema { name: string; description: string; parameters: Record<string, unknown> }
 export interface ToolCall { id: string; name: string; arguments: Record<string, unknown> }
-export interface GenerationResult { text: string; toolCalls: ToolCall[]; provider: string }
+// `model` is what the provider was asked for; OpenRouter may answer from one of
+// its alternates, so for it this is the first choice, not a guarantee.
+export interface GenerationResult { text: string; toolCalls: ToolCall[]; provider: string; model?: string }
+export interface InlineImage { base64: string; mimeType: string }
 export interface GenerateOptions { tools?: ToolSchema[]; maxTokens?: number; temperature?: number }
 
 // Checked against console.groq.com/docs/models and console.groq.com/docs/tool-use
@@ -53,9 +56,13 @@ const REASONING_TOKEN_FLOOR = 1024;
 
 type WireToolCall = { id: string; type: 'function'; function: { name: string; arguments: string } };
 
+type WireContentPart =
+    | { type: 'text'; text: string }
+    | { type: 'image_url'; image_url: { url: string } | string };
+
 type WireMessage = {
     role: ChatMessage['role'];
-    content: string;
+    content: string | WireContentPart[];
     tool_call_id?: string;
     name?: string;
     tool_calls?: WireToolCall[];
@@ -229,13 +236,32 @@ function secondsUntilRetry(headers: Headers): number | null {
     return null;
 }
 
-async function requestCompletion(provider: Provider, system: string, messages: ChatMessage[], options: GenerateOptions): Promise<GenerationResult> {
+// Images ride on the last user turn as OpenAI-style content parts. Mistral
+// documents image_url as a bare data-URL string; Gemini's OpenAI-compatible
+// endpoint takes the OpenAI object form.
+function attachImages(wire: WireMessage[], images: InlineImage[], provider: Provider): WireMessage[] {
+    if (!images.length) return wire;
+    const lastUser = wire.map((message) => message.role).lastIndexOf('user');
+    if (lastUser < 0) return wire;
+    const target = wire[lastUser];
+    const parts: WireContentPart[] = [
+        { type: 'text', text: typeof target.content === 'string' ? target.content : '' },
+        ...images.map((image): WireContentPart => {
+            const url = `data:${image.mimeType};base64,${image.base64}`;
+            return { type: 'image_url', image_url: provider.id === 'mistral' ? url : { url } };
+        }),
+    ];
+    return wire.map((message, index) => (index === lastUser ? { ...message, content: parts } : message));
+}
+
+async function requestCompletion(provider: Provider, system: string, messages: ChatMessage[], options: GenerateOptions, images: InlineImage[] = []): Promise<GenerationResult> {
+    const wireMessages = attachImages(messages.map((message) => toWireMessage(message, provider)), images, provider);
     const body: Record<string, unknown> = {
         model: provider.model,
         ...(provider.alternates?.length ? { models: [provider.model, ...provider.alternates] } : {}),
         temperature: options.temperature ?? 0.6,
         max_tokens: Math.max(options.maxTokens ?? 1024, provider.minTokens ?? 0),
-        messages: [{ role: 'system', content: system }, ...messages.map((message) => toWireMessage(message, provider))],
+        messages: [{ role: 'system', content: system }, ...wireMessages],
         ...provider.extraBody,
     };
     if (options.tools?.length) {
@@ -269,7 +295,7 @@ async function requestCompletion(provider: Provider, system: string, messages: C
     const text = typeof content === 'string' ? content.trim() : '';
     const toolCalls = toToolCalls(data.choices, provider);
     if (!text && toolCalls.length === 0) throw new Error(`${provider.id} no devolvio contenido.`);
-    return { text, toolCalls, provider: provider.id };
+    return { text, toolCalls, provider: provider.id, model: provider.model };
 }
 
 // ai.ts speaks plain text over two roles only, so tool results are folded into
@@ -332,7 +358,45 @@ function isExhausted(error: unknown): boolean {
 }
 
 export async function generateWithFallback(system: string, messages: ChatMessage[], options: GenerateOptions = {}): Promise<GenerationResult | null> {
-    const lista = providers();
+    return runChain(providers(), system, messages, options, { images: [], allowLegacy: true });
+}
+
+/** The provider ids the chain knows, in the order generateWithFallback tries them. */
+export function providerIds(): string[] {
+    return providers().map((provider) => provider.id);
+}
+
+/**
+ * Same chain, but `preferred` goes first. Used where a role suits one model
+ * better (the workbench gives each role its own); when that provider has no
+ * key, no credit or is saturated, the rest of the chain answers instead, and
+ * `provider` in the result says who actually did. An unknown id is ignored.
+ */
+export async function generateWithProvider(preferred: string, system: string, messages: ChatMessage[], options: GenerateOptions = {}): Promise<GenerationResult | null> {
+    const all = providers();
+    const first = all.filter((provider) => provider.id === preferred);
+    return runChain([...first, ...all.filter((provider) => provider.id !== preferred)], system, messages, options, { images: [], allowLegacy: true });
+}
+
+// Only these understand images among the free models we use; Groq's gpt-oss and
+// the OpenRouter free list are text-only and would answer about an image they
+// never saw. No legacy fallback for the same reason.
+const VISION_PROVIDERS = ['gemini', 'mistral'];
+
+/** Asks a vision-capable provider about inline images. Null when none is configured or all fail. */
+export async function generateWithVision(system: string, prompt: string, images: InlineImage[], options: GenerateOptions = {}): Promise<GenerationResult | null> {
+    const all = providers();
+    const chain = VISION_PROVIDERS.flatMap((id) => all.filter((provider) => provider.id === id));
+    return runChain(chain, system, [{ role: 'user', content: prompt }], options, { images, allowLegacy: false });
+}
+
+async function runChain(
+    lista: Provider[],
+    system: string,
+    messages: ChatMessage[],
+    options: GenerateOptions,
+    extra: { images: InlineImage[]; allowLegacy: boolean },
+): Promise<GenerationResult | null> {
     for (const [indice, provider] of lista.entries()) {
         const remaining = lista.slice(indice + 1);
         if (!provider.apiKey) {
@@ -344,7 +408,7 @@ export async function generateWithFallback(system: string, messages: ChatMessage
             continue;
         }
         try {
-            const result = await requestCompletion(provider, system, messages, options);
+            const result = await requestCompletion(provider, system, messages, options, extra.images);
             console.info(`Respondio ${provider.id} con el modelo ${provider.model}.`);
             return result;
         } catch (error) {
@@ -374,7 +438,7 @@ export async function generateWithFallback(system: string, messages: ChatMessage
             console.info(`${provider.id} esta saturado; esperando ${espera.toFixed(1)}s y reintentando una vez.`);
             await new Promise((resolve) => setTimeout(resolve, espera * 1000 + 250));
             try {
-                const result = await requestCompletion(provider, system, messages, options);
+                const result = await requestCompletion(provider, system, messages, options, extra.images);
                 console.info(`Respondio ${provider.id} tras esperar el limite de tasa.`);
                 return result;
             } catch (retryError) {
@@ -383,6 +447,7 @@ export async function generateWithFallback(system: string, messages: ChatMessage
         }
     }
 
+    if (!extra.allowLegacy) return null;
     const legacy = await requestLegacy(system, messages, options);
     if (legacy) return legacy;
     console.warn('Ningun proveedor de lenguaje respondio; la funcion queda sin modelo.');

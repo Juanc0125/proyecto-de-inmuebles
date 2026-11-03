@@ -39,6 +39,10 @@ const PROTECTED_ROUTES: Array<{ method: string; pattern: RegExp }> = [
     // visitors from planting templates at all.
     { method: 'POST', pattern: /^\/api\/brand-templates$/ },
     { method: 'POST', pattern: /^\/api\/videos\/[^/]+\/brand-template$/ },
+    // The AI workbench and per-scene image regeneration spend the free-tier
+    // image quota and upload into the public scene-images bucket.
+    { method: 'POST', pattern: /^\/api\/videos\/[^/]+\/workbench$/ },
+    { method: 'POST', pattern: /^\/api\/videos\/[^/]+\/scenes\/[^/]+\/image$/ },
 ];
 
 function needsSession(method: string, pathname: string): boolean {

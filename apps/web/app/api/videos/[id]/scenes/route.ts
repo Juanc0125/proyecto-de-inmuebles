@@ -2,11 +2,11 @@ import { NextResponse } from 'next/server';
 import { getTemplate, type VideoTemplate } from '@shared-types/templates';
 import type { CharacterType, Scene, SceneAction, ScenePropType } from '@shared-types/video';
 import { MAX_SCENE_SECONDS, MIN_SCENE_SECONDS } from '@shared-types/video';
-import { generateWithFallback } from '../../../../../lib/ai-provider';
+import { generateWithProvider, providerIds } from '../../../../../lib/ai-provider';
 import { getVideo, replaceScenes } from '../../../../../lib/video-persistence';
 
 type RouteContext = { params: Promise<{ id: string }> };
-type SceneInput = Omit<Scene, 'id' | 'video_id'>;
+type SceneInput = Omit<Scene, 'id' | 'video_id' | 'image_url' | 'image_prompt'>;
 
 const CHARACTERS: CharacterType[] = ['broker', 'cliente', 'pareja', 'hombre', 'mujer', 'generico'];
 const ACTIONS: SceneAction[] = ['hablar', 'caminar', 'senalar', 'sentarse', 'pensar', 'telefono', 'mostrar_objeto'];
@@ -178,8 +178,17 @@ function buildSentenceFallback(script: string, targetDurationSeconds: number, te
     });
 }
 
+// Extra direction for a re-plan (the workbench passes the critic's notes).
+// Capped: it goes into the planner prompt and comes from outside.
+const MAX_GUIDANCE_CHARS = 1500;
+
 export async function POST(request: Request, context: RouteContext) {
     const { id } = await context.params;
+    // Optional body. The panel posts none; the workbench names the provider it
+    // prefers for the director role and may add guidance. Anything else is ignored.
+    const body = await request.json().catch(() => null) as { provider?: unknown; guidance?: unknown } | null;
+    const preferred = typeof body?.provider === 'string' && providerIds().includes(body.provider) ? body.provider : '';
+    const guidance = typeof body?.guidance === 'string' ? body.guidance.trim().slice(0, MAX_GUIDANCE_CHARS) : '';
 
     let video;
     try {
@@ -198,14 +207,22 @@ export async function POST(request: Request, context: RouteContext) {
         : 30;
 
     let scenes: SceneInput[] | null = null;
+    let provider: string | null = null;
+    let model: string | null = null;
     try {
-        const result = await generateWithFallback(
+        const extra = guidance ? `\n\nIndicaciones adicionales:\n${guidance}` : '';
+        const result = await generateWithProvider(
+            preferred,
             buildSystemPrompt(targetDurationSeconds, video.template),
-            [{ role: 'user', content: `Tema: ${video.topic}\n\nGuion completo:\n${video.script}` }],
+            [{ role: 'user', content: `Tema: ${video.topic}\n\nGuion completo:\n${video.script}${extra}` }],
             { maxTokens: 900 },
         );
         if (result?.text) {
             scenes = buildScenesFromAiJson(extractJson(result.text));
+            if (scenes?.length) {
+                provider = result.provider;
+                model = result.model ?? null;
+            }
         }
     } catch (error) {
         console.warn('Fallo al generar escenas con IA, se usara el respaldo por oraciones.', error);
@@ -217,7 +234,8 @@ export async function POST(request: Request, context: RouteContext) {
 
     try {
         const updated = await replaceScenes(id, scenes);
-        return NextResponse.json({ video: updated });
+        // provider/model say who planned it; null when the sentence fallback did.
+        return NextResponse.json({ video: updated, provider, model });
     } catch (error) {
         console.error('Error al guardar las escenas generadas', error);
         return NextResponse.json({ error: 'No se pudieron generar las escenas.' }, { status: 500 });

@@ -1,15 +1,21 @@
 import type { User } from '@supabase/supabase-js';
-import type { Branding, Platform, Scene, Video, VideoStatus } from '@shared-types/video';
-import { DEFAULT_BRANDING, RENDER_STALLED_ERROR, RENDER_STALL_TIMEOUT_MS, isRenderStalled } from '@shared-types/video';
+import type { Branding, Platform, Scene, Video, VideoStatus, VisualStyle, Workbench, WorkbenchStep } from '@shared-types/video';
+import {
+    DEFAULT_BRANDING, DEFAULT_VISUAL_STYLE, RENDER_STALLED_ERROR, RENDER_STALL_TIMEOUT_MS, VISUAL_STYLES, WORKBENCH_STALE_MS,
+    WORKBENCH_STALLED_ERROR, isRenderStalled, isWorkbenchStale,
+} from '@shared-types/video';
 import { getTemplate, type VideoTemplate } from '@shared-types/templates';
 import { EDIT_REVERTS_TO_DRAFT_FROM, canTransition, revertsToDraftOnEdit, transitions, videos as mockVideos } from '../app/api/videos/store';
 import { getSupabaseClient } from './supabaseClient';
-import { generateWithFallback } from './ai-provider';
+import { generateWithProvider, type GenerationResult } from './ai-provider';
 import { SOUNDS_MIGRATION_MISSING_ERROR, isMissingSchemaError, resolveSoundUrls } from './sounds';
 import { MAX_JOB_PAYLOAD_CHARS, encodeJobPayload, readCloudRunJobConfig, runCloudRunJob, type CloudRunJobConfig } from './cloud-run-job';
 
 type VideoRecord = Video & { scenes: Scene[] };
-type SceneInput = Omit<Scene, 'id' | 'video_id'>;
+// The image fields are optional on input: most writers (the planner, the
+// copilot, manual edits) know nothing about images, and a scene born without
+// one simply has none.
+export type SceneInput = Omit<Scene, 'id' | 'video_id' | 'image_url' | 'image_prompt'> & Partial<Pick<Scene, 'image_url' | 'image_prompt'>>;
 type DatabaseRow = Record<string, unknown>;
 // Derived instead of imported from supabase-js: the factory already pins the
 // generics, and naming them here again would need an `any`.
@@ -95,7 +101,62 @@ function toScene(scene: DatabaseRow): Scene {
         audio_url: nullableString(scene.audio_url),
         // Absent until the RF-010 migration is applied; null reads as "no effect".
         sound_effect_id: nullableString(scene.sound_effect_id),
+        // Absent until the workbench migration is applied; null means "no image".
+        image_url: nullableString(scene.image_url),
+        image_prompt: nullableString(scene.image_prompt),
     };
+}
+
+export function coerceVisualStyle(value: unknown): VisualStyle {
+    return typeof value === 'string' && (VISUAL_STYLES as readonly string[]).includes(value) ? value as VisualStyle : DEFAULT_VISUAL_STYLE;
+}
+
+const WORKBENCH_STATUSES: readonly Workbench['status'][] = ['idle', 'running', 'done', 'error'];
+const STEP_STATUSES: readonly WorkbenchStep['status'][] = ['running', 'done', 'error', 'skipped'];
+const STEP_ROLES: readonly WorkbenchStep['role'][] = ['guionista', 'director', 'cumplimiento', 'critico', 'director_arte', 'fotografo', 'revisor_visual', 'productor'];
+
+function toWorkbenchStep(value: unknown): WorkbenchStep | null {
+    if (!value || typeof value !== 'object') return null;
+    const step = value as Record<string, unknown>;
+    if (!(STEP_ROLES as readonly unknown[]).includes(step.role)) return null;
+    const sceneOrder = Number(step.scene_order);
+    return {
+        id: typeof step.id === 'string' ? step.id : crypto.randomUUID(),
+        role: step.role as WorkbenchStep['role'],
+        provider: typeof step.provider === 'string' ? step.provider : 'desconocido',
+        model: nullableString(step.model),
+        status: (STEP_STATUSES as readonly unknown[]).includes(step.status) ? step.status as WorkbenchStep['status'] : 'error',
+        round: Number.isFinite(Number(step.round)) ? Number(step.round) : 1,
+        summary: typeof step.summary === 'string' ? step.summary : '',
+        detail: nullableString(step.detail),
+        scene_order: step.scene_order === null || step.scene_order === undefined || !Number.isFinite(sceneOrder) ? null : sceneOrder,
+        started_at: typeof step.started_at === 'string' ? step.started_at : new Date(0).toISOString(),
+        finished_at: nullableString(step.finished_at),
+    };
+}
+
+// jsonb comes back as whatever was written, so it is read defensively. A run
+// still 'running' past WORKBENCH_STALE_MS died with its function: it is shown as
+// an error (derived, like a stalled render) so the panel offers a restart.
+export function toWorkbench(value: unknown): Workbench | null {
+    if (!value || typeof value !== 'object' || Array.isArray(value)) return null;
+    const source = value as Record<string, unknown>;
+    const workbench: Workbench = {
+        status: (WORKBENCH_STATUSES as readonly unknown[]).includes(source.status) ? source.status as Workbench['status'] : 'idle',
+        started_at: nullableString(source.started_at),
+        finished_at: nullableString(source.finished_at),
+        error: nullableString(source.error),
+        steps: Array.isArray(source.steps) ? source.steps.map(toWorkbenchStep).filter((step): step is WorkbenchStep => step !== null) : [],
+    };
+    if (isWorkbenchStale(workbench)) {
+        return {
+            ...workbench,
+            status: 'error',
+            error: WORKBENCH_STALLED_ERROR,
+            steps: workbench.steps.map((step) => (step.status === 'running' ? { ...step, status: 'error' } : step)),
+        };
+    }
+    return workbench;
 }
 
 // The worker that dies to the container memory limit never writes again, so
@@ -160,6 +221,8 @@ function toVideoRecord(video: DatabaseRow, scenes: DatabaseRow[] = []): VideoRec
         render_error: nullableString(video.render_error),
         render_started_at: nullableString(video.render_started_at),
         template: getTemplate(video.template).id,
+        visual_style: coerceVisualStyle(video.visual_style),
+        workbench: toWorkbench(video.workbench),
         scenes: (scenes ?? []).map(toScene).sort((a, b) => a.order - b.order),
     });
 }
@@ -286,12 +349,29 @@ function buildFallbackScript(topic: string): string {
 // receive text: `buildFallbackScript` produces the same handful of sentences
 // for every topic, and a batch that hides that behind "creado" is the bug
 // RF-024's third array exists to fix.
-export async function generateScript(topic: string, template: VideoTemplate): Promise<{ text: string; fromModel: boolean }> {
+export interface ScriptOptions {
+    // The workbench gives the writer role to a specific provider; everyone
+    // else gets the default chain order.
+    preferredProvider?: string;
+    // A revision instead of a first draft: the current script and what to fix.
+    revision?: { script: string; critique: string };
+}
+
+export async function generateScript(
+    topic: string,
+    template: VideoTemplate,
+    options: ScriptOptions = {},
+): Promise<{ text: string; fromModel: boolean; provider: string | null; model: string | null }> {
     // Telenovela structure on purpose: the client wants the "frutinovela" format
     // that works on TikTok - conflict, characters with a stake, a hook - rather
     // than the explainer tone this used to produce. The compliance limits are
     // unchanged; drama applies to the situation, never to the numbers.
-    const result = await generateWithFallback(
+    const userContent = options.revision
+        ? `Tema: ${topic}\n\nGuion actual:\n${options.revision.script}\n\nCritica a resolver:\n${options.revision.critique}\n\nReescribe la mini-telenovela resolviendo la critica y respetando los limites.`
+        : `Tema: ${topic}\nEscribe la mini-telenovela.`;
+    // An empty preference is the plain chain order, same as before.
+    const result: GenerationResult | null = await generateWithProvider(
+        options.preferredProvider ?? '',
         [
             'Eres guionista de mini-telenovelas verticales para redes, al estilo de las "frutinovelas" virales, aplicadas a marketing de credito hipotecario y vivienda.',
             'Escribe una historia corta con conflicto real entre personas: alguien quiere comprar o refinanciar, algo se interpone, y aparece quien lo aclara.',
@@ -303,14 +383,23 @@ export async function generateScript(topic: string, template: VideoTemplate): Pr
             // advice above. Empty for 'libre', which leaves the shape to the model.
             ...(getTemplate(template).guidance ? [`ESTRUCTURA OBLIGATORIA: ${getTemplate(template).guidance}`] : []),
         ].join('\n'),
-        [{ role: 'user', content: `Tema: ${topic}\nEscribe la mini-telenovela.` }],
+        [{ role: 'user', content: userContent }],
         { maxTokens: 500 },
     );
-    if (!result || !result.text.trim()) return { text: buildFallbackScript(topic), fromModel: false };
-    return { text: result.text.trim(), fromModel: true };
+    if (!result || !result.text.trim()) {
+        // A failed revision keeps the script it was revising, never the canned one.
+        return { text: options.revision?.script ?? buildFallbackScript(topic), fromModel: false, provider: null, model: null };
+    }
+    return { text: result.text.trim(), fromModel: true, provider: result.provider, model: result.model ?? null };
 }
 
-async function createInSupabase(client: SupabaseClient, topic: string, platform: Platform, targetDurationSeconds: number, script: string, template: VideoTemplate): Promise<VideoRecord> {
+// Written only when it is not the default, so creation keeps working against a
+// database the workbench migration has not reached (the default is the column default).
+function visualStyleColumn(visualStyle: VisualStyle): { visual_style?: VisualStyle } {
+    return visualStyle === DEFAULT_VISUAL_STYLE ? {} : { visual_style: visualStyle };
+}
+
+async function createInSupabase(client: SupabaseClient, topic: string, platform: Platform, targetDurationSeconds: number, script: string, template: VideoTemplate, visualStyle: VisualStyle): Promise<VideoRecord> {
     const userId = await ensureDemoUser();
     if (!userId) {
         throw new Error('No fue posible preparar el usuario demo para Supabase.');
@@ -325,6 +414,7 @@ async function createInSupabase(client: SupabaseClient, topic: string, platform:
         template,
         status: 'borrador',
         branding: DEFAULT_BRANDING,
+        ...visualStyleColumn(visualStyle),
     }).select().single();
 
     if (videoError || !videoData) {
@@ -334,7 +424,7 @@ async function createInSupabase(client: SupabaseClient, topic: string, platform:
     return toVideoRecord(videoData, []);
 }
 
-function buildLocalVideoRecord(topic: string, platform: Platform, targetDurationSeconds: number, script: string, template: VideoTemplate): VideoRecord {
+function buildLocalVideoRecord(topic: string, platform: Platform, targetDurationSeconds: number, script: string, template: VideoTemplate, visualStyle: VisualStyle): VideoRecord {
     const id = crypto.randomUUID();
     const video: Video = {
         id,
@@ -344,6 +434,8 @@ function buildLocalVideoRecord(topic: string, platform: Platform, targetDuration
         target_duration_seconds: targetDurationSeconds,
         script,
         template,
+        visual_style: visualStyle,
+        workbench: null,
         status: 'borrador',
         branding: { ...DEFAULT_BRANDING },
         video_url: null,
@@ -368,6 +460,9 @@ function sceneRows(videoId: string, scenes: SceneInput[]): DatabaseRow[] {
         duration_seconds: scene.duration_seconds,
         audio_url: scene.audio_url,
         ...soundEffectColumn(scene.sound_effect_id),
+        // Same reasoning as the sound effect: only written when present.
+        ...(scene.image_url ? { image_url: scene.image_url } : {}),
+        ...(scene.image_prompt ? { image_prompt: scene.image_prompt } : {}),
     }));
 }
 
@@ -412,19 +507,26 @@ export async function getVideo(id: string): Promise<VideoRecord | null> {
 // route, so it can inspect `fromModel` before handing the text over) skip a
 // second model call. Every existing caller omits it and keeps generating the
 // script here, unchanged.
-export async function createVideo(topic: string, platform: Platform, targetDurationSeconds: number, template: VideoTemplate = 'libre', preparedScript?: string): Promise<VideoRecord> {
+export async function createVideo(
+    topic: string,
+    platform: Platform,
+    targetDurationSeconds: number,
+    template: VideoTemplate = 'libre',
+    preparedScript?: string,
+    visualStyle: VisualStyle = DEFAULT_VISUAL_STYLE,
+): Promise<VideoRecord> {
     const script = preparedScript ?? (await generateScript(topic, template)).text;
 
     const client = getSupabaseClient({ serviceRole: true });
     if (client) {
         try {
-            return await createInSupabase(client, topic, platform, targetDurationSeconds, script, template);
+            return await createInSupabase(client, topic, platform, targetDurationSeconds, script, template, visualStyle);
         } catch (error) {
             fallBackOrThrow(error, 'Fallo al crear el video en Supabase');
         }
     }
 
-    const record = buildLocalVideoRecord(topic, platform, targetDurationSeconds, script, template);
+    const record = buildLocalVideoRecord(topic, platform, targetDurationSeconds, script, template, visualStyle);
     mockVideos.set(record.id, record);
     return record;
 }
@@ -497,13 +599,13 @@ export async function replaceScenes(id: string, scenes: SceneInput[]): Promise<V
 
     const video = mockVideos.get(id);
     if (!video) throw new VideoError(VIDEO_NOT_FOUND, 404);
-    const newScenes: Scene[] = scenes.map((scene) => ({ ...scene, id: crypto.randomUUID(), video_id: id }));
+    const newScenes: Scene[] = scenes.map((scene) => ({ image_url: null, image_prompt: null, ...scene, id: crypto.randomUUID(), video_id: id }));
     const updated = revertApprovalInMemory({ ...video, scenes: newScenes });
     mockVideos.set(id, updated);
     return updated;
 }
 
-const SCENE_FIELDS: readonly (keyof SceneInput)[] = ['order', 'character', 'action', 'prop', 'description', 'duration_seconds', 'audio_url', 'sound_effect_id'];
+const SCENE_FIELDS: readonly (keyof SceneInput)[] = ['order', 'character', 'action', 'prop', 'description', 'duration_seconds', 'audio_url', 'sound_effect_id', 'image_url', 'image_prompt'];
 
 // Only what actually differs from the stored scene. A regeneration that fell
 // back to the original content therefore writes nothing and costs nobody an
@@ -647,6 +749,8 @@ export async function duplicateForPlatform(id: string, platform: Platform): Prom
         duration_seconds: scene.duration_seconds,
         audio_url: scene.audio_url,
         sound_effect_id: scene.sound_effect_id,
+        image_url: scene.image_url,
+        image_prompt: scene.image_prompt,
     }));
 
     const client = getSupabaseClient({ serviceRole: true }) ?? getSupabaseClient();
@@ -662,6 +766,7 @@ export async function duplicateForPlatform(id: string, platform: Platform): Prom
                 status: 'borrador',
                 branding: original.branding,
                 source_video_id: original.id,
+                ...visualStyleColumn(original.visual_style),
             }).select().single();
             if (videoError || !videoData) throw videoError ?? new Error('No se pudo duplicar el video.');
 
@@ -700,11 +805,13 @@ export async function duplicateForPlatform(id: string, platform: Platform): Prom
         render_error: null,
         render_started_at: null,
         template: original.template,
+        visual_style: original.visual_style,
+        workbench: null,
         created_at: new Date().toISOString(),
     };
     const record: VideoRecord = {
         ...video,
-        scenes: sceneInputs.map((scene) => ({ ...scene, id: crypto.randomUUID(), video_id: newId })),
+        scenes: sceneInputs.map((scene) => ({ image_url: null, image_prompt: null, ...scene, id: crypto.randomUUID(), video_id: newId })),
     };
     mockVideos.set(newId, record);
     return record;
@@ -784,6 +891,94 @@ export async function deleteVideo(id: string): Promise<void> {
     }
 
     mockVideos.delete(id);
+}
+
+// ---- Visual style and AI workbench ---------------------------------------
+
+// A different look is a different ad, so a real change reverts approval like
+// any other content edit; re-picking the current style writes nothing.
+export async function updateVisualStyle(id: string, visualStyle: VisualStyle): Promise<VideoRecord> {
+    const current = await findVideoRecord(id);
+    if (!current) throw new VideoError(VIDEO_NOT_FOUND, 404);
+    if (current.visual_style === visualStyle) return current;
+
+    const client = getSupabaseClient({ serviceRole: true }) ?? getSupabaseClient();
+    if (client) {
+        try {
+            await revertApprovalInSupabase(client, id);
+            const { data: updated, error } = await client.from('videos').update({ visual_style: visualStyle }).eq('id', id).select('*').maybeSingle();
+            if (error) throw error;
+            if (!updated) throw new VideoError(VIDEO_NOT_FOUND, 404);
+            const { data: scenesData } = await client.from('scenes').select('*').eq('video_id', id);
+            return toVideoRecord(updated, scenesData ?? []);
+        } catch (error) {
+            fallBackOrThrow(error, 'Fallo al actualizar el estilo visual en Supabase');
+        }
+    }
+
+    const video = mockVideos.get(id);
+    if (!video) throw new VideoError(VIDEO_NOT_FOUND, 404);
+    const updated = revertApprovalInMemory({ ...video, visual_style: visualStyle });
+    mockVideos.set(id, updated);
+    return updated;
+}
+
+export const WORKBENCH_ALREADY_RUNNING = 'La mesa de trabajo ya está trabajando en este video.';
+
+// Takes the workbench slot in one conditional write, like claimRender: two
+// clicks cannot start two runs. A run older than WORKBENCH_STALE_MS is taken
+// over. Applies the RF-012 revert once, because the run is about to edit content.
+export async function claimWorkbench(id: string, workbench: Workbench): Promise<VideoRecord> {
+    const client = getSupabaseClient({ serviceRole: true }) ?? getSupabaseClient();
+    if (client) {
+        try {
+            const { data: existing, error: readError } = await client.from('videos').select('id').eq('id', id).maybeSingle();
+            if (readError) throw readError;
+            if (!existing) throw new VideoError(VIDEO_NOT_FOUND, 404);
+
+            const staleCutoff = new Date(Date.now() - WORKBENCH_STALE_MS).toISOString();
+            const { data: claimed, error } = await client
+                .from('videos')
+                .update({ workbench })
+                .eq('id', id)
+                .or(`workbench.is.null,workbench->>status.neq.running,workbench->>started_at.lt."${staleCutoff}"`)
+                .select('*')
+                .maybeSingle();
+            if (error) throw error;
+            if (!claimed) throw new VideoError(WORKBENCH_ALREADY_RUNNING, 409);
+
+            await revertApprovalInSupabase(client, id);
+            return await readVideoFromSupabase(client, id);
+        } catch (error) {
+            fallBackOrThrow(error, 'Fallo al iniciar la mesa de trabajo en Supabase');
+        }
+    }
+
+    const video = mockVideos.get(id);
+    if (!video) throw new VideoError(VIDEO_NOT_FOUND, 404);
+    const current = toWorkbench(video.workbench);
+    if (current?.status === 'running') throw new VideoError(WORKBENCH_ALREADY_RUNNING, 409);
+    const updated = revertApprovalInMemory({ ...video, workbench });
+    mockVideos.set(id, updated);
+    return updated;
+}
+
+// Progress writes during a run. Not a content edit (the steps are a log), so no
+// approval revert here; the content writes the run makes revert on their own.
+export async function saveWorkbench(id: string, workbench: Workbench): Promise<void> {
+    const client = getSupabaseClient({ serviceRole: true }) ?? getSupabaseClient();
+    if (client) {
+        try {
+            const { error } = await client.from('videos').update({ workbench }).eq('id', id);
+            if (error) throw error;
+            return;
+        } catch (error) {
+            fallBackOrThrow(error, 'Fallo al guardar el progreso de la mesa de trabajo en Supabase');
+        }
+    }
+    const video = mockVideos.get(id);
+    if (!video) throw new VideoError(VIDEO_NOT_FOUND, 404);
+    mockVideos.set(id, { ...video, workbench });
 }
 
 type RenderState = Pick<Video, 'render_status' | 'render_progress' | 'render_error' | 'render_started_at'>;
@@ -891,6 +1086,9 @@ export async function renderVideo(id: string): Promise<VideoRecord> {
         id,
         platform: video.platform,
         branding: video.branding,
+        // 'realista' asks the worker to use image_url as the scene's picture;
+        // a scene without one is drawn as before.
+        visual_style: video.visual_style,
         scenes: sortedScenes.map((scene) => ({
             order: scene.order,
             character: scene.character,
@@ -900,6 +1098,7 @@ export async function renderVideo(id: string): Promise<VideoRecord> {
             duration_seconds: scene.duration_seconds,
             audio_url: scene.audio_url,
             sound_effect_url: urlFor(scene.sound_effect_id),
+            image_url: scene.image_url,
         })),
     };
 

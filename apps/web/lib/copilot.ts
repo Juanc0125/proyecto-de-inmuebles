@@ -5,13 +5,14 @@
 
 import { getTemplate, VIDEO_TEMPLATES } from '@shared-types/templates';
 import type { CharacterType, Platform, Scene, SceneAction, ScenePropType } from '@shared-types/video';
-import { MAX_SCENE_SECONDS, MAX_TARGET_DURATION_SECONDS, MIN_SCENE_SECONDS } from '@shared-types/video';
+import { MAX_SCENE_SECONDS, MAX_TARGET_DURATION_SECONDS, MIN_SCENE_SECONDS, VISUAL_STYLES } from '@shared-types/video';
 import { POST as applyBrandTemplateRoute } from '../app/api/videos/[id]/brand-template/route';
 import { PATCH as patchSceneRoute } from '../app/api/videos/[id]/scenes/[sceneId]/route';
 import { POST as planScenesRoute } from '../app/api/videos/[id]/scenes/route';
 import { POST as duplicateRoute } from '../app/api/videos/[id]/duplicate/route';
 import { POST as ttsRoute } from '../app/api/videos/[id]/tts/route';
 import { POST as batchRoute } from '../app/api/videos/batch/route';
+import { POST as workbenchRoute } from '../app/api/videos/[id]/workbench/route';
 import type { VideoRecord } from '../app/api/videos/store';
 import { ACTION_OPTIONS, CHARACTER_OPTIONS, PLATFORM_LABELS, PLATFORM_OPTIONS, PROP_OPTIONS, STATUS_LABELS } from '../app/components/constants';
 import { generateWithFallback, isCopilotConfigured, type ChatMessage, type ToolCall, type ToolSchema } from './ai-provider';
@@ -19,7 +20,7 @@ import { FORBIDDEN, interpret, type AssistantAction, type AssistantContext, type
 import { listBrandTemplates } from './brand-templates';
 import { SIGN_IN_REQUIRED_ERROR } from './sign-in-required';
 import { listSounds } from './sounds';
-import { createVideo, deleteScene, deleteVideo, getVideo, listVideos, updateBranding, updateScene, updateScript } from './video-persistence';
+import { coerceVisualStyle, createVideo, deleteScene, deleteVideo, getVideo, listVideos, updateBranding, updateScene, updateScript } from './video-persistence';
 
 export interface CopilotTurn {
     role: 'user' | 'assistant';
@@ -145,6 +146,7 @@ const TOOLS: ToolSchema[] = [
                 duracion_segundos: { type: 'number', description: `${MIN_DURATION}-${MAX_DURATION}, por defecto ${DEFAULT_DURATION}.` },
                 plataforma: { type: 'string', enum: PLATFORMS },
                 plantilla: { type: 'string', enum: TEMPLATE_IDS, description: 'Estructura narrativa.' },
+                estilo_visual: { type: 'string', enum: [...VISUAL_STYLES], description: 'ilustracion (muñecos, por defecto) o realista (fotos por escena).' },
             },
             required: ['tema'],
             additionalProperties: false,
@@ -161,6 +163,7 @@ const TOOLS: ToolSchema[] = [
                 duracion_segundos: { type: 'number', description: `${MIN_DURATION}-${MAX_DURATION}, por defecto ${DEFAULT_DURATION}.` },
                 plantilla: { type: 'string', enum: TEMPLATE_IDS },
                 con_escenas: { type: 'boolean', description: 'Generar tambien las escenas de cada uno.' },
+                estilo_visual: { type: 'string', enum: [...VISUAL_STYLES] },
             },
             required: ['temas'],
             additionalProperties: false,
@@ -314,6 +317,17 @@ const TOOLS: ToolSchema[] = [
         },
     },
     {
+        name: 'usar_mesa_de_trabajo',
+        description: 'Pone a varias IA a trabajar en el video abierto: guion, escenas, revision de cumplimiento, critica y, si es realista, fotos por escena. Corre en segundo plano unos minutos y deja un borrador; no aprueba nada.',
+        parameters: {
+            type: 'object',
+            properties: {
+                reescribir_guion: { type: 'boolean', description: 'Reescribir el guion aunque ya exista.' },
+            },
+            additionalProperties: false,
+        },
+    },
+    {
         name: 'descargar_video',
         description: 'Entrega el MP4 ya generado. No genera nada.',
         parameters: { type: 'object', properties: {}, additionalProperties: false },
@@ -454,7 +468,14 @@ async function generarGuion(args: ToolArgs, state: CopilotState): Promise<string
         return 'Falta el tema del video: sin tema no hay guion que escribir.';
     }
 
-    const video = await createVideo(tema, coercePlatform(args.plataforma), coerceDuration(args.duracion_segundos), getTemplate(args.plantilla).id);
+    const video = await createVideo(
+        tema,
+        coercePlatform(args.plataforma),
+        coerceDuration(args.duracion_segundos),
+        getTemplate(args.plantilla).id,
+        undefined,
+        coerceVisualStyle(args.estilo_visual),
+    );
     state.videoId = video.id;
     state.touched = video;
     state.created = true;
@@ -481,6 +502,7 @@ async function generarVarios(args: ToolArgs, state: CopilotState): Promise<strin
             target_duration_seconds: coerceDuration(args.duracion_segundos),
             template: getTemplate(args.plantilla).id,
             con_escenas: args.con_escenas === true,
+            visual_style: coerceVisualStyle(args.estilo_visual),
         });
     } catch (error) {
         return `No se pudo generar el lote: ${error instanceof Error ? error.message : 'error desconocido'}.`;
@@ -895,6 +917,20 @@ async function duplicarVideo(args: ToolArgs, state: CopilotState): Promise<strin
     return `Copia creada para ${PLATFORM_LABELS[platform]} con el mismo guion, escenas y marca. Arranca como borrador y necesita su propia aprobacion.`;
 }
 
+// The workbench route claims the slot and schedules the run with after(); it
+// is called in process like the other handlers, so the 409 for a run already
+// going and the RF-012 revert live in one place. The run outlives this turn.
+async function usarMesaDeTrabajo(args: ToolArgs, state: CopilotState): Promise<string> {
+    const open = await requireVideo(state);
+    if (!open.ok) return open.message;
+
+    const video = await callRoute(workbenchRoute, { id: open.value.id }, jsonInit('POST', { rewrite_script: args.reescribir_guion === true }));
+    state.touched = video;
+    state.acciones.push('Mesa de trabajo iniciada');
+    const fotos = video.visual_style === 'realista' ? ' y las fotos de cada escena' : '';
+    return `La mesa de trabajo arranco: guion, escenas, revision de cumplimiento, critica${fotos}. Tarda unos minutos y el avance se ve en el panel. Al final queda en borrador para que una persona lo revise.`;
+}
+
 async function descargarVideo(_args: ToolArgs, state: CopilotState): Promise<string> {
     const open = await requireVideo(state);
     if (!open.ok) return open.message;
@@ -923,6 +959,7 @@ const EXECUTORS: Record<string, ToolExecutor> = {
     generar_voz: generarVoz,
     duplicar_video: duplicarVideo,
     descargar_video: descargarVideo,
+    usar_mesa_de_trabajo: usarMesaDeTrabajo,
 };
 
 // A failed tool is information for the model, not a dead turn: it gets the
@@ -1093,6 +1130,7 @@ async function buildPromptContext(videoId: string | null): Promise<string> {
         `Video abierto: "${open.topic}"`,
         PLATFORM_LABELS[open.platform],
         `plantilla ${getTemplate(open.template).label}`,
+        `estilo ${open.visual_style}`,
         `objetivo ${open.target_duration_seconds}s`,
         `estado ${STATUS_LABELS[open.status].toLowerCase()}`,
         `render ${open.render_status}${open.video_url ? ' (MP4 listo)' : ''}`,

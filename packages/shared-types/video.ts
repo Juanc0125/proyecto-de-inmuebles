@@ -63,6 +63,54 @@ export function isRenderStalled(renderStatus: unknown, renderStartedAt: unknown,
     return now - startedAt > RENDER_STALL_TIMEOUT_MS;
 }
 
+// How the scenes are drawn. 'ilustracion' is the stick-figure canvas the worker
+// always had; 'realista' uses one photorealistic image per scene, produced by
+// the AI workbench (scenes[].image_url).
+export type VisualStyle = 'ilustracion' | 'realista';
+export const VISUAL_STYLES: readonly VisualStyle[] = ['ilustracion', 'realista'];
+export const DEFAULT_VISUAL_STYLE: VisualStyle = 'ilustracion';
+
+export type WorkbenchStatus = 'idle' | 'running' | 'done' | 'error';
+export type WorkbenchRole = 'guionista' | 'director' | 'cumplimiento' | 'critico' | 'director_arte' | 'fotografo' | 'revisor_visual' | 'productor';
+export type WorkbenchStepStatus = 'running' | 'done' | 'error' | 'skipped';
+
+export interface WorkbenchStep {
+    id: string;
+    role: WorkbenchRole;
+    provider: string;          // the provider that actually answered, not the preferred one
+    model: string | null;
+    status: WorkbenchStepStatus;
+    round: number;
+    summary: string;           // short Spanish line shown in the UI
+    detail: string | null;     // longer Spanish text, e.g. the critique
+    scene_order: number | null;
+    started_at: string;
+    finished_at: string | null;
+}
+
+// The AI workbench ("mesa de trabajo"): several free providers taking turns on
+// one video. Persisted on videos.workbench after every step so the UI can poll.
+export interface Workbench {
+    status: WorkbenchStatus;
+    started_at: string | null;
+    finished_at: string | null;
+    error: string | null;
+    steps: WorkbenchStep[];
+}
+
+// A run that has not finished in this long died with its serverless function
+// (the route's maxDuration is 5 minutes) and may be started again. Shared so the
+// server that allows the restart and the panel that offers it agree.
+export const WORKBENCH_STALE_MS = 10 * 60 * 1000;
+export const WORKBENCH_STALLED_ERROR = 'La mesa de trabajo se interrumpió antes de terminar. Puedes volver a iniciarla.';
+
+export function isWorkbenchStale(workbench: Workbench | null | undefined, now: number = Date.now()): boolean {
+    if (!workbench || workbench.status !== 'running') return false;
+    const startedAt = workbench.started_at ? Date.parse(workbench.started_at) : Number.NaN;
+    if (Number.isNaN(startedAt)) return true;
+    return now - startedAt > WORKBENCH_STALE_MS;
+}
+
 export interface Video {
     id: string;
     user_id: string;
@@ -80,6 +128,8 @@ export interface Video {
     render_error: string | null;
     render_started_at: string | null; // lets the UI spot a job whose worker died
     template: VideoTemplate; // RF-019: narrative shape the scenes follow
+    visual_style: VisualStyle;
+    workbench: Workbench | null; // last AI workbench run, null if never run
     /**
      * @deprecated Background music was removed from the product. The column
      * still exists in `videos` (no destructive migration) but the server never
@@ -100,4 +150,6 @@ export interface Scene {
     duration_seconds: number;
     audio_url: string | null;
     sound_effect_id: string | null; // RF-010: optional effect played at the start of the scene
+    image_url: string | null;     // photorealistic still for 'realista' videos (public URL)
+    image_prompt: string | null;  // the English prompt that produced it, kept for regeneration
 }

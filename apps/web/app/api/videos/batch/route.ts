@@ -3,7 +3,7 @@ import { getTemplate } from '@shared-types/templates';
 import type { Platform } from '@shared-types/video';
 import { MAX_TARGET_DURATION_SECONDS } from '@shared-types/video';
 import { POST as planScenesRoute } from '../[id]/scenes/route';
-import { createVideo, generateScript } from '../../../../lib/video-persistence';
+import { coerceVisualStyle, createVideo, generateScript } from '../../../../lib/video-persistence';
 import type { VideoRecord } from '../store';
 
 const PLATFORMS: Platform[] = ['reels', 'tiktok', 'shorts'];
@@ -86,6 +86,7 @@ export async function POST(request: Request) {
         target_duration_seconds?: unknown;
         template?: unknown;
         con_escenas?: unknown;
+        visual_style?: unknown;
     } | null;
 
     const rawTopics = Array.isArray(body?.temas) ? body.temas : null;
@@ -116,6 +117,7 @@ export async function POST(request: Request) {
     // batch over one field, same as POST /api/videos.
     const template = getTemplate(body?.template).id;
     const conEscenas = body?.con_escenas === true;
+    const visualStyle = coerceVisualStyle(body?.visual_style);
 
     // Blank and repeated topics are not a mistake worth reporting back, so they
     // are dropped quietly instead of becoming an entry in `fallidos`.
@@ -145,7 +147,7 @@ export async function POST(request: Request) {
             // whether the model actually answered before deciding if the topic
             // needs a warning - createVideo just takes the text and saves it.
             const { text: script, fromModel } = await generateScript(tema, template);
-            const video = await createVideo(tema, platform, targetDurationSeconds, template, script);
+            const video = await createVideo(tema, platform, targetDurationSeconds, template, script, visualStyle);
 
             if (!conEscenas) {
                 creados.push(video);

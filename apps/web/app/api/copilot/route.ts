@@ -2,6 +2,10 @@ import { NextResponse } from 'next/server';
 import { runCopilot, type CopilotTurn } from '../../../lib/copilot';
 import { requireSession } from '../../../lib/sign-in-required';
 
+// usar_mesa_de_trabajo schedules the workbench with after(), which lives only
+// as long as this route may; the workbench route itself has the same limit.
+export const maxDuration = 300;
+
 // The browser sends the whole visible conversation and the id of the video on
 // screen; everything else the copilot needs it reads from the database itself,
 // so the client cannot lie about the state of a video.
