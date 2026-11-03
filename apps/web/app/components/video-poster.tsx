@@ -80,6 +80,10 @@ export default function VideoPoster({ video, sceneIndex = 0, className = '', hov
     const character: CharacterType = scene?.character ?? 'broker';
     const subtitle = scene?.description ?? video.topic;
     const rendering = video.render_status === 'procesando';
+    // A realistic video shows the scene's AI photo instead of the drawn
+    // figure. Hidden when the operator switched back to the illustrated look:
+    // the photo stays on the scene, but it is no longer what will be rendered.
+    const photo = video.visual_style !== 'ilustracion' ? scene?.image_url ?? null : null;
 
     function play() {
         const element = videoRef.current;
@@ -107,10 +111,14 @@ export default function VideoPoster({ video, sceneIndex = 0, className = '', hov
         >
             {/* Depth: a soft light from the top and a vignette at the bottom
                 where the subtitle sits. */}
-            <div className="absolute inset-0 bg-[radial-gradient(120%_70%_at_50%_0%,rgba(255,255,255,0.16),transparent_60%)]" />
+            {photo && (
+                // eslint-disable-next-line @next/next/no-img-element -- generated image in Supabase Storage, not a static asset.
+                <img src={photo} alt="" loading="lazy" decoding="async" className="absolute inset-0 h-full w-full object-cover" />
+            )}
+            {!photo && <div className="absolute inset-0 bg-[radial-gradient(120%_70%_at_50%_0%,rgba(255,255,255,0.16),transparent_60%)]" />}
             <div className="absolute inset-x-0 bottom-0 h-1/2 bg-gradient-to-t from-black/45 to-transparent" />
 
-            <svg viewBox="0 0 100 120" className="absolute inset-x-0 top-[8%] mx-auto w-[86%]">
+            {!photo && <svg viewBox="0 0 100 120" className="absolute inset-x-0 top-[8%] mx-auto w-[86%]">
                 {character === 'pareja' ? (
                     <>
                         <Figure x={30} color={branding.secondary_color} />
@@ -121,7 +129,7 @@ export default function VideoPoster({ video, sceneIndex = 0, className = '', hov
                 )}
                 {scene && <Prop prop={scene.prop} color={branding.secondary_color} />}
                 <path d="M14 92h72" stroke={branding.secondary_color} strokeOpacity="0.35" strokeWidth="1.5" />
-            </svg>
+            </svg>}
 
             {branding.logo_url && (
                 // eslint-disable-next-line @next/next/no-img-element -- Supabase Storage URL, not a static asset.

@@ -49,17 +49,28 @@ export default function Storyboard({ video, scenes, activeId, onPick }: Storyboa
             <ol className="thin-scroll -mx-1 flex snap-x gap-3 overflow-x-auto px-1 pb-2" aria-label="Escenas en orden">
                 {scenes.map((scene, index) => {
                     const active = scene.id === activeId;
+                    const photo = video.visual_style !== 'ilustracion' && Boolean(scene.image_url);
                     return (
                         <li key={scene.id} className="w-[6.75rem] shrink-0 snap-start sm:w-[7.5rem]">
                             <button
                                 type="button"
                                 onClick={() => onPick(scene.id)}
                                 aria-label={`Ir a la escena ${index + 1}: ${scene.description}`}
+                                // The prompt behind the photo, on hover; the
+                                // scene editor below shows it in full.
+                                title={photo && scene.image_prompt ? `Imagen IA: ${scene.image_prompt}` : undefined}
                                 className={`group block w-full rounded-lg p-1 text-left transition-colors ${
                                     active ? 'bg-brand-500/15 ring-1 ring-brand-400/50' : 'hover:bg-white/[0.04]'
                                 }`}
                             >
-                                <VideoPoster video={video} sceneIndex={index} className={`w-full ${active ? 'hud-frame' : ''}`} />
+                                <span className="relative block">
+                                    <VideoPoster video={video} sceneIndex={index} className={`w-full ${active ? 'hud-frame' : ''}`} />
+                                    {photo && (
+                                        <span className="absolute left-1 top-1 rounded bg-ink-950/75 px-1 py-px font-mono text-[0.5625rem] font-semibold uppercase tracking-wider text-brand-200 ring-1 ring-inset ring-brand-400/30">
+                                            IA
+                                        </span>
+                                    )}
+                                </span>
                                 <span className="mt-1.5 flex items-center justify-between gap-1 font-mono text-[0.6875rem] tabular-nums">
                                     <span className={active ? 'text-brand-200' : 'text-slate-300'}>E{String(index + 1).padStart(2, '0')}</span>
                                     <span className="text-slate-400">{scene.duration_seconds}s</span>

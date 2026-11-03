@@ -8,6 +8,7 @@ import StatusBadge from './status-badge';
 import { Icon, type SectionIconName } from './section-icon';
 import VideoPoster from './video-poster';
 import { PLATFORM_SHORT, relativeTime } from './studio-utils';
+import { ROLE_LABEL, currentStep, providerBadge } from './workbench-meta';
 
 interface DashboardViewProps {
     videos: VideoRecord[];
@@ -21,6 +22,7 @@ interface DashboardViewProps {
     onNewBatch: () => void;
     onOpenCopilot: () => void;
     onGoToBoard: () => void;
+    onUseWorkbench: () => void;
 }
 
 const WEEK_MS = 7 * 24 * 60 * 60 * 1000;
@@ -66,8 +68,9 @@ function attentionItems(videos: VideoRecord[], now: number): AttentionItem[] {
 }
 
 export default function DashboardView({
-    videos, loading, loadError, onRetry, now, onOpen, onNewVideo, onNewBatch, onOpenCopilot, onGoToBoard,
+    videos, loading, loadError, onRetry, now, onOpen, onNewVideo, onNewBatch, onOpenCopilot, onGoToBoard, onUseWorkbench,
 }: DashboardViewProps) {
+    const atTable = videos.filter((v) => v.workbench?.status === 'running');
     const byStatus = Object.fromEntries(STATUS_ORDER.map((status) => [status, videos.filter((v) => v.status === status).length])) as Record<VideoStatus, number>;
     const rendering = videos.filter((v) => v.render_status === 'procesando');
     const createdThisWeek = now > 0 ? videos.filter((v) => now - Date.parse(v.created_at) < WEEK_MS).length : 0;
@@ -100,12 +103,54 @@ export default function DashboardView({
                         <Icon name="layers" />
                         Crear lote
                     </button>
+                    <button type="button" onClick={onUseWorkbench} className="btn btn-secondary">
+                        <Icon name="team" />
+                        Usar mesa de trabajo
+                    </button>
                     <button type="button" onClick={onOpenCopilot} className="btn btn-secondary">
                         <Icon name="bot" />
                         Copiloto
                     </button>
                 </div>
             </header>
+
+            {/* Compact live strip: which videos the AI workbench is on now. */}
+            <section aria-labelledby="mesa-activity-title" className="tile flex flex-wrap items-center gap-x-4 gap-y-2 px-3.5 py-2.5">
+                <h2 id="mesa-activity-title" className="flex items-center gap-2 text-xs font-medium text-slate-200">
+                    <span className="relative flex h-2 w-2" aria-hidden="true">
+                        {atTable.length > 0 && <span className="absolute inline-flex h-full w-full animate-ping rounded-full bg-brand-300 opacity-75" />}
+                        <span className={`relative inline-flex h-2 w-2 rounded-full ${atTable.length > 0 ? 'bg-brand-300' : 'bg-slate-500'}`} />
+                    </span>
+                    Mesa de trabajo
+                </h2>
+                {loading ? (
+                    <div className="skeleton h-4 w-40" aria-hidden="true" />
+                ) : atTable.length === 0 ? (
+                    <p className="text-xs text-slate-400">Libre: ningún video en revisión ahora.</p>
+                ) : (
+                    <ul className="flex min-w-0 flex-1 flex-wrap gap-2" aria-live="polite">
+                        {atTable.map((video) => {
+                            const step = currentStep(video.workbench);
+                            return (
+                                <li key={video.id} className="min-w-0 max-w-full">
+                                    <button
+                                        type="button"
+                                        onClick={() => onOpen(video.id)}
+                                        className="flex min-w-0 max-w-full items-center gap-2 rounded-lg bg-brand-500/10 px-2.5 py-1 text-left text-xs ring-1 ring-inset ring-brand-400/25 hover:bg-brand-500/15"
+                                    >
+                                        <span className="truncate text-slate-100">{video.topic}</span>
+                                        {step && (
+                                            <span className="shrink-0 font-mono text-[0.625rem] text-brand-200">
+                                                {ROLE_LABEL[step.role]} · {providerBadge(step.provider, step.model)}
+                                            </span>
+                                        )}
+                                    </button>
+                                </li>
+                            );
+                        })}
+                    </ul>
+                )}
+            </section>
 
             {loadError && !loading && (
                 <div role="alert" className="alert alert-error flex flex-wrap items-center justify-between gap-2">

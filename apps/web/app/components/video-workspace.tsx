@@ -3,7 +3,8 @@
 import { useState, type Dispatch, type SetStateAction } from 'react';
 import type { SoundAsset } from '@shared-types/sounds';
 import type { BrandTemplate } from '@shared-types/templates';
-import type { VideoRecord } from './api';
+import type { VisualStyle } from '@shared-types/video';
+import { updateVisualStyle, type VideoRecord } from './api';
 import { PLATFORM_LABELS, TEMPLATE_TEXT } from './constants';
 import StatusBadge from './status-badge';
 import ScriptPanel from './script-panel';
@@ -15,6 +16,8 @@ import ExportPanel from './export-panel';
 import VideoPoster from './video-poster';
 import { Icon, type SectionIconName } from './section-icon';
 import { formatClock, scenesSeconds } from './studio-utils';
+import VisualStylePicker from './visual-style-picker';
+import WorkbenchPanel, { type WorkbenchStartRequest } from './workbench-panel';
 
 // The sound list and the brand templates are owned by the shell now (the
 // Marca and Sonidos sections show the same lists), which keeps the reason
@@ -38,6 +41,8 @@ interface VideoWorkspaceProps {
     libraries: SharedLibraries;
     onUpdated: (video: VideoRecord) => void;
     onDuplicated: (video: VideoRecord) => void;
+    workbenchRequest?: WorkbenchStartRequest;
+    onWorkbenchRequestHandled?: () => void;
 }
 
 // Content edits on a video already sent to approval (or approved, or
@@ -46,6 +51,7 @@ interface VideoWorkspaceProps {
 const BACK_TO_DRAFT_NOTICE = 'El video volvió a borrador: hay que aprobarlo de nuevo.';
 
 const JUMPS: { id: string; label: string; icon: SectionIconName }[] = [
+    { id: 'mesa', label: 'Mesa de trabajo', icon: 'team' },
     { id: 'guion', label: 'Guion', icon: 'script' },
     { id: 'escenas', label: 'Storyboard', icon: 'scenes' },
     { id: 'sonido', label: 'Efectos', icon: 'sound' },
@@ -62,9 +68,15 @@ function jumpTo(id: string) {
     target.focus({ preventScroll: true });
 }
 
-export default function VideoWorkspace({ video, libraries, onUpdated, onDuplicated }: VideoWorkspaceProps) {
+export default function VideoWorkspace({
+    video, libraries, onUpdated, onDuplicated, workbenchRequest, onWorkbenchRequestHandled,
+}: VideoWorkspaceProps) {
     // Tied to the video it is about, so switching videos hides it.
     const [notice, setNotice] = useState<{ videoId: string; text: string } | null>(null);
+    const [styleSaving, setStyleSaving] = useState(false);
+    const [styleError, setStyleError] = useState<{ videoId: string; text: string } | null>(null);
+    const visualStyle: VisualStyle = video.visual_style ?? 'ilustracion';
+    const workbenchRunning = video.workbench?.status === 'running';
 
     // Read-only progress strip: where this video sits in guion -> escenas ->
     // aprobacion -> video. Derived from the record; it has no controls, so it
@@ -89,6 +101,19 @@ export default function VideoWorkspace({ video, libraries, onUpdated, onDuplicat
         onUpdated(updated);
     }
     // Once it is back in approval there is nothing left to warn about.
+    async function handleStyleChange(next: VisualStyle) {
+        setStyleSaving(true);
+        setStyleError(null);
+        try {
+            handleEdited(await updateVisualStyle(video.id, next));
+        } catch (err) {
+            setStyleError({ videoId: video.id, text: err instanceof Error ? err.message : 'No se pudo cambiar el estilo visual.' });
+        } finally {
+            setStyleSaving(false);
+        }
+    }
+    const visibleStyleError = styleError && styleError.videoId === video.id ? styleError.text : '';
+
     const visibleNotice = notice && notice.videoId === video.id && video.status === 'borrador' ? notice.text : '';
     const seconds = scenesSeconds(video);
 
@@ -112,6 +137,18 @@ export default function VideoWorkspace({ video, libraries, onUpdated, onDuplicat
                                     {video.scenes.length} {video.scenes.length === 1 ? 'escena' : 'escenas'}
                                 </span>
                                 <span className="chip">Plantilla: {TEMPLATE_TEXT[video.template]?.label ?? video.template}</span>
+                            </div>
+                            {/* Changing the look while the workbench runs would
+                                race its art direction and photos. */}
+                            <div className="mt-4 max-w-md">
+                                <VisualStylePicker
+                                    idPrefix={`ws-style-${video.id}`}
+                                    value={visualStyle}
+                                    onChange={(next) => { void handleStyleChange(next); }}
+                                    disabled={styleSaving || workbenchRunning}
+                                />
+                                {styleSaving && <p className="hint mt-1.5" aria-live="polite">Guardando estilo…</p>}
+                                {visibleStyleError && <p role="alert" className="alert alert-error mt-2 text-xs">{visibleStyleError}</p>}
                             </div>
                         </div>
                         <StatusBadge status={video.status} />
@@ -180,6 +217,15 @@ export default function VideoWorkspace({ video, libraries, onUpdated, onDuplicat
                 </div>
             )}
 
+            <div id="ws-mesa" tabIndex={-1} className="scroll-mt-32 outline-none">
+                <WorkbenchPanel
+                    video={video}
+                    onUpdated={onUpdated}
+                    startRequest={workbenchRequest}
+                    onStartRequestHandled={onWorkbenchRequestHandled}
+                />
+            </div>
+
             <div className="grid grid-cols-1 items-start gap-5 md:grid-cols-[minmax(0,1fr)_13rem]">
                 <div id="ws-guion" tabIndex={-1} className="min-w-0 scroll-mt-32 outline-none">
                     {/* The script panel seeds its textarea from the record when
@@ -230,13 +276,14 @@ export default function VideoWorkspace({ video, libraries, onUpdated, onDuplicat
 // (brand colours, first scene), labelled as such so nobody mistakes it for
 // the render.
 function PreviewMonitor({ video }: { video: VideoRecord }) {
+    const hasPhoto = video.visual_style !== 'ilustracion' && video.scenes.some((scene) => Boolean(scene.image_url));
     return (
         <aside className="panel p-3 md:sticky md:top-[7.5rem]" aria-label="Vista previa">
             <div className="mb-2 flex items-center justify-between gap-2 px-1">
                 <p className="eyebrow">Monitor</p>
                 <span className={`flex items-center gap-1.5 font-mono text-[0.625rem] uppercase tracking-wider ${video.video_url ? 'text-emerald-300' : 'text-slate-500'}`}>
                     <span className={`h-1.5 w-1.5 rounded-full ${video.video_url ? 'bg-emerald-400' : 'bg-slate-500'}`} aria-hidden="true" />
-                    {video.video_url ? 'MP4' : 'Boceto'}
+                    {video.video_url ? 'MP4' : hasPhoto ? 'Foto IA' : 'Boceto'}
                 </span>
             </div>
             <div className="hud-frame mx-auto w-full max-w-[11rem] md:max-w-none">
@@ -257,7 +304,9 @@ function PreviewMonitor({ video }: { video: VideoRecord }) {
             <p className="hint mt-2 px-1">
                 {video.video_url
                     ? 'Archivo final generado por el servidor.'
-                    : 'Boceto con tu marca y la primera escena. El video real se genera tras la aprobación.'}
+                    : hasPhoto
+                        ? 'Primera escena con su imagen de IA y tu marca. El video real se genera tras la aprobación.'
+                        : 'Boceto con tu marca y la primera escena. El video real se genera tras la aprobación.'}
             </p>
         </aside>
     );

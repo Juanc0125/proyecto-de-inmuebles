@@ -21,6 +21,7 @@ import SoundsView from './sounds-view';
 import StudioView, { type RevealRequest } from './studio-view';
 import { parseHash, useHashRoute } from './use-hash-route';
 import type { SharedLibraries } from './video-workspace';
+import type { WorkbenchStartRequest } from './workbench-panel';
 import type { Section } from './studio-utils';
 
 // At this width the copilot docks beside the content; below it, it opens as
@@ -64,6 +65,12 @@ export default function VideoStudio() {
     const [stickyId, setStickyId] = useState<string | null>(null);
     const [reveal, setReveal] = useState<RevealRequest>({ seq: 0, focus: false });
     const [createRequest, setCreateRequest] = useState<CreateRequest>({ seq: 0, mode: 'single', focus: false });
+    // The palette's "start the workbench on this video": consumed by that
+    // video's workbench panel, then cleared so revisiting it does not re-run.
+    const [workbenchRequest, setWorkbenchRequest] = useState<WorkbenchStartRequest>({ seq: 0, videoId: null });
+    const clearWorkbenchRequest = useCallback(() => {
+        setWorkbenchRequest((current) => (current.videoId ? { ...current, videoId: null } : current));
+    }, []);
 
     // null = automatic: docked open on wide screens, closed on narrow ones.
     // Decided by CSS so the server render and the first client paint agree.
@@ -252,9 +259,13 @@ export default function VideoStudio() {
 
     // Rendering runs in the background on the worker, which reports progress on
     // the video row - so while anything is rendering, keep refreshing the list.
+    // The AI workbench reports the same way (a step at a time on the row), and
+    // its steps are seconds apart, so it polls a little faster.
     const isRendering = videos.some((video) => video.render_status === 'procesando');
+    const isWorkbenchRunning = videos.some((video) => video.workbench?.status === 'running');
+    const pollMs = isWorkbenchRunning ? 2500 : isRendering ? 4000 : 0;
     useEffect(() => {
-        if (!isRendering) return;
+        if (pollMs === 0) return;
         const timer = setInterval(() => {
             const startedAt = mutationRef.current;
             fetchVideos()
@@ -265,15 +276,38 @@ export default function VideoStudio() {
                     setVideos(loaded);
                 })
                 .catch(() => undefined);
-        }, 4000);
+        }, pollMs);
         return () => clearInterval(timer);
-    }, [isRendering]);
+    }, [pollMs]);
 
-    function openVideo(id: string, focus: boolean) {
+    function openVideo(id: string, focus: boolean, target?: string) {
         setCreateRequest((current) => (current.focus ? { ...current, focus: false } : current));
         setStickyId(id);
         navigate('estudio', id);
-        setReveal((current) => ({ seq: current.seq + 1, focus }));
+        setReveal((current) => ({ seq: current.seq + 1, focus, target }));
+    }
+
+    // The video "the workbench" means from the dashboard or the palette: the
+    // one being worked on, else the newest. None at all: start a new one.
+    function workbenchTarget(): VideoRecord | null {
+        const sticky = videos.find((video) => video.id === selectedId);
+        if (sticky) return sticky;
+        return [...videos].sort((a, b) => Date.parse(b.created_at) - Date.parse(a.created_at))[0] ?? null;
+    }
+
+    function openWorkbench() {
+        const target = workbenchTarget();
+        if (!target) {
+            requestCreate('single');
+            return;
+        }
+        openVideo(target.id, false, 'mesa');
+    }
+
+    function runWorkbenchOnCurrent() {
+        if (!selectedVideo) return;
+        setWorkbenchRequest((current) => ({ seq: current.seq + 1, videoId: selectedVideo.id }));
+        openVideo(selectedVideo.id, false, 'mesa');
     }
 
     function handleCreated(video: VideoRecord, focus = true) {
@@ -408,6 +442,8 @@ export default function VideoStudio() {
                     libraries={libraries}
                     createRequest={createRequest}
                     reveal={reveal}
+                    workbenchRequest={workbenchRequest}
+                    onWorkbenchRequestHandled={clearWorkbenchRequest}
                     onSelect={(id) => openVideo(id, true)}
                     onCreated={(video) => handleCreated(video)}
                     onBatchCreated={handleBatchCreated}
@@ -469,6 +505,7 @@ export default function VideoStudio() {
                     onNewBatch={() => requestCreate('batch')}
                     onOpenCopilot={() => setCopilotOpen(true)}
                     onGoToBoard={() => navigate('flujo')}
+                    onUseWorkbench={openWorkbench}
                 />
             );
     }
@@ -559,7 +596,10 @@ export default function VideoStudio() {
                     newBatch: () => requestCreate('batch'),
                     toggleCopilot,
                     showShortcuts: () => setHelpOpen(true),
+                    openWorkbench,
+                    runWorkbench: selectedVideo && selectedVideo.workbench?.status !== 'running' ? runWorkbenchOnCurrent : null,
                 }}
+                currentVideo={selectedVideo}
             />
             <ShortcutsHelp open={helpOpen} onClose={() => setHelpOpen(false)} />
         </div>

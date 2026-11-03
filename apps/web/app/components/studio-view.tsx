@@ -5,6 +5,7 @@ import type { VideoRecord } from './api';
 import CreateVideoForm, { type CreateRequest } from './create-video-form';
 import VideoList from './video-list';
 import VideoWorkspace, { type SharedLibraries } from './video-workspace';
+import type { WorkbenchStartRequest } from './workbench-panel';
 import { Icon } from './section-icon';
 
 export interface RevealRequest {
@@ -14,6 +15,8 @@ export interface RevealRequest {
     // copilot opens a video the operator is mid-conversation, and pulling
     // focus out of the chat would cut what they are typing or dictating.
     focus: boolean;
+    // A workspace section to land on instead of its top (e.g. 'mesa').
+    target?: string;
 }
 
 interface StudioViewProps {
@@ -27,6 +30,8 @@ interface StudioViewProps {
     libraries: SharedLibraries;
     createRequest: CreateRequest;
     reveal: RevealRequest;
+    workbenchRequest: WorkbenchStartRequest;
+    onWorkbenchRequestHandled: () => void;
     onSelect: (id: string) => void;
     onCreated: (video: VideoRecord) => void;
     onBatchCreated: (videos: VideoRecord[]) => void;
@@ -47,7 +52,7 @@ const STEPS = [
 
 export default function StudioView({
     videos, loading, loadError, onRetry, routeVideoId, selectedId, libraries, createRequest, reveal,
-    onSelect, onCreated, onBatchCreated, onUpdated, onDuplicated, onDeleted, onBackToList, onNewVideo, onShowAll,
+    workbenchRequest, onWorkbenchRequestHandled, onSelect, onCreated, onBatchCreated, onUpdated, onDuplicated, onDeleted, onBackToList, onNewVideo, onShowAll,
 }: StudioViewProps) {
     const workspaceRef = useRef<HTMLDivElement>(null);
     const video = routeVideoId ? videos.find((entry) => entry.id === routeVideoId) ?? null : null;
@@ -56,7 +61,8 @@ export default function StudioView({
     // of the workspace - on a phone the click happened far down the list.
     useEffect(() => {
         if (reveal.seq === 0) return;
-        const target = workspaceRef.current;
+        const section = reveal.target ? document.getElementById(`ws-${reveal.target}`) : null;
+        const target = section ?? workspaceRef.current;
         if (!target) return;
         // After paint, so the workspace already shows the new video.
         const frame = requestAnimationFrame(() => {
@@ -97,7 +103,14 @@ export default function StudioView({
                     along with the scroll; scroll-mt clears the top bar. */}
                 <div ref={workspaceRef} tabIndex={-1} aria-label="Área de trabajo del video" className="min-w-0 scroll-mt-20 rounded-2xl outline-none">
                     {video ? (
-                        <VideoWorkspace video={video} libraries={libraries} onUpdated={onUpdated} onDuplicated={onDuplicated} />
+                        <VideoWorkspace
+                            video={video}
+                            libraries={libraries}
+                            onUpdated={onUpdated}
+                            onDuplicated={onDuplicated}
+                            workbenchRequest={workbenchRequest}
+                            onWorkbenchRequestHandled={onWorkbenchRequestHandled}
+                        />
                     ) : loading ? (
                         <div className="space-y-4" aria-label="Cargando el video">
                             <div className="skeleton h-40 w-full rounded-2xl" />

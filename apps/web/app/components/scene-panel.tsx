@@ -3,9 +3,9 @@
 import { useEffect, useState } from 'react';
 import type { SoundAsset } from '@shared-types/sounds';
 import type { CharacterType, Scene, SceneAction, ScenePropType } from '@shared-types/video';
-import { deleteScene, generateScenes, generateVoice, regenerateScene, updateScene, type ScenePatch, type VideoRecord } from './api';
+import { deleteScene, generateScenes, generateVoice, regenerateScene, regenerateSceneImage, updateScene, type ScenePatch, type VideoRecord } from './api';
 import { ACTION_OPTIONS, CHARACTER_OPTIONS, PROP_OPTIONS } from './constants';
-import SectionIcon from './section-icon';
+import SectionIcon, { Icon } from './section-icon';
 import Storyboard from './storyboard';
 
 interface ScenePanelProps {
@@ -155,6 +155,7 @@ export default function ScenePanel({ video, sounds, soundsLoading, onUpdated }: 
                                 effects={effects}
                                 soundsLoading={soundsLoading}
                                 active={scene.id === activeSceneId}
+                                realista={video.visual_style === 'realista'}
                                 onUpdated={onUpdated}
                             />
                         ))}
@@ -172,13 +173,14 @@ interface SceneRowProps {
     effects: SoundAsset[];
     soundsLoading: boolean;
     active: boolean;
+    realista: boolean;
     onUpdated: (video: VideoRecord) => void;
 }
 
-function SceneRow({ videoId, scene, index, effects, soundsLoading, active, onUpdated }: SceneRowProps) {
+function SceneRow({ videoId, scene, index, effects, soundsLoading, active, realista, onUpdated }: SceneRowProps) {
     const [description, setDescription] = useState(scene.description);
     const [durationSeconds, setDurationSeconds] = useState(scene.duration_seconds);
-    const [busyAction, setBusyAction] = useState<'select' | 'text' | 'regenerate' | 'delete' | null>(null);
+    const [busyAction, setBusyAction] = useState<'select' | 'text' | 'regenerate' | 'image' | 'delete' | null>(null);
     const [error, setError] = useState('');
 
     const busy = busyAction !== null;
@@ -254,6 +256,18 @@ function SceneRow({ videoId, scene, index, effects, soundsLoading, active, onUpd
         }
     }
 
+    async function handleRegenerateImage() {
+        setBusyAction('image');
+        setError('');
+        try {
+            onUpdated(await regenerateSceneImage(videoId, scene.id));
+        } catch (err) {
+            setError(err instanceof Error ? err.message : 'No se pudo regenerar la imagen.');
+        } finally {
+            setBusyAction(null);
+        }
+    }
+
     return (
         // Focusable (not tabbable) so a pick on the storyboard can move the
         // keyboard here along with the scroll.
@@ -294,6 +308,52 @@ function SceneRow({ videoId, scene, index, effects, soundsLoading, active, onUpd
                     </button>
                 </div>
             </div>
+
+            {(realista || scene.image_url) && (
+                <div className="mt-3 flex gap-3 rounded-lg border border-white/[0.06] bg-ink-950/40 p-2.5">
+                    <div className="relative aspect-[9/16] w-16 shrink-0 overflow-hidden rounded-md bg-white/[0.03] ring-1 ring-inset ring-white/10 sm:w-20">
+                        {scene.image_url ? (
+                            // eslint-disable-next-line @next/next/no-img-element -- generated image in Supabase Storage, not a static asset.
+                            <img src={scene.image_url} alt={`Imagen de IA de la escena ${index + 1}`} loading="lazy" className="h-full w-full object-cover" />
+                        ) : (
+                            <span className="flex h-full w-full items-center justify-center text-slate-500"><Icon name="image" size={18} /></span>
+                        )}
+                        {busyAction === 'image' && (
+                            <span className="absolute inset-0 flex items-center justify-center bg-ink-950/65"><span className="spinner h-4 w-4 text-brand-300" aria-hidden="true" /></span>
+                        )}
+                    </div>
+                    <div className="min-w-0 flex-1">
+                        <p className="text-xs font-medium text-slate-200">{scene.image_url ? 'Imagen de IA' : 'Sin imagen todavía'}</p>
+                        <p className="hint mt-0.5">
+                            {scene.image_url
+                                ? 'Revisa que represente bien al negocio antes de aprobar.'
+                                : 'La mesa de trabajo la genera; también puedes pedirla aquí.'}
+                        </p>
+                        <button
+                            type="button"
+                            onClick={handleRegenerateImage}
+                            disabled={busy}
+                            className="btn btn-secondary btn-sm mt-2"
+                        >
+                            {busyAction === 'image' ? <span className="spinner h-3 w-3" aria-hidden="true" /> : <Icon name="refresh" size={13} />}
+                            {busyAction === 'image'
+                                ? 'Generando imagen… (hasta 1 min)'
+                                : scene.image_url ? 'Regenerar imagen' : 'Generar imagen'}
+                        </button>
+                        {scene.image_prompt && (
+                            <details className="group mt-2">
+                                <summary className="inline-flex cursor-pointer select-none items-center gap-1 text-[0.6875rem] font-medium text-brand-300 hover:text-brand-200">
+                                    <Icon name="chevron-right" size={12} className="transition-transform group-open:rotate-90" />
+                                    Ver indicación de la imagen
+                                </summary>
+                                <p className="mt-1.5 whitespace-pre-wrap break-words rounded-md bg-ink-950/60 p-2 font-mono text-[0.6875rem] leading-relaxed text-slate-300" lang="en">
+                                    {scene.image_prompt}
+                                </p>
+                            </details>
+                        )}
+                    </div>
+                </div>
+            )}
 
             <div className="mt-3 grid grid-cols-1 gap-3 sm:grid-cols-3">
                 <div>

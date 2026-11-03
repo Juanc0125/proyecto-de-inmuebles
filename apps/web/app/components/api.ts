@@ -12,9 +12,22 @@ import type {
     SceneAction,
     ScenePropType,
     Video,
+    VisualStyle,
 } from '@shared-types/video';
 
 export type VideoRecord = Video & { scenes: Scene[] };
+
+// Carries the HTTP status so a caller can tell "already running" (409) apart
+// from a real failure without matching words in the server's sentence.
+export class ApiError extends Error {
+    readonly status: number;
+
+    constructor(message: string, status: number) {
+        super(message);
+        this.name = 'ApiError';
+        this.status = status;
+    }
+}
 
 export async function parseJsonSafe(response: Response): Promise<unknown> {
     try {
@@ -51,7 +64,7 @@ async function request<T>(input: string, init?: RequestInit): Promise<T> {
         }
         const record = data && typeof data === 'object' ? (data as Record<string, unknown>) : null;
         const message = record && typeof record.error === 'string' ? record.error : 'Ocurrió un error inesperado.';
-        throw new Error(message);
+        throw new ApiError(message, response.status);
     }
     return data as T;
 }
@@ -86,11 +99,12 @@ export async function createVideo(
     platform: Platform,
     targetDurationSeconds: number,
     template: VideoTemplate = 'libre',
+    visualStyle: VisualStyle = 'ilustracion',
 ): Promise<VideoRecord> {
     const data = await request<{ video: VideoRecord }>('/api/videos', {
         method: 'POST',
         headers: JSON_HEADERS,
-        body: JSON.stringify({ topic, platform, targetDurationSeconds, template }),
+        body: JSON.stringify({ topic, platform, targetDurationSeconds, template, visual_style: visualStyle }),
     });
     return data.video;
 }
@@ -130,6 +144,7 @@ export async function createVideosBatch(
     targetDurationSeconds: number,
     template: VideoTemplate,
     conEscenas: boolean,
+    visualStyle: VisualStyle = 'ilustracion',
 ): Promise<BatchCreateResult> {
     return request<BatchCreateResult>('/api/videos/batch', {
         method: 'POST',
@@ -140,6 +155,7 @@ export async function createVideosBatch(
             target_duration_seconds: targetDurationSeconds,
             template,
             con_escenas: conEscenas,
+            visual_style: visualStyle,
         }),
     });
 }
@@ -150,6 +166,41 @@ export async function saveScript(id: string, script: string): Promise<VideoRecor
         headers: JSON_HEADERS,
         body: JSON.stringify({ script }),
     });
+    return data.video;
+}
+
+export async function updateVisualStyle(id: string, visualStyle: VisualStyle): Promise<VideoRecord> {
+    const data = await request<{ video: VideoRecord }>(`/api/videos/${id}`, {
+        method: 'PATCH',
+        headers: JSON_HEADERS,
+        body: JSON.stringify({ visual_style: visualStyle }),
+    });
+    return data.video;
+}
+
+// The workbench runs in the background: the server answers 202 with the
+// record already marked as running, and progress arrives through the list
+// polling in the shell. 409 means a run is already going for this video.
+export async function startWorkbench(id: string, rewriteScript: boolean): Promise<VideoRecord> {
+    try {
+        const data = await request<{ video: VideoRecord }>(`/api/videos/${id}/workbench`, {
+            method: 'POST',
+            headers: JSON_HEADERS,
+            body: JSON.stringify({ rewrite_script: rewriteScript }),
+        });
+        return data.video;
+    } catch (error) {
+        if (error instanceof ApiError && error.status === 409) {
+            throw new ApiError('La mesa ya está trabajando en este video. Espera a que termine para volver a lanzarla.', 409);
+        }
+        throw error;
+    }
+}
+
+// One image, generated again from its prompt. Synchronous on the server and
+// slow (up to about a minute): the caller shows a spinner meanwhile.
+export async function regenerateSceneImage(id: string, sceneId: string): Promise<VideoRecord> {
+    const data = await request<{ video: VideoRecord }>(`/api/videos/${id}/scenes/${sceneId}/image`, { method: 'POST' });
     return data.video;
 }
 

@@ -649,6 +649,26 @@
   to { transform: translateX(250%); }
 }
 
+/* A seat at the AI workbench that is working right now. */
+@keyframes seat-pulse {
+  0% { box-shadow: 0 0 0 0 rgba(34, 211, 238, 0.5); }
+  70% { box-shadow: 0 0 0 9px rgba(34, 211, 238, 0); }
+  100% { box-shadow: 0 0 0 0 rgba(34, 211, 238, 0); }
+}
+
+@keyframes seat-blink {
+  0%, 100% { opacity: 1; }
+  50% { opacity: 0.35; }
+}
+
+.seat-live {
+  animation: seat-pulse 1.6s ease-out infinite;
+}
+
+.seat-blink {
+  animation: seat-blink 1.4s ease-in-out infinite;
+}
+
 .listening-ring {
   animation: pulse-ring 1.6s ease-out infinite;
 }
@@ -705,6 +725,8 @@
   }
 
   .listening-ring,
+  .seat-live,
+  .seat-blink,
   .skeleton,
   .float-soft,
   .bar-sheen::after {

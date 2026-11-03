@@ -14,6 +14,9 @@ export interface PaletteActions {
     newBatch: () => void;
     toggleCopilot: () => void;
     showShortcuts: () => void;
+    openWorkbench: () => void;
+    // Null when there is no current video, or its workbench is already running.
+    runWorkbench: (() => void) | null;
 }
 
 interface CommandPaletteProps {
@@ -21,6 +24,7 @@ interface CommandPaletteProps {
     onClose: () => void;
     videos: VideoRecord[];
     actions: PaletteActions;
+    currentVideo?: VideoRecord | null;
 }
 
 interface Command {
@@ -45,17 +49,17 @@ const SECTION_ICONS: Record<Section, SectionIconName> = {
 
 const MAX_VIDEOS = 8;
 
-export default function CommandPalette({ open, onClose, videos, actions }: CommandPaletteProps) {
+export default function CommandPalette({ open, onClose, videos, actions, currentVideo = null }: CommandPaletteProps) {
     return (
         <Modal open={open} onClose={onClose} labelledBy="palette-title" className="max-w-2xl">
             {/* Mounted only while open, so every opening starts with an empty
                 query and the first item active. */}
-            {open && <PaletteBody onClose={onClose} videos={videos} actions={actions} />}
+            {open && <PaletteBody onClose={onClose} videos={videos} actions={actions} currentVideo={currentVideo} />}
         </Modal>
     );
 }
 
-function PaletteBody({ onClose, videos, actions }: Omit<CommandPaletteProps, 'open'>) {
+function PaletteBody({ onClose, videos, actions, currentVideo }: Omit<CommandPaletteProps, 'open'>) {
     const [query, setQuery] = useState('');
     const [active, setActive] = useState(0);
 
@@ -67,6 +71,18 @@ function PaletteBody({ onClose, videos, actions }: Omit<CommandPaletteProps, 'op
     const commands: Command[] = [
         { id: 'new', group: 'Acciones', label: 'Nuevo video', hint: 'N', icon: 'plus', keywords: 'crear nuevo video tema', run: actions.newVideo },
         { id: 'batch', group: 'Acciones', label: 'Crear varios videos (lote)', icon: 'layers', keywords: 'lote varios batch masivo', run: actions.newBatch },
+        ...(actions.runWorkbench && currentVideo
+            ? [{
+                id: 'workbench-run',
+                group: 'Acciones' as const,
+                label: 'Poner a trabajar la mesa en el video actual',
+                hint: currentVideo.topic,
+                icon: 'team' as const,
+                keywords: 'mesa de trabajo ia revisar mejorar guion escenas imagenes fotos',
+                run: actions.runWorkbench,
+            }]
+            : []),
+        { id: 'workbench-open', group: 'Acciones', label: 'Usar mesa de trabajo', icon: 'team', keywords: 'mesa de trabajo ia abrir panel', run: actions.openWorkbench },
         { id: 'copilot', group: 'Acciones', label: 'Abrir o cerrar el copiloto', hint: 'C', icon: 'bot', keywords: 'copiloto asistente voz chat ia', run: actions.toggleCopilot },
         { id: 'help', group: 'Acciones', label: 'Ver atajos de teclado', hint: '?', icon: 'keyboard', keywords: 'atajos teclado ayuda shortcuts', run: actions.showShortcuts },
         ...SECTIONS.map((section) => ({

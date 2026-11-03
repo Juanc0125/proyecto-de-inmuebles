@@ -39,7 +39,10 @@ export type SectionIconName =
     | 'activity'
     | 'film'
     | 'arrow-right'
-    | 'trash';
+    | 'trash'
+    | 'team'
+    | 'image'
+    | 'refresh';
 
 const PATHS: Record<SectionIconName, React.ReactNode> = {
     sparkles: (
@@ -206,6 +209,23 @@ const PATHS: Record<SectionIconName, React.ReactNode> = {
     ),
     'arrow-right': <path d="M5 12h14M13 6l6 6-6 6" />,
     trash: <path d="M3 6h18M8 6V4h8v2M6 6l1 14h10l1-14M10 11v5M14 11v5" />,
+    // Three seats around a table: the AI workbench.
+    team: (
+        <>
+            <circle cx="12" cy="6.5" r="2.5" />
+            <circle cx="5" cy="9.5" r="2" />
+            <circle cx="19" cy="9.5" r="2" />
+            <path d="M3 15.5h18M5.5 15.5 4.5 20M18.5 15.5l1 4.5M8.5 15.5c0-2.2 1.6-4 3.5-4s3.5 1.8 3.5 4" />
+        </>
+    ),
+    image: (
+        <>
+            <rect x="3.5" y="4.5" width="17" height="15" rx="2.5" />
+            <circle cx="9" cy="10" r="1.75" />
+            <path d="m20.5 16-5-5-9 8.5" />
+        </>
+    ),
+    refresh: <path d="M20 11a8 8 0 0 0-14.3-4.3L4 8.5M4 4v4.5h4.5M4 13a8 8 0 0 0 14.3 4.3L20 15.5M20 20v-4.5h-4.5" />,
 };
 
 interface IconProps {

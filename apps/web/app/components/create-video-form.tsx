@@ -2,7 +2,7 @@
 
 import { useEffect, useRef, useState, type FormEvent } from 'react';
 import { VIDEO_TEMPLATES, type VideoTemplate } from '@shared-types/templates';
-import type { Platform } from '@shared-types/video';
+import type { Platform, VisualStyle } from '@shared-types/video';
 import {
     createVideo,
     createVideosBatch,
@@ -14,6 +14,7 @@ import {
 import { PLATFORM_OPTIONS, TEMPLATE_TEXT } from './constants';
 import { PLATFORM_SHORT } from './studio-utils';
 import SectionIcon, { Icon } from './section-icon';
+import VisualStylePicker from './visual-style-picker';
 
 // RF-024: the same form makes one video or several. A person making one must
 // not pay for the batch machinery, so the two paths only share the fields
@@ -77,6 +78,7 @@ export default function CreateVideoForm({ onCreated, onBatchCreated, request }: 
     const [platform, setPlatform] = useState<Platform>('reels');
     const [duration, setDuration] = useState(30);
     const [template, setTemplate] = useState<VideoTemplate>('libre');
+    const [visualStyle, setVisualStyle] = useState<VisualStyle>('ilustracion');
     const [submitting, setSubmitting] = useState(false);
     const [formError, setFormError] = useState('');
     const [batchElapsed, setBatchElapsed] = useState(0);
@@ -142,7 +144,7 @@ export default function CreateVideoForm({ onCreated, onBatchCreated, request }: 
         setSubmitting(true);
         setFormError('');
         try {
-            const video = await createVideo(topic.trim(), platform, duration, template);
+            const video = await createVideo(topic.trim(), platform, duration, template, visualStyle);
             setTopic('');
             onCreated(video);
         } catch (error) {
@@ -172,7 +174,7 @@ export default function CreateVideoForm({ onCreated, onBatchCreated, request }: 
         setBatchResult(null);
         setBatchElapsed(0);
         try {
-            const result = await createVideosBatch(batchTopicsList, platform, duration, template, conEscenas);
+            const result = await createVideosBatch(batchTopicsList, platform, duration, template, conEscenas, visualStyle);
             // In the order the operator typed them; the shell selects the
             // first topic (RF-024) without navigating away from this summary.
             if (result.creados.length > 0) onBatchCreated(result.creados);
@@ -303,6 +305,11 @@ export default function CreateVideoForm({ onCreated, onBatchCreated, request }: 
                         </div>
                         {mode === 'batch' && <p className="hint mt-1.5">Se aplica a todos los videos del lote.</p>}
                     </div>
+                </div>
+
+                <div>
+                    <VisualStylePicker idPrefix="new-video-style" value={visualStyle} onChange={setVisualStyle} disabled={submitting} />
+                    {mode === 'batch' && <p className="hint mt-1.5">Se aplica a todos los videos del lote.</p>}
                 </div>
 
                 <fieldset>
