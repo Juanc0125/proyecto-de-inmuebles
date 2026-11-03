@@ -5,6 +5,9 @@ import type { WordTiming } from './voice';
 export type CharacterType = 'broker' | 'cliente' | 'pareja' | 'hombre' | 'mujer' | 'generico';
 export type SceneAction = 'hablar' | 'caminar' | 'senalar' | 'sentarse' | 'pensar' | 'telefono' | 'mostrar_objeto';
 export type ScenePropType = 'casa' | 'carro' | 'banco' | 'telefono' | 'documento' | 'dinero' | 'grafico' | 'oficina' | 'ninguno';
+// How a job's scenes are pictured: the drawn 2D characters, or one photo per
+// scene (image_url) animated with a slow camera move (see photo.ts).
+export type VisualStyle = 'ilustracion' | 'realista';
 
 export interface FrameScene {
 	index: number;
@@ -1268,6 +1271,26 @@ export function drawSceneFrame(
 	}
 
 	ctx.restore();
+
+	drawSceneOverlay(ctx, scene, t, duration, style, wordTimings, fadeEdges);
+}
+
+/**
+ * Everything drawn over a scene's picture that must not move with the camera:
+ * the scene counter, the subtitle with its highlighted word and the fade at
+ * the true edges of the video. Shared by the drawn scenes and the photo scenes
+ * (photo.ts), so both lay the text out identically.
+ */
+export function drawSceneOverlay(
+	ctx: SKRSContext2D,
+	scene: FrameScene,
+	t: number,
+	duration: number,
+	style: FrameStyle,
+	wordTimings: WordTiming[] | null = null,
+	fadeEdges: { in: boolean; out: boolean } | null = null,
+) {
+	const { width, height, ink } = style;
 
 	// Scene counter, top left.
 	ctx.fillStyle = ink;

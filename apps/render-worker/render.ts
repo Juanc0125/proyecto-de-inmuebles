@@ -17,7 +17,10 @@ import {
 	type FrameScene,
 	type SceneAction,
 	type ScenePropType,
+	type VisualStyle,
 } from './drawing';
+import { createPhotoCanvas, drawPhotoSceneFrame, loadScenePhoto, trustedSceneImageUrl } from './photo';
+import type { Canvas } from '@napi-rs/canvas';
 import { estimateWordTimings, mouthEnvelope, speak, type Speech } from './voice';
 import { aiVideoModel, buildScenePrompt, generateSceneVideo, isAiVideoEnabled } from './ai-video';
 import { heygenMissingConfig, isHeygenEnabled, startAvatarScenes, type AvatarClip } from './heygen';
@@ -103,6 +106,9 @@ export type RenderScene = {
 	// RF-010: one optional effect per scene, already resolved to a public URL
 	// by the web app (null when none, or when its id no longer exists).
 	sound_effect_url?: string | null;
+	// 'realista' only: the scene's photo, a public URL in this project's
+	// scene-images bucket (see trustedSceneImageUrl in photo.ts).
+	image_url?: string | null;
 };
 
 export type Branding = {
@@ -118,6 +124,8 @@ export type RenderJob = {
 	platform: Platform;
 	branding: Branding;
 	scenes: RenderScene[];
+	// Missing on jobs from a web app older than the style: those are drawn.
+	visual_style?: VisualStyle;
 };
 
 export const port = Number(process.env.PORT ?? 8080);
@@ -738,7 +746,50 @@ export async function render(job: RenderJob, onProgress?: (percent: number) => v
 		// HeyGen, when configured, is the main engine: every scene is sent to it
 		// before the first one is drawn, so its queue works in parallel with the
 		// loop below. A scene it cannot produce comes back null and is drawn.
-		const avatarClips: Array<Promise<AvatarClip | null>> | null = isHeygenEnabled()
+		// 'realista': every scene is its photo, animated here. HeyGen and fal
+		// are illustrated-style engines and are not used at all for such a job
+		// - a scene whose photo cannot be used is drawn, as the style asks.
+		const realista = job.visual_style === 'realista';
+
+		// At most two photo surfaces per render, allocated only when needed:
+		// scene i uses slot i % 2, so the next scene's photo can be prepared
+		// for the crossfade while this scene's is still on screen. Each photo
+		// is decoded once, resampled into its slot and the decoded image
+		// dropped right there (see loadScenePhoto).
+		const photoSlots: Array<Canvas | undefined> = [undefined, undefined];
+		const photoLoaded = new Map<number, boolean>();
+		const preparePhoto = async (sceneIndex: number): Promise<Canvas | null> => {
+			if (!realista) return null;
+			const slotIndex = sceneIndex % 2;
+			const known = photoLoaded.get(sceneIndex);
+			if (known !== undefined) return known ? photoSlots[slotIndex] ?? null : null;
+
+			const raw = nonEmptyUrl(scenes[sceneIndex].image_url);
+			const context = { job_id: jobId, stage: 'scene_image', scene: sceneIndex + 1, image_url: raw ? raw.slice(0, 300) : null };
+			let loaded = false;
+			const trusted = raw ? trustedSceneImageUrl(raw, supabaseUrl) : null;
+			if (!raw) {
+				console.warn(`Escena ${sceneIndex + 1}: estilo realista sin image_url; se dibuja ilustrada.`);
+				void reportError(new Error('Escena realista sin image_url'), context);
+			} else if (!trusted) {
+				console.warn(`Escena ${sceneIndex + 1}: la imagen no viene del bucket scene-images de este proyecto; se dibuja ilustrada.`);
+				void reportError(new Error('image_url rechazada: no es una URL https del bucket scene-images'), context);
+			} else {
+				try {
+					const slot = photoSlots[slotIndex] ?? createPhotoCanvas(width, height);
+					photoSlots[slotIndex] = slot;
+					await loadScenePhoto(trusted, slot);
+					loaded = true;
+				} catch (error) {
+					console.warn(`Escena ${sceneIndex + 1}: no se pudo usar la imagen; se dibuja ilustrada.`, error);
+					void reportError(error, context);
+				}
+			}
+			photoLoaded.set(sceneIndex, loaded);
+			return loaded ? photoSlots[slotIndex] ?? null : null;
+		};
+
+		const avatarClips: Array<Promise<AvatarClip | null>> | null = !realista && isHeygenEnabled()
 			? startAvatarScenes(
 				scenes.map((scene) => ({ description: (scene.description || '').trim(), audio_url: scene.audio_url })),
 				(index) => join(jobDirectory, `scene-${index + 1}-heygen.mp4`),
@@ -829,7 +880,7 @@ export async function render(job: RenderJob, onProgress?: (percent: number) => v
 			// best-effort: if it fails or is not configured, the scene is drawn
 			// instead, so a render always produces a video.
 			let generatedPath: string | null = avatarClip ? avatarClip.path : null;
-			if (!generatedPath && isAiVideoEnabled()) {
+			if (!generatedPath && !realista && isAiVideoEnabled()) {
 				const candidate = join(jobDirectory, `scene-${index + 1}-ai.mp4`);
 				const prompt = buildScenePrompt(scene);
 				if (await generateSceneVideo(prompt, duration, candidate)) generatedPath = candidate;
@@ -868,6 +919,7 @@ export async function render(job: RenderJob, onProgress?: (percent: number) => v
 					clipPath,
 				]);
 			} else {
+				const photo = await preparePhoto(index);
 				await runFfmpegWithFrames([
 					'-y',
 					'-f', 'rawvideo',
@@ -890,16 +942,21 @@ export async function render(job: RenderJob, onProgress?: (percent: number) => v
 					'-movflags', '+faststart',
 					clipPath,
 				], frameCount, (frameIndex) => {
-					drawSceneFrame(
-						context,
-						frameScene,
-						frameIndex / FRAME_RATE,
-						duration,
-						frameStyle,
-						mouth ? mouth[frameIndex] ?? 0 : null,
-						wordTimings,
-						{ in: isFirstScene, out: isLastScene },
-					);
+					const fadeEdges = { in: isFirstScene, out: isLastScene };
+					if (photo) {
+						drawPhotoSceneFrame(context, photo, frameScene, frameIndex / FRAME_RATE, duration, frameStyle, wordTimings, fadeEdges);
+					} else {
+						drawSceneFrame(
+							context,
+							frameScene,
+							frameIndex / FRAME_RATE,
+							duration,
+							frameStyle,
+							mouth ? mouth[frameIndex] ?? 0 : null,
+							wordTimings,
+							fadeEdges,
+						);
+					}
 					// canvas.data() reads the surface's raw RGBA pixels directly, in
 					// the exact byte layout ffmpeg's rawvideo/rgba input expects.
 					// context.getImageData(...).data did the same read plus an
@@ -941,11 +998,15 @@ export async function render(job: RenderJob, onProgress?: (percent: number) => v
 			// has no frame of ours to blend from, and generation is best-effort
 			// per scene, so whether the *next* scene will need one isn't known
 			// yet here - simplest to keep every AI-video boundary a plain cut.
-			if (!isLastScene && !generatedPath && !isAiVideoEnabled() && !avatarClips) {
+			// A realista job never has AI clips (see above), so every one of its
+			// boundaries is between two frames of ours.
+			if (!isLastScene && !generatedPath && (realista || (!isAiVideoEnabled() && !avatarClips))) {
 				const nextFrameScene = previewFrameScene(scenes[index + 1], index + 1);
 				const narrationWordCount = frameScene.description.split(/\s+/).filter(Boolean).length;
 				const wordsPerSecond = duration > 0 ? narrationWordCount / duration : 0;
-				const kind = pickTransition(frameScene, nextFrameScene, wordsPerSecond, index);
+				// Photos always crossfade: a slide or a hard cut between two
+				// slow camera moves reads as a glitch, not an edit.
+				const kind = realista ? 'fade' : pickTransition(frameScene, nextFrameScene, wordsPerSecond, index);
 
 				if (kind !== 'cut') {
 					// The "from" side is just-drawn: `canvas` still holds this
@@ -960,7 +1021,11 @@ export async function render(job: RenderJob, onProgress?: (percent: number) => v
 					// drawSceneFrame uses (camera easing, pose phase) is 0
 					// regardless of the real duration, which isn't known yet -
 					// the next scene hasn't been narrated at this point in the loop.
-					drawSceneFrame(toContext, nextFrameScene, 0, 1, frameStyle, null, null);
+					// The next scene's photo is prepared here, once, and kept
+					// in its slot for that scene's own loop iteration.
+					const nextPhoto = await preparePhoto(index + 1);
+					if (nextPhoto) drawPhotoSceneFrame(toContext, nextPhoto, nextFrameScene, 0, 1, frameStyle, null, null);
+					else drawSceneFrame(toContext, nextFrameScene, 0, 1, frameStyle, null, null);
 
 					const transitionFrameCount = Math.max(1, Math.round(TRANSITION_SECONDS * FRAME_RATE));
 					const transitionClipPath = join(jobDirectory, `scene-${index + 1}-transition.mp4`);
@@ -1059,7 +1124,10 @@ export function parseRenderJob(value: unknown): RenderJob {
 	if (job.id !== undefined && !isUuid(job.id)) {
 		throw new Error('El id del trabajo no es un UUID valido.');
 	}
-	return job;
+	// Anything but an explicit 'realista' (missing, an unknown value from a
+	// newer web app) renders the way every job did before the style existed.
+	const visualStyle: VisualStyle = job.visual_style === 'realista' ? 'realista' : 'ilustracion';
+	return { ...job, visual_style: visualStyle };
 }
 
 // Writes the final 'error' state on a video whose job never reached render()

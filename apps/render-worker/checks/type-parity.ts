@@ -11,7 +11,7 @@
 // `npm run check:types` (tsconfig.check.json, noEmit) and fails the build the
 // day either side changes without the other.
 
-import type { CharacterType as WorkerCharacter, SceneAction as WorkerAction, ScenePropType as WorkerProp } from '../drawing';
+import type { CharacterType as WorkerCharacter, SceneAction as WorkerAction, ScenePropType as WorkerProp, VisualStyle as WorkerVisualStyle } from '../drawing';
 import type { Branding as WorkerBranding, LogoPosition as WorkerLogoPosition, Platform as WorkerPlatform } from '../index';
 import type {
 	Branding as SharedBranding,
@@ -20,6 +20,7 @@ import type {
 	Platform as SharedPlatform,
 	SceneAction as SharedAction,
 	ScenePropType as SharedProp,
+	VisualStyle as SharedVisualStyle,
 } from '../../../packages/shared-types/video';
 
 // Mutual assignability, not one-way: a worker type missing a value the web app
@@ -35,3 +36,4 @@ sonIguales<Exact<WorkerProp, SharedProp>>();
 sonIguales<Exact<WorkerPlatform, SharedPlatform>>();
 sonIguales<Exact<WorkerLogoPosition, SharedLogoPosition>>();
 sonIguales<Exact<WorkerBranding, SharedBranding>>();
+sonIguales<Exact<WorkerVisualStyle, SharedVisualStyle>>();
