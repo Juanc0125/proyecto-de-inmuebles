@@ -20,7 +20,7 @@
 #   - deploy SA    stickman-deployer        -> what GitHub Actions uses through
 #                                              Workload Identity Federation
 #   - WIF pool `github` + provider `github-oidc`, restricted to
-#     Juanc0125/stickman-video-app on refs/heads/master
+#     Juanc0125/proyecto-de-inmuebles on refs/heads/master
 #   - Secret Manager secrets for the API keys (read with `read -s`, never shown,
 #     never passed as command-line arguments)
 #   - the Cloud Run job `stickman-render` with a public placeholder image, so
@@ -37,7 +37,7 @@ JOB="stickman-render"
 AR_REPO="stickman"
 IMAGE_NAME="render-worker"
 PLACEHOLDER_IMAGE="us-docker.pkg.dev/cloudrun/container/job:latest"
-GH_REPO="Juanc0125/stickman-video-app"
+GH_REPO="Juanc0125/proyecto-de-inmuebles"
 GH_REF="refs/heads/master"
 POOL="github"
 PROVIDER="github-oidc"
@@ -47,7 +47,7 @@ DEPLOY_SA_NAME="stickman-deployer"
 DISPATCHER_ROLE_ID="stickmanRenderDispatcher"
 BUDGET_NAME="stickman-render-budget"
 KEY_FILE="${HOME}/stickman-dispatcher-key.json"
-VERCEL_PROJECT="project-bftvz"
+VERCEL_PROJECT="proyecto-de-inmuebles"
 VERCEL_SCOPE="juanc0125s-projects"
 
 # Secret Manager free tier: 6 active secret versions per billing account.
@@ -420,7 +420,7 @@ printf '%s' $JOB           | npx vercel@latest env add CLOUD_RUN_JOB production
 base64 -w0 $KEY_FILE | npx vercel@latest env add GCP_SA_KEY_B64 production
 
    Then redeploy production so the new env is picked up:
-npx vercel@latest redeploy https://project-bftvz.vercel.app --scope $VERCEL_SCOPE
+npx vercel@latest redeploy https://proyecto-de-inmuebles.vercel.app --scope $VERCEL_SCOPE
 
 4) DELETE THE LOCAL KEY FILE (it now lives only in Vercel):
 

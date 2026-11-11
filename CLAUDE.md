@@ -99,7 +99,7 @@ el worker local (`npm run dev`).
   imágenes más nuevas), las tres cuentas de servicio (runtime del job,
   despachador para Vercel con un rol propio que solo puede lanzar este job,
   desplegador para GitHub), Workload Identity Federation para
-  `Juanc0125/stickman-video-app` en `master`, los secretos y el job. Al final
+  `Juanc0125/proyecto-de-inmuebles` en `master`, los secretos y el job. Al final
   imprime los `gh variable set` y los `vercel env add` exactos. Para cambiar
   una clave del worker se vuelve a correr; las claves se escriben ocultas
   (`read -s`) y nunca pasan por argumentos ni por pantalla.

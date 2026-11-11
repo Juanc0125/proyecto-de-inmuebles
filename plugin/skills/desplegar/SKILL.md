@@ -46,7 +46,7 @@ que terminó porque la URL responde: la URL responde con el despliegue
 La forma fiable es preguntar por el despliegue y comparar el sha:
 
 ```
-vercel list project-bftvz --scope juanc0125s-projects
+vercel list proyecto-de-inmuebles --scope juanc0125s-projects
 ```
 
 Con el MCP de Vercel, `list_deployments` sobre el proyecto devuelve
@@ -59,10 +59,10 @@ Tres comprobaciones contra Vercel, y las tres importan:
 
 ```
 curl -s -o /dev/null -w "%{http_code}
-" https://project-bftvz.vercel.app/
+" https://proyecto-de-inmuebles.vercel.app/
 curl -s -o /dev/null -w "%{http_code}
-" -X PATCH -H "Content-Type: application/json"   -d '{"action":"render"}' https://project-bftvz.vercel.app/api/videos/00000000-0000-0000-0000-000000000000
-curl -s https://project-bftvz.vercel.app/api/health
+" -X PATCH -H "Content-Type: application/json"   -d '{"action":"render"}' https://proyecto-de-inmuebles.vercel.app/api/videos/00000000-0000-0000-0000-000000000000
+curl -s https://proyecto-de-inmuebles.vercel.app/api/health
 ```
 
 Lo que debe salir:
@@ -87,7 +87,7 @@ Que el archivo esté commiteado no significa que Vercel lo haya aplicado.
 Confírmalo del lado de Vercel:
 
 ```
-vercel crons ls --project project-bftvz --scope juanc0125s-projects
+vercel crons ls --project proyecto-de-inmuebles --scope juanc0125s-projects
 ```
 
 **Pasa `--project` y `--scope` explícitamente en vez de correr `vercel link`.**
