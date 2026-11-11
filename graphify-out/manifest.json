@@ -480,9 +480,9 @@
     "semantic_hash": "6cbb81b6748ec69c802643080ada3a20"
   },
   "CLAUDE.md": {
-    "mtime": 1793407706.1051483,
-    "seen": 1793408471.2095923,
-    "ast_hash": "c65354e05ff96c68f2df7b244903d384",
+    "mtime": 1794407565.2320416,
+    "seen": 1794407605.1752656,
+    "ast_hash": "62f4fab6f2f6d396abde386e11c125ae",
     "semantic_hash": ""
   },
   "scripts/graph.mjs": {
@@ -630,9 +630,9 @@
     "semantic_hash": ""
   },
   "plugin/skills/desplegar/SKILL.md": {
-    "mtime": 1793407706.2725246,
-    "seen": 1793408471.2096217,
-    "ast_hash": "0306dcd35e90704d03431d55891c7071",
+    "mtime": 1794407565.3804233,
+    "seen": 1794407605.1753848,
+    "ast_hash": "fac2dc8d97a2479252474c9dc36b44d3",
     "semantic_hash": ""
   },
   "plugin/skills/verificar/SKILL.md": {
@@ -942,9 +942,9 @@
     "semantic_hash": ""
   },
   "scripts/gcp-setup.sh": {
-    "mtime": 1793661660.3450346,
-    "seen": 1793662597.052377,
-    "ast_hash": "59871b915a7c12e2f17d960a405234f7",
+    "mtime": 1794407565.405564,
+    "seen": 1794407605.1751819,
+    "ast_hash": "0f4abad52ff6b964c86d0e0aa827e356",
     "semantic_hash": ""
   },
   ".github/workflows/deploy-render-worker.yml": {
